@@ -23,6 +23,10 @@ export const CITY_OPTIONS = ["Cebu City", "Mandaue", "Lapu-Lapu", "Cordova", "Ta
 
 export const locationBySlug = (slug?: string | null) => LOCATIONS.find((l) => l.slug === slug);
 
+/** /explore/cebu — the whole province (no city filter). */
+export const ALL_CEBU = { slug: "cebu", name: "Cebu", match: [] as string[], blurb: "Cebu City, Mactan, Mandaue, Talisay and beyond" };
+export const cityPageBySlug = (slug: string) => (slug === ALL_CEBU.slug ? ALL_CEBU : locationBySlug(slug));
+
 export const PAYMENT_METHODS: { value: Enums<"payment_method_type">; label: string }[] = [
   { value: "CASH", label: "Cash" },
   { value: "GCASH", label: "GCash" },
