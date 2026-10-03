@@ -114,8 +114,9 @@ Owners see their payment history under **Subscription**. Admins see recent payme
   - The Supabase `site_url` and redirect URLs. The old `13-c.vercel.app` URLs stay allowed, so links in emails sent earlier still work.
 - Cloudflare Email Routing forwards `support@`, `privacy@` and `owner@13c.online` to the owner's inbox.
 - To do:
-  1. In PayMongo, change the webhook URL to `https://www.13c.online/api/webhooks/paymongo`. Use the `www` address, because webhooks don't follow the redirect from the apex.
-  2. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
+  1. Done: the PayMongo test-mode webhook points to `https://www.13c.online/api/webhooks/paymongo` (verified with a 200), and its secret is `PAYMONGO_WEBHOOK_SECRET`. A live-mode webhook to the same URL is ready.
+  2. When going live: in Vercel, set `PAYMONGO_SECRET_KEY` (`sk_live_…`) and `PAYMONGO_WEBHOOK_SECRET` (the live webhook's secret), redeploy, and confirm with one small real payment.
+  3. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
 
 **Also before launch**
 1. Have the contract template (Admin → Settings), Terms and Privacy Policy reviewed by Philippine legal counsel.
