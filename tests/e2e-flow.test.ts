@@ -114,14 +114,17 @@ describe("MVP workflow (35 steps)", () => {
       expect(text, needle).toContain(needle);
     }
     // 25. Sent to customer (provider signature captured server-side)
-    must(await service.rpc("send_contract", { p_actor_id: owner.id, p_contract_id: contractId, p_signer_name: "Maria Santos", p_ip: "203.177.1.10", p_user_agent: "e2e" }));
+    must(await service.rpc("send_contract", {
+      p_actor_id: owner.id, p_contract_id: contractId, p_signer_name: "Maria Santos", p_signature_type: "TYPED",
+      p_signature_data: `data:image/png;base64,${btoa(String.fromCharCode(...PNG))}`, p_ip: "203.177.1.10", p_user_agent: "e2e",
+    }));
   });
 
   it("Customer 26–29: open, review, sign, submit", async () => {
     // 26. Opens contract
     const v = must(await customer.client.from("contract_versions").select("id, content_hash, status").eq("booking_id", bookingId).single());
     versionId = v.id;
-    must(await customer.client.rpc("mark_contract_viewed", { p_contract_id: contractId }));
+    must(await service.rpc("record_contract_view", { p_actor_id: customer.id, p_contract_id: contractId, p_ip: "112.198.5.20", p_user_agent: "e2e" }));
     // 27. Reviews (sees the business's signature, sections)
     expect(v.status).toBe("SENT");
     // 28–29. Signs electronically (drawn) and submits

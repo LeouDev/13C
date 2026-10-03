@@ -44,3 +44,6 @@ export async function completeRenterProfile(u: TestUser) {
     legal_name: "Juan Dela Cruz", address: "123 Osmeña Blvd, Cebu City", license_number: "G01-23-456789",
   }).eq("user_id", u.id));
 }
+
+/** 1×1 PNG as a signature image (what the signature pad sends). */
+export const SIGNATURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";

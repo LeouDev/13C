@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { renderContractPdf, type ContractSection, type ContractSignature } from "@/lib/contracts/pdf";
+import { renderContractPdf, type ContractPdfInput, type ContractSection, type ContractSignature } from "@/lib/contracts/pdf";
 import type { Database } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -18,17 +18,18 @@ export async function requestMeta() {
 export async function loadVersion(client: SupabaseClient<Database>, versionId: string) {
   const { data } = await client
     .from("contract_versions")
-    .select("id, version, status, title, sections, content_hash, pdf_path, contract_id, booking_id, data, bookings(reference, business_id), contract_signatures(signer_role, signer_name, signature_type, signature_data, signed_at, ip_address, content_hash)")
+    .select("id, version, status, title, sections, content_hash, pdf_path, contract_id, booking_id, data, sent_at, sent_to_email, viewed_at, viewed_ip, viewed_user_agent, bookings(reference, business_id), contract_signatures(signer_role, signer_name, signer_email, signature_type, signature_data, signed_at, ip_address, user_agent, content_hash)")
     .eq("id", versionId)
     .maybeSingle();
   return data;
 }
 export type LoadedVersion = NonNullable<Awaited<ReturnType<typeof loadVersion>>>;
 
-export function pdfInput(v: LoadedVersion) {
+export function pdfInput(v: LoadedVersion): ContractPdfInput {
   const vars = v.data as Record<string, string>;
   return {
-    title: v.title, version: v.version, reference: v.bookings?.reference ?? "", status: v.status,
+    documentId: v.id, title: v.title, version: v.version, reference: v.bookings?.reference ?? "", status: v.status,
+    sentAt: v.sent_at, sentTo: v.sent_to_email, viewedAt: v.viewed_at, viewedIp: v.viewed_ip as string | null, viewedUserAgent: v.viewed_user_agent,
     sections: v.sections as ContractSection[], signatures: v.contract_signatures as ContractSignature[],
     contentHash: v.content_hash, providerName: vars.provider_name ?? "Rental Provider", renterName: vars.renter_name ?? "Renter",
   };

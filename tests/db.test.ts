@@ -6,7 +6,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { TRANSITIONS } from "@/lib/bookings/status";
 import { PLAN_VEHICLE_LIMIT, RESERVED_SLUGS, TRIAL_DAYS } from "@/lib/constants";
-import { anon, completeRenterProfile, day, makeUser, must, service, type TestUser } from "./helpers";
+import { anon, completeRenterProfile, day, makeUser, must, service, SIGNATURE, type TestUser } from "./helpers";
 
 let owner: TestUser, admin: TestUser, renter: TestUser, renter2: TestUser, outsider: TestUser;
 let businessId: string, vehicleId: string, slug: string;
@@ -212,31 +212,48 @@ describe("contract signing", () => {
   it("only the server can send (provider signature captured)", async () => {
     const c = must(await owner.client.from("contracts").select("id").eq("booking_id", bookingId).single());
     contractId = c.id;
-    await expectError(owner.client.rpc("send_contract", { p_actor_id: owner.id, p_contract_id: contractId, p_signer_name: "Owner Test", p_ip: "1.2.3.4", p_user_agent: "x" }), /permission denied|42501/);
-    await expectError(service.rpc("send_contract", { p_actor_id: renter.id, p_contract_id: contractId, p_signer_name: "Nope", p_ip: "1.2.3.4", p_user_agent: "x" }), "NOT_AUTHORIZED");
-    must(await service.rpc("send_contract", { p_actor_id: owner.id, p_contract_id: contractId, p_signer_name: "Owner Test", p_ip: "1.2.3.4", p_user_agent: "vitest" }));
-    const v = must(await renter.client.from("contract_versions").select("id, content_hash, status").eq("booking_id", bookingId).single());
+    const send = { p_contract_id: contractId, p_signature_type: "DRAWN" as const, p_signature_data: SIGNATURE, p_ip: "1.2.3.4", p_user_agent: "vitest" };
+    await expectError(owner.client.rpc("send_contract", { ...send, p_actor_id: owner.id, p_signer_name: "Owner Test" }), /permission denied|42501/);
+    await expectError(service.rpc("send_contract", { ...send, p_actor_id: renter.id, p_signer_name: "Nope" }), "NOT_AUTHORIZED");
+    await expectError(service.rpc("send_contract", { ...send, p_actor_id: owner.id, p_signer_name: "Owner Test", p_signature_data: "data:image/svg+xml;base64,PHN2Zz4=" }), "contract_signatures_signature_png");
+    must(await service.rpc("send_contract", { ...send, p_actor_id: owner.id, p_signer_name: "Owner Test" }));
+    const v = must(await renter.client.from("contract_versions").select("id, content_hash, status, sent_to_email").eq("booking_id", bookingId).single());
     expect(v.status).toBe("SENT");
+    expect(v.sent_to_email).toBe(renter.email);
     versionId = v.id;
     hash = v.content_hash;
   });
 
-  it("viewing moves the booking to AWAITING_SIGNATURE", async () => {
-    must(await renter.client.rpc("mark_contract_viewed", { p_contract_id: contractId }));
+  it("opening is recorded by the server, once, and moves the booking to AWAITING_SIGNATURE", async () => {
+    await expectError(renter.client.rpc("mark_contract_viewed", { p_contract_id: contractId }), /permission denied|42501/);
+    await expectError(renter.client.rpc("record_contract_view", { p_actor_id: renter.id, p_contract_id: contractId, p_ip: "9.9.9.9", p_user_agent: "forged" }), /permission denied|42501/);
+    must(await service.rpc("record_contract_view", { p_actor_id: outsider.id, p_contract_id: contractId, p_ip: "6.6.6.6", p_user_agent: "outsider" }));
+    must(await service.rpc("record_contract_view", { p_actor_id: renter.id, p_contract_id: contractId, p_ip: "5.6.7.8", p_user_agent: "vitest-first" }));
+    must(await service.rpc("record_contract_view", { p_actor_id: renter.id, p_contract_id: contractId, p_ip: "7.7.7.7", p_user_agent: "vitest-again" }));
+    const v = must(await owner.client.from("contract_versions").select("viewed_at, viewed_ip, viewed_user_agent").eq("id", versionId).single());
+    expect(v.viewed_at).toBeTruthy();
+    expect([v.viewed_ip, v.viewed_user_agent]).toEqual(["5.6.7.8", "vitest-first"]);
     const b = must(await renter.client.from("bookings").select("status").eq("id", bookingId).single());
     expect(b.status).toBe("AWAITING_SIGNATURE");
   });
 
-  it("signature must cover the exact content and come from the renter", async () => {
-    const base = { p_version_id: versionId, p_signature_type: "TYPED" as const, p_signer_name: "Juan Dela Cruz", p_signature_data: null as never, p_agreed: true, p_ip: "5.6.7.8", p_user_agent: "vitest" };
+  it("signature must be a PNG, cover the exact content and come from the renter", async () => {
+    const base = { p_version_id: versionId, p_signature_type: "TYPED" as const, p_signer_name: "Juan Dela Cruz", p_signature_data: SIGNATURE, p_agreed: true, p_ip: "5.6.7.8", p_user_agent: "vitest" };
     await expectError(service.rpc("sign_contract", { ...base, p_actor_id: renter.id, p_content_hash: "tampered" }), "CONTRACT_CHANGED");
     await expectError(service.rpc("sign_contract", { ...base, p_actor_id: renter.id, p_content_hash: hash, p_agreed: false }), "AGREEMENT_REQUIRED");
     await expectError(service.rpc("sign_contract", { ...base, p_actor_id: renter2.id, p_content_hash: hash }), "NOT_AUTHORIZED");
-    must(await service.rpc("sign_contract", { ...base, p_actor_id: renter.id, p_content_hash: hash }));
+    for (const bad of [null, "", "data:image/png;base64,not base64!", "data:image/jpeg;base64,AAAA", `data:image/png;base64,${"A".repeat(400_000)}`]) {
+      await expectError(service.rpc("sign_contract", { ...base, p_actor_id: renter.id, p_content_hash: hash, p_signature_data: bad as string }), /contract_signatures_signature_png|23514/);
+    }
+    // Double submit (two tabs / double click): the row lock lets exactly one through.
+    const results = await Promise.all([1, 2, 3].map(() => service.rpc("sign_contract", { ...base, p_actor_id: renter.id, p_content_hash: hash })));
+    expect(results.filter((r) => !r.error)).toHaveLength(1);
+    for (const r of results.filter((r) => r.error)) expect(JSON.stringify(r.error)).toMatch("CONTRACT_NOT_SIGNABLE");
     const b = must(await owner.client.from("bookings").select("status").eq("id", bookingId).single());
     expect(b.status).toBe("CONFIRMED");
-    const sigs = must(await renter.client.from("contract_signatures").select("signer_role, ip_address").eq("contract_version_id", versionId));
-    expect(sigs.map((s) => s.signer_role).sort()).toEqual(["PROVIDER", "RENTER"]);
+    const sigs = must(await renter.client.from("contract_signatures").select("signer_role, signer_email, signature_data, ip_address").eq("contract_version_id", versionId));
+    expect(sigs.map((s) => `${s.signer_role}:${s.signer_email}`).sort()).toEqual([`PROVIDER:${owner.email}`, `RENTER:${renter.email}`]);
+    expect(sigs.every((s) => s.signature_data === SIGNATURE)).toBe(true);
     const hist = must(await renter.client.from("booking_status_history").select("to_status").eq("booking_id", bookingId).order("id"));
     expect(hist.map((h) => h.to_status)).toEqual(["PENDING_OWNER_APPROVAL", "APPROVED", "CONTRACT_DRAFT", "CONTRACT_SENT", "AWAITING_SIGNATURE", "SIGNED", "CONFIRMED"]);
   });
@@ -291,9 +308,9 @@ describe("rental completion & reviews", () => {
     }));
     must(await owner.client.rpc("transition_booking", { p_booking_id: id, p_to: "APPROVED" }));
     const c = must(await owner.client.from("contracts").select("id").eq("booking_id", id).single());
-    must(await service.rpc("send_contract", { p_actor_id: owner.id, p_contract_id: c.id, p_signer_name: "Owner Test", p_ip: "1.1.1.1", p_user_agent: "t" }));
+    must(await service.rpc("send_contract", { p_actor_id: owner.id, p_contract_id: c.id, p_signer_name: "Owner Test", p_signature_type: "TYPED", p_signature_data: SIGNATURE, p_ip: "1.1.1.1", p_user_agent: "t" }));
     const v = must(await renter2.client.from("contract_versions").select("id, content_hash").eq("booking_id", id).single());
-    must(await service.rpc("sign_contract", { p_actor_id: renter2.id, p_version_id: v.id, p_signature_type: "TYPED", p_signer_name: "Test Renter", p_signature_data: null as never, p_content_hash: v.content_hash, p_agreed: true, p_ip: "1.1.1.1", p_user_agent: "t" }));
+    must(await service.rpc("sign_contract", { p_actor_id: renter2.id, p_version_id: v.id, p_signature_type: "TYPED", p_signer_name: "Test Renter", p_signature_data: SIGNATURE, p_content_hash: v.content_hash, p_agreed: true, p_ip: "1.1.1.1", p_user_agent: "t" }));
     await expectError(renter2.client.rpc("create_review", { p_booking_id: id, p_rating: 5, p_vehicle_rating: 5, p_business_rating: 5, p_comment: "early" }), "REVIEW_NOT_ALLOWED");
     for (const to of ["ACTIVE", "RETURNED", "COMPLETED"] as const) {
       must(await owner.client.rpc("transition_booking", { p_booking_id: id, p_to: to }));

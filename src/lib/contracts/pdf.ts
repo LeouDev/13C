@@ -1,15 +1,19 @@
 import "server-only";
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from "pdf-lib";
+import { groupFingerprint, isValidSignatureImage } from "@/lib/signature";
 
 export type ContractSection = { key: string; title: string; body: string };
 export type ContractSignature = {
   signer_role: "RENTER" | "PROVIDER"; signer_name: string; signature_type: "TYPED" | "DRAWN";
   signature_data: string | null; signed_at: string; ip_address: unknown; content_hash: string;
+  signer_email?: string | null; user_agent?: string | null;
 };
 export type ContractPdfInput = {
-  title: string; version: number; reference: string; sections: ContractSection[];
+  documentId: string; title: string; version: number; reference: string; sections: ContractSection[];
   signatures: ContractSignature[]; contentHash: string; providerName: string; renterName: string;
   status: "DRAFT" | "SENT" | "SIGNED" | "SUPERSEDED" | "CANCELLED";
+  // Signature-certificate evidence (recorded by the server).
+  sentAt?: string | null; sentTo?: string | null; viewedAt?: string | null; viewedIp?: string | null; viewedUserAgent?: string | null;
 };
 
 const NAVY = rgb(0.07, 0.12, 0.23);
@@ -41,7 +45,8 @@ function wrap(text: string, font: PDFFont, size: number, width: number) {
   return lines;
 }
 
-const fmt = (iso: string) => new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium", timeStyle: "short" }).format(new Date(iso)) + " (PHT)";
+const fmt = (iso: string, timeStyle: "short" | "medium" = "short") =>
+  new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium", timeStyle }).format(new Date(iso)) + " (PHT)";
 
 export async function renderContractPdf(c: ContractPdfInput): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
@@ -52,6 +57,7 @@ export async function renderContractPdf(c: ContractPdfInput): Promise<Uint8Array
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const italic = await pdf.embedFont(StandardFonts.TimesRomanItalic);
+  const mono = await pdf.embedFont(StandardFonts.Courier);
 
   let page: PDFPage = pdf.addPage([A4.w, A4.h]);
   let y = A4.h - M;
@@ -103,7 +109,7 @@ export async function renderContractPdf(c: ContractPdfInput): Promise<Uint8Array
     const label = role === "PROVIDER" ? `Rental Provider — ${c.providerName}` : `Renter — ${c.renterName}`;
     text(label, { font: bold, size: 9.5, gap: 4 });
     if (!sig) { text("Not yet signed.", { color: GRAY, gap: 12 }); continue; }
-    if (sig.signature_type === "DRAWN" && sig.signature_data?.startsWith("data:image/png;base64,")) {
+    if (isValidSignatureImage(sig.signature_data)) {
       const png = await pdf.embedPng(Buffer.from(sig.signature_data.split(",")[1]!, "base64"));
       const scale = Math.min(180 / png.width, 50 / png.height);
       ensure(png.height * scale + 6);
@@ -120,6 +126,37 @@ export async function renderContractPdf(c: ContractPdfInput): Promise<Uint8Array
   }
   text(`Document fingerprint (SHA-256 of the agreement content): ${c.contentHash}`, { size: 7.5, color: GRAY, gap: 2 });
   text("Executed electronically under Republic Act No. 8792 (Electronic Commerce Act of 2000). Any change requires a new version signed by both parties.", { size: 7.5, color: GRAY });
+
+  // Signature certificate: the audit trail of this exact version.
+  if (c.status === "SIGNED") {
+    newPage();
+    page.drawRectangle({ x: 0, y: A4.h - 6, width: A4.w, height: 6, color: NAVY });
+    text("Signature certificate", { font: bold, size: 18, gap: 2 });
+    text(`${c.title}  ·  Booking ${c.reference}  ·  Version ${c.version}`, { size: 9, color: GRAY });
+    text(`Document ID ${c.documentId}`, { size: 9, color: GRAY, gap: 14 });
+    text("DOCUMENT FINGERPRINT (SHA-256 OF THE AGREEMENT TEXT)", { font: bold, size: 7.5, color: GRAY, gap: 3 });
+    text(groupFingerprint(c.contentHash), { font: mono, size: 10, gap: 16 });
+
+    const row = (label: string, lines: string[]) => {
+      ensure(48);
+      page.drawText(label.toUpperCase(), { x: M, y: y - 9, size: 7.5, font: bold, color: GRAY });
+      for (const l of lines) text(l, { size: 9, indent: 150 });
+      y -= 12;
+    };
+    const who = (s: ContractSignature) => `${s.signer_name}${s.signer_email ? ` · ${s.signer_email}` : ""}`;
+    const where = (at: string, ip: unknown) => `${fmt(at, "medium")}${ip ? ` · IP ${String(ip)}` : ""}`;
+    const browser = (ua?: string | null) => (ua ? [`Browser: ${ua}`] : []);
+    const provider = c.signatures.find((s) => s.signer_role === "PROVIDER");
+    const renter = c.signatures.find((s) => s.signer_role === "RENTER");
+
+    if (provider) row("Signed by Rental Provider", [who(provider), where(provider.signed_at, provider.ip_address), `${provider.signature_type === "DRAWN" ? "Drawn" : "Typed"} signature`, ...browser(provider.user_agent)]);
+    if (c.sentAt) row("Sent for signature", [`To ${c.sentTo ?? c.renterName}`, fmt(c.sentAt, "medium")]);
+    if (c.viewedAt) row("Opened by Renter", [where(c.viewedAt, c.viewedIp), ...browser(c.viewedUserAgent)]);
+    if (renter) row("Signed by Renter", [who(renter), where(renter.signed_at, renter.ip_address), `${renter.signature_type === "DRAWN" ? "Drawn" : "Typed"} signature`, ...browser(renter.user_agent)]);
+
+    y -= 6;
+    text("All times are Philippine Standard Time (UTC+8). IP addresses and browsers were recorded by the server from each request, not entered by the signers. Both signatures apply to the fingerprint above; any change to the agreement produces a different fingerprint and needs a new version signed by both parties.", { size: 7.5, color: GRAY });
+  }
 
   // Footer on every page
   const pages = pdf.getPages();

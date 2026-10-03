@@ -35,7 +35,7 @@ export function ContractDocument({
               <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{role === "PROVIDER" ? "Rental Provider" : "Renter"}</p>
               {sig ? (
                 <>
-                  {sig.signature_type === "DRAWN" && sig.signature_data
+                  {sig.signature_data
                     // eslint-disable-next-line @next/next/no-img-element
                     ? <img src={sig.signature_data} alt={`Signature of ${sig.signer_name}`} className="mt-2 h-14 w-auto" />
                     : <p className="mt-2 font-serif text-2xl text-navy-900 italic">{sig.signer_name}</p>}

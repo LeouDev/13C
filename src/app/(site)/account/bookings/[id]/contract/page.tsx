@@ -17,7 +17,7 @@ export default async function ContractPage({ params }: PageProps<"/account/booki
   const user = await requireUser(`/account/bookings/${id}/contract`);
   const supabase = await createClient();
   const { data: b } = await supabase.from("bookings")
-    .select("id, reference, status, renter_id, contracts(id, current_version, contract_versions(id, version, status, title, sections, content_hash, data, signed_at, contract_signatures(signer_role, signer_name, signature_type, signature_data, signed_at, ip_address, content_hash)))")
+    .select("id, reference, status, renter_id, contracts(id, current_version, contract_versions(id, version, status, title, sections, content_hash, data, signed_at, viewed_at, contract_signatures(signer_role, signer_name, signature_type, signature_data, signed_at, ip_address, content_hash)))")
     .eq("id", id).eq("renter_id", user.id).maybeSingle();
   if (!b) notFound();
   const versions = [...(b.contracts?.contract_versions ?? [])].sort((x, y) => y.version - x.version);
@@ -30,7 +30,7 @@ export default async function ContractPage({ params }: PageProps<"/account/booki
 
   return (
     <div className="mx-auto grid max-w-3xl gap-6">
-      {b.status === "CONTRACT_SENT" && b.contracts && <MarkViewed contractId={b.contracts.id} />}
+      {current.status === "SENT" && !current.viewed_at && b.contracts && <MarkViewed contractId={b.contracts.id} />}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link href={`/account/bookings/${id}`} className="text-sm text-muted-foreground hover:text-navy-900">← Booking {b.reference}</Link>
         <a href={`/api/contracts/${current.id}/pdf`} target="_blank" className={buttonVariants({ variant: "outline" })}><Download /> {signed ? "Download signed PDF" : "Download PDF"}</a>

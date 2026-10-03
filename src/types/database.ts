@@ -558,6 +558,7 @@ export type Database = {
           signature_data: string | null
           signature_type: Database["public"]["Enums"]["signature_type"]
           signed_at: string
+          signer_email: string | null
           signer_id: string
           signer_name: string
           signer_role: Database["public"]["Enums"]["signer_role"]
@@ -572,6 +573,7 @@ export type Database = {
           signature_data?: string | null
           signature_type: Database["public"]["Enums"]["signature_type"]
           signed_at?: string
+          signer_email?: string | null
           signer_id: string
           signer_name: string
           signer_role: Database["public"]["Enums"]["signer_role"]
@@ -586,6 +588,7 @@ export type Database = {
           signature_data?: string | null
           signature_type?: Database["public"]["Enums"]["signature_type"]
           signed_at?: string
+          signer_email?: string | null
           signer_id?: string
           signer_name?: string
           signer_role?: Database["public"]["Enums"]["signer_role"]
@@ -667,11 +670,15 @@ export type Database = {
           sections: Json
           sent_at: string | null
           sent_by: string | null
+          sent_to_email: string | null
           signed_at: string | null
           status: Database["public"]["Enums"]["contract_status"]
           template_id: string | null
           title: string
           version: number
+          viewed_at: string | null
+          viewed_ip: unknown
+          viewed_user_agent: string | null
         }
         Insert: {
           booking_id: string
@@ -686,11 +693,15 @@ export type Database = {
           sections: Json
           sent_at?: string | null
           sent_by?: string | null
+          sent_to_email?: string | null
           signed_at?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           template_id?: string | null
           title?: string
           version: number
+          viewed_at?: string | null
+          viewed_ip?: unknown
+          viewed_user_agent?: string | null
         }
         Update: {
           booking_id?: string
@@ -705,11 +716,15 @@ export type Database = {
           sections?: Json
           sent_at?: string | null
           sent_by?: string | null
+          sent_to_email?: string | null
           signed_at?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           template_id?: string | null
           title?: string
           version?: number
+          viewed_at?: string | null
+          viewed_ip?: unknown
+          viewed_user_agent?: string | null
         }
         Relationships: [
           {
@@ -2192,6 +2207,15 @@ export type Database = {
         }
         Returns: Json
       }
+      record_contract_view: {
+        Args: {
+          p_actor_id: string
+          p_contract_id: string
+          p_ip: unknown
+          p_user_agent: string
+        }
+        Returns: undefined
+      }
       regenerate_contract: { Args: { p_booking_id: string }; Returns: string }
       register_business: {
         Args: {
@@ -2305,6 +2329,8 @@ export type Database = {
           p_actor_id: string
           p_contract_id: string
           p_ip: unknown
+          p_signature_data: string
+          p_signature_type: Database["public"]["Enums"]["signature_type"]
           p_signer_name: string
           p_user_agent: string
         }

@@ -67,9 +67,29 @@ All 44 emails share one branded layout (`src/emails/`): 8 Supabase Auth/security
 - **Auth emails** (confirm sign-up, reset password, change email, magic link, invite, re-auth, password/email changed) render to `supabase/templates/*.html` via `npm run emails:build`. Supabase only accepts custom templates once **custom SMTP** is configured: then uncomment the template block in `supabase/config.toml` and run `supabase config push`.
 - **App emails** render with `renderAppEmail(key, data)` → `{ subject, html, text }` for any provider. They map to the in-app notification types and go out once an email provider is connected.
 
-## Before launch
+## Contract signing
 
+The provider and the renter each draw or type a signature; both become a PNG in the browser (typed names use a handwriting font). The database accepts only `data:image/png;base64,…` up to 400 KB. Signing and "opened" events run on the server with the secret key, so the IP address and browser come from the request, not the client. Every signed PDF ends with a **signature certificate** page listing: the SHA-256 fingerprint; provider name, email, time, IP and browser; who it was sent to and when; when and from where the renter opened it; and the renter's name, email, time, IP and browser. All times are in PHT.
+
+## Pending — do these when the email provider and domain are ready
+
+**Email provider / SMTP**
+1. Configure custom SMTP in Supabase Auth and keep email confirmation on.
+2. Uncomment the template block in `supabase/config.toml`, then run `supabase config push --project-ref nsmwwezprpqqsqsgpkya`.
+3. Wire the app emails: map each notification type to `renderAppEmail(key, data)` and send it through the provider.
+4. Contract emails: send the "sent for signature" email to `contract_versions.sent_to_email`, and attach the signed PDF (with its certificate page) to the "signed" emails for both parties.
+
+**Domain (13c.ph)**
+1. Add the domain to the Vercel project.
+2. Set `NEXT_PUBLIC_SITE_URL=https://13c.ph` and `NEXT_PUBLIC_ROOT_DOMAIN=13c.ph`, then redeploy.
+3. In `supabase/config.toml`, change `site_url` and the redirect URLs to the new domain, then run `supabase config push`.
+4. Add the email provider's SPF, DKIM and DMARC records for the sending domain.
+5. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
+
+**Needs your OK:** the contract PDFs print "PHP" instead of "₱". Showing ₱ needs the `@pdf-lib/fontkit` dependency and an embedded font.
+
+**Also before launch**
 1. Have the contract template (Admin → Settings), Terms and Privacy Policy reviewed by Philippine legal counsel.
-2. Configure custom SMTP in Supabase Auth (the built-in sender only reaches project members) and keep email confirmation on.
-3. Set the production Site URL / redirect URLs in Supabase Auth and `NEXT_PUBLIC_SITE_URL`.
-4. Deploy (e.g. Vercel) with the env vars above; the secret key must never be exposed to the browser.
+2. Upgrade Vercel to Pro, because Hobby is for non-commercial use.
+3. Turn on leaked-password protection in Supabase Auth.
+4. Keep the secret key server-only. It is only ever read in server code.

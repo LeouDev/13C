@@ -6,6 +6,7 @@ import { fail, ok, type ActionResult } from "@/lib/actions";
 import { finalizeSignedPdf, requestMeta } from "@/lib/contracts/service";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { MAX_SIGNATURE_CHARS, SIGNATURE_PNG } from "@/lib/signature";
 
 function refresh() {
   revalidatePath("/account", "layout");
@@ -18,15 +19,30 @@ async function verifiedUserId() {
   return data.user?.id ?? null;
 }
 
-/** Provider signs (typed) and sends the agreement. Runs with the secret key so IP/UA come from the request. */
-export async function sendContract(contractId: string, signerName: string): Promise<ActionResult> {
+const signature = {
+  type: z.enum(["TYPED", "DRAWN"]),
+  name: z.string().trim().min(2, "Type your full name").max(120),
+  // Drawn or typed, the browser sends a PNG; the database enforces the same rule.
+  image: z.string().max(MAX_SIGNATURE_CHARS, "That signature image is too large. Please clear it and sign again.").regex(SIGNATURE_PNG, "Please add your signature."),
+};
+
+const sendSchema = z.object({
+  contractId: z.uuid(),
+  ...signature,
+  agreed: z.literal(true, { error: "Please confirm you're authorized to sign for this business." }),
+});
+
+/** Provider signs and sends the agreement. Runs with the secret key so IP/UA come from the request. */
+export async function sendContract(input: z.input<typeof sendSchema>): Promise<ActionResult> {
+  const parsed = sendSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]!.message };
+  const d = parsed.data;
   const userId = await verifiedUserId();
   if (!userId) return { ok: false, error: "Please sign in again." };
-  const name = z.string().trim().min(2, "Type your full name to sign").max(120).safeParse(signerName);
-  if (!name.success) return { ok: false, error: name.error.issues[0]!.message };
   const { ip, userAgent } = await requestMeta();
   const { error } = await createAdminClient().rpc("send_contract", {
-    p_actor_id: userId, p_contract_id: contractId, p_signer_name: name.data, p_ip: ip as string, p_user_agent: userAgent,
+    p_actor_id: userId, p_contract_id: d.contractId, p_signer_name: d.name, p_signature_type: d.type,
+    p_signature_data: d.image, p_ip: ip as string, p_user_agent: userAgent,
   });
   if (error) return fail(error);
   refresh();
@@ -41,17 +57,19 @@ export async function regenerateContract(bookingId: string): Promise<ActionResul
   return ok(undefined, "A new contract version was generated from the latest booking details.");
 }
 
+/** First time the renter opens the agreement: the server records when and from where. */
 export async function markContractViewed(contractId: string): Promise<void> {
-  const supabase = await createClient();
-  await supabase.rpc("mark_contract_viewed", { p_contract_id: contractId });
+  if (!z.uuid().safeParse(contractId).success) return;
+  const userId = await verifiedUserId();
+  if (!userId) return;
+  const { ip, userAgent } = await requestMeta();
+  await createAdminClient().rpc("record_contract_view", { p_actor_id: userId, p_contract_id: contractId, p_ip: ip as string, p_user_agent: userAgent });
   refresh();
 }
 
 const signSchema = z.object({
   versionId: z.uuid(),
-  type: z.enum(["TYPED", "DRAWN"]),
-  name: z.string().trim().min(2, "Type your full name").max(120),
-  drawing: z.string().max(500_000).nullable(),
+  ...signature,
   contentHash: z.string().regex(/^[0-9a-f]{64}$/),
   agreed: z.literal(true, { error: "Please confirm that you have read and agree to the Rental Agreement." }),
 });
@@ -60,13 +78,12 @@ export async function signContract(input: z.input<typeof signSchema>): Promise<A
   const parsed = signSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]!.message };
   const d = parsed.data;
-  if (d.type === "DRAWN" && !d.drawing?.startsWith("data:image/png;base64,")) return { ok: false, error: "Please draw your signature." };
   const userId = await verifiedUserId();
   if (!userId) return { ok: false, error: "Please sign in again." };
   const { ip, userAgent } = await requestMeta();
   const { error } = await createAdminClient().rpc("sign_contract", {
     p_actor_id: userId, p_version_id: d.versionId, p_signature_type: d.type, p_signer_name: d.name,
-    p_signature_data: (d.type === "DRAWN" ? d.drawing : null) as string, p_content_hash: d.contentHash,
+    p_signature_data: d.image, p_content_hash: d.contentHash,
     p_agreed: d.agreed, p_ip: ip as string, p_user_agent: userAgent,
   });
   if (error) return fail(error);
