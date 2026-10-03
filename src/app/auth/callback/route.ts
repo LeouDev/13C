@@ -12,5 +12,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return NextResponse.redirect(`${origin}${next}`);
   }
-  return NextResponse.redirect(`${origin}/login?error=link`);
+  // Opened in another browser/device: Supabase already confirmed the email, but the PKCE
+  // verifier cookie lives where the user signed up — so ask them to sign in here.
+  return NextResponse.redirect(`${origin}/login?confirmed=1&next=${encodeURIComponent(next)}`);
 }
