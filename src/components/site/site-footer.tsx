@@ -35,7 +35,7 @@ export function SiteFooter() {
           <ul className="mt-4 grid gap-2 text-sm">
             <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
             <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
-            <li><a href="mailto:support@air-rally.com" className="hover:text-white">support@air-rally.com</a></li>
+            <li><a href="mailto:support@13c.online" className="hover:text-white">support@13c.online</a></li>
           </ul>
         </div>
       </div>

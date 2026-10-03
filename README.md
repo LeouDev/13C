@@ -67,7 +67,7 @@ tests/                 unit, db (RLS/integrity), e2e-flow (spec §62)
 
 ## Emails
 
-All 47 emails share one branded layout (`src/emails/`): 8 Supabase Auth/security emails and 39 app emails (15 renter, 21 business, 3 admin), each with HTML and plain text. Preview them at **Admin → Emails** (`/admin/emails`). Everything is sent through **Resend**, from `13C <support@air-rally.com>`.
+All 47 emails share one branded layout (`src/emails/`): 8 Supabase Auth/security emails and 39 app emails (15 renter, 21 business, 3 admin), each with HTML and plain text. Preview them at **Admin → Emails** (`/admin/emails`). Everything is sent through **Resend**, from `13C <support@13c.online>`.
 
 - **Auth emails** (confirm sign-up, reset password, change email, magic link, invite, re-auth, password/email changed) go through Supabase Auth's custom SMTP, which points at Resend. They render to `supabase/templates/*.html` via `npm run emails:build`, and the template block in `supabase/config.toml` uploads them with `supabase config push`.
 - **App emails:** every row in `notifications` is also an outbox entry.
@@ -101,7 +101,7 @@ Owners see their payment history under **Subscription**. Admins see recent payme
 
 ## Pending — do these when the email provider and domain are ready
 
-**Email:** done. Resend (Vercel integration, free plan, 100 emails/day) sends from `support@air-rally.com`:
+**Email:** done. Resend (Vercel integration, free plan, 100 emails/day) sends from `support@13c.online`. The domain is verified in Resend (region Tokyo), and `air-rally.com` stays verified as a fallback:
 - Supabase Auth uses Resend through custom SMTP, with the branded templates pushed from `config.toml`.
 - App emails go through the notifications outbox; see **Emails** above.
 - Upgrade Resend when volume passes about 100 a day.
@@ -115,7 +115,7 @@ Owners see their payment history under **Subscription**. Admins see recent payme
 - Cloudflare Email Routing forwards `support@`, `privacy@` and `owner@13c.online` to the owner's inbox.
 - To do:
   1. In PayMongo, change the webhook URL to `https://www.13c.online/api/webhooks/paymongo`. Use the `www` address, because webhooks don't follow the redirect from the apex.
-  2. In Resend, verify `13c.online` (region Tokyo). Then switch the sender to `support@13c.online`: `EMAIL_FROM` in `src/lib/mailer.ts`, the Supabase SMTP sender, and the support address in the site and emails. Use `privacy@13c.online` in the Privacy Policy.
+  2. In Supabase (Authentication → SMTP Settings), set the sender email to `support@13c.online`. App emails, the site and the legal pages already use `support@` and `privacy@13c.online`.
   3. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
 
 **Also before launch**

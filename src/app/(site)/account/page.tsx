@@ -49,7 +49,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       {!reset && security}
       <section className={card}>
         <h2 className="mb-1 font-semibold text-navy-900">Privacy</h2>
-        <p className="mb-4 text-sm text-muted-foreground">Under the Data Privacy Act of 2012 you can access, correct or request deletion of your personal data. Email support@air-rally.com for a copy of your data.</p>
+        <p className="mb-4 text-sm text-muted-foreground">Under the Data Privacy Act of 2012 you can access, correct or request deletion of your personal data. Email privacy@13c.online for a copy of your data.</p>
         <DeletionRequest requestedAt={user.deletion_requested_at} />
       </section>
     </div>

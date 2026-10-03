@@ -11,8 +11,8 @@ export function VerificationBanner({ business }: { business: Tables<"businesses"
     PENDING: { icon: Clock, tone: "border-sky-200 bg-sky-50 text-sky-900", title: "Verification submitted", body: "13C is reviewing your documents. You can keep setting up your store and fleet in the meantime.", cta: null },
     UNDER_REVIEW: { icon: Clock, tone: "border-sky-200 bg-sky-50 text-sky-900", title: "Verification under review", body: "A reviewer is checking your business. We'll notify you as soon as it's done.", cta: null },
     CHANGES_REQUESTED: { icon: AlertTriangle, tone: "border-amber-200 bg-amber-50 text-amber-900", title: "Changes requested", body: business.status_note ?? "Please update your details and resubmit.", cta: { href: "/dashboard/profile#verification", label: "Update & resubmit" } },
-    REJECTED: { icon: ShieldAlert, tone: "border-red-200 bg-red-50 text-red-900", title: "Verification not approved", body: business.status_note ?? "Contact support@air-rally.com for details.", cta: { href: "/dashboard/profile#verification", label: "Review & resubmit" } },
-    SUSPENDED: { icon: ShieldAlert, tone: "border-red-200 bg-red-50 text-red-900", title: "Business suspended", body: business.status_note ?? "Your store is hidden. Contact support@air-rally.com.", cta: null },
+    REJECTED: { icon: ShieldAlert, tone: "border-red-200 bg-red-50 text-red-900", title: "Verification not approved", body: business.status_note ?? "Contact support@13c.online for details.", cta: { href: "/dashboard/profile#verification", label: "Review & resubmit" } },
+    SUSPENDED: { icon: ShieldAlert, tone: "border-red-200 bg-red-50 text-red-900", title: "Business suspended", body: business.status_note ?? "Your store is hidden. Contact support@13c.online.", cta: null },
   }[s];
   const Icon = map.icon ?? BadgeCheck;
   return (
