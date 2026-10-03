@@ -221,7 +221,7 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          To exercise these rights, email <a href="mailto:privacy@13c.online">privacy@13c.online</a> from the email address on your account. We may need to verify
+          To exercise these rights, email <a href="mailto:support@air-rally.com">support@air-rally.com</a> from the email address on your account. We may need to verify
           your identity before acting, and we will respond within thirty (30) days. For data a rental business holds about you as a separate controller, you
           may also contact that business directly. We will help you reach it.
         </p>
@@ -287,8 +287,7 @@ export default function PrivacyPage() {
       <LegalSection {...sec("contact")}>
         <p>For privacy questions, requests or complaints, contact our Data Protection Officer:</p>
         <ul>
-          <li>Email: <a href="mailto:privacy@13c.online">privacy@13c.online</a></li>
-          <li>General support: <a href="mailto:support@13c.online">support@13c.online</a></li>
+          <li>Email (privacy and general support): <a href="mailto:support@air-rally.com">support@air-rally.com</a></li>
         </ul>
         <p>
           You may also contact the National Privacy Commission at{" "}

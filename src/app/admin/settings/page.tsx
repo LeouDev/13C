@@ -76,7 +76,7 @@ export default async function AdminSettingsPage() {
 
         <section id="platform" className={card} aria-labelledby="platform-heading">
           <h2 id="platform-heading" className="font-semibold">Platform settings</h2>
-          <p className="mt-1 mb-4 text-sm text-muted-foreground">Values are JSON: strings need quotes (<code>&quot;support@13c.online&quot;</code>), lists use brackets.</p>
+          <p className="mt-1 mb-4 text-sm text-muted-foreground">Values are JSON: strings need quotes (<code>&quot;support@air-rally.com&quot;</code>), lists use brackets.</p>
           {!settings?.length ? <EmptyState title="No platform settings" description="Settings are seeded by database migrations." /> : (
             <SettingsEditor settings={settings.map((s) => ({ key: s.key, value: s.value, updatedAt: s.updated_at, updatedLabel: formatDateTime(s.updated_at) }))} />
           )}

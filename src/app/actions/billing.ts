@@ -11,7 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function startCheckout(plan: "PRO" | "BUSINESS"): Promise<ActionResult<{ url: string }>> {
   const parsed = z.enum(["PRO", "BUSINESS"]).safeParse(plan);
   if (!parsed.success) return { ok: false, error: "Choose Pro or Business." };
-  if (!paymongoMode()) return { ok: false, error: "Online payments aren't available yet. Email sales@13c.online to upgrade." };
+  if (!paymongoMode()) return { ok: false, error: "Online payments aren't available yet. Email support@air-rally.com to upgrade." };
   const { user, business } = await requireBusiness("OWNER");
 
   const admin = createAdminClient();

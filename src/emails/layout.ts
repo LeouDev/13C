@@ -97,7 +97,7 @@ function footerLines(e: Email, base: string): string[] {
       ? ["You received this email because this address was used with 13C. If that wasn't you, you can safely ignore it."]
       : e.footer === "admin"
         ? ["Sent to 13C platform admins."]
-        : ["You're receiving this because of activity on your 13C account. Questions? support@13c.online"];
+        : ["You're receiving this because of activity on your 13C account. Questions? support@air-rally.com"];
   if (e.disclaimer) lines.unshift(e.disclaimer);
   lines.push(e.footer === "auth" ? "13C · Cebu, Philippines" : `13C · Cebu, Philippines · ${base.replace(/^https?:\/\//, "")}`);
   return lines;

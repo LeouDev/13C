@@ -347,7 +347,7 @@ export const EMAILS = {
       blocks: [
         { p: `${hi(d)} we'll delete your 13C account and personal data within 30 days and email you when it's done.` },
         { list: ["Your profile, contact details, driver's license and ID files will be erased", "Completed bookings and signed rental agreements are kept as required by law, with your personal details removed", "You won't be able to sign in once it's processed"] },
-        { p: "Didn't request this? Reply to support@13c.online right away." },
+        { p: "Didn't request this? Reply to support@air-rally.com right away." },
       ],
     }),
   },
@@ -427,7 +427,7 @@ export const EMAILS = {
       blocks: [
         { p: `${hi(d)} we weren't able to verify **${d.businessName}** this time.` },
         ...(d.note ? [{ quote: d.note, by: "13C review team" } as Block] : []),
-        { p: "You can correct your details and resubmit, or reply to support@13c.online if you have questions." },
+        { p: "You can correct your details and resubmit, or reply to support@air-rally.com if you have questions." },
       ],
       cta: { label: "Review & resubmit", url: "/dashboard/profile#verification" },
     }),
@@ -444,7 +444,7 @@ export const EMAILS = {
       blocks: [
         { p: `${hi(d)} **${d.businessName}** has been suspended and your store is hidden from customers. Existing bookings and contracts remain accessible.` },
         ...(d.note ? [{ quote: d.note, by: "13C review team" } as Block] : []),
-        { p: "Please contact support@13c.online to resolve this." },
+        { p: "Please contact support@air-rally.com to resolve this." },
       ],
       cta: { label: "Go to dashboard", url: "/dashboard" },
     }),
