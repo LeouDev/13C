@@ -165,6 +165,16 @@ describe("contract PDF", () => {
     ],
   });
 
+  it("puts the business logo in the letterhead, and still renders when the logo is unusable", async () => {
+    const logo = { bytes: Buffer.from(SIG.split(",")[1]!, "base64"), kind: "png" as const };
+    const images = async (b: Uint8Array) => (await PDFDocument.load(b)).context.enumerateIndirectObjects()
+      .filter(([, o]) => (o as { dict?: PDFDict }).dict?.get(PDFName.of("Subtype")) === PDFName.of("Image")).length;
+    // A PNG with transparency adds an image plus its soft mask.
+    expect(await images(await renderContractPdf({ ...doc("SENT"), providerLogo: logo }))).toBeGreaterThan(await images(await renderContractPdf(doc("SENT"))));
+    const broken = await renderContractPdf({ ...doc("SENT"), providerLogo: { bytes: new Uint8Array([1, 2, 3]), kind: "png" } });
+    expect((await PDFDocument.load(broken)).getPageCount()).toBeGreaterThan(0);
+  });
+
   it("embeds a font with the peso sign for body text", async () => {
     const bytes = await renderContractPdf({ ...doc("SENT"), sections: [{ key: "fees", title: "4. Fees", body: "Daily rate ₱1,500.00 · deposit ₱3,000.00 — “cash” ★" }] });
     const loaded = await PDFDocument.load(bytes);

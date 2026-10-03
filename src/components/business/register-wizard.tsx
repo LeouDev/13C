@@ -89,7 +89,7 @@ export function RegisterWizard({ resume }: { resume: Resume }) {
         <div className="grid gap-6">
           <div className="grid gap-6 sm:grid-cols-[180px_1fr]">
             <Field label="Logo" hint="Square, at least 400×400.">
-              <ImageUpload prefix={`b/${biz.id}`} value={biz.logo_path} maxPx={600} label="Upload logo"
+              <ImageUpload prefix={`b/${biz.id}`} value={biz.logo_path} maxPx={600} png label="Upload logo"
                 onChange={async (path) => {
                   const r = await setBusinessLogo(biz.id, path);
                   if (r.ok) setBiz({ ...biz, logo_path: path }); else toast.error(r.error);

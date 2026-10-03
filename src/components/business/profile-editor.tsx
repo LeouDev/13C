@@ -19,7 +19,7 @@ export function ProfileEditor({ business }: { business: Tables<"businesses"> }) 
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[200px_1fr]">
       <div>
         <p className="mb-2 text-[13px] font-medium text-navy-900">Logo</p>
-        <ImageUpload prefix={`b/${business.id}`} value={logo} maxPx={600} label="Upload logo" onChange={async (path) => {
+        <ImageUpload prefix={`b/${business.id}`} value={logo} maxPx={600} png label="Upload logo" onChange={async (path) => {
           const r = await setBusinessLogo(business.id, path);
           if (r.ok) { setLogo(path); toast.success("Logo updated."); router.refresh(); } else toast.error(r.error);
         }} />

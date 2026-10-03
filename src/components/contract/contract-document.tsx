@@ -1,16 +1,18 @@
 import { BadgeCheck } from "lucide-react";
 import type { ContractSection, ContractSignature } from "@/lib/contracts/pdf";
+import { BusinessLogo } from "@/components/common/vehicle-image";
 import { formatDateTime } from "@/lib/format";
 
 export function ContractDocument({
-  title, version, reference, sections, signatures, contentHash, providerName, renterName,
+  title, version, reference, sections, signatures, contentHash, providerName, renterName, providerLogo,
 }: {
   title: string; version: number; reference: string; sections: ContractSection[]; signatures: ContractSignature[];
-  contentHash: string; providerName: string; renterName: string;
+  contentHash: string; providerName: string; renterName: string; providerLogo?: string | null;
 }) {
   return (
     <article className="rounded-3xl bg-white ring-1 ring-black/5">
       <header className="border-b px-5 py-6 sm:px-10">
+        {providerLogo && <BusinessLogo path={providerLogo} name={providerName} className="mb-4 size-14" />}
         <p className="eyebrow text-muted-foreground">Booking {reference} · Version {version}</p>
         <h2 className="mt-1 font-display text-xl font-bold tracking-tight text-navy-900 sm:text-2xl">{title}</h2>
         <dl className="mt-4 grid gap-2 rounded-2xl bg-canvas p-4 text-sm sm:grid-cols-3">

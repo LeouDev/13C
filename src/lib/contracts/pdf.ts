@@ -15,6 +15,8 @@ export type ContractPdfInput = {
   documentId: string; title: string; version: number; reference: string; sections: ContractSection[];
   signatures: ContractSignature[]; contentHash: string; providerName: string; renterName: string;
   status: "DRAFT" | "SENT" | "SIGNED" | "SUPERSEDED" | "CANCELLED";
+  /** The rental business's logo for the letterhead (PNG or JPEG only; WebP logos are skipped). */
+  providerLogo?: { bytes: Uint8Array; kind: "png" | "jpg" } | null;
   // Signature-certificate evidence (recorded by the server).
   sentAt?: string | null; sentTo?: string | null; viewedAt?: string | null; viewedIp?: string | null; viewedUserAgent?: string | null;
 };
@@ -91,8 +93,18 @@ export async function renderContractPdf(c: ContractPdfInput): Promise<Uint8Array
     y -= opts.gap ?? 0;
   };
 
-  // Header
+  // Header: the rental business's logo as a letterhead, then the title
   page.drawRectangle({ x: 0, y: A4.h - 6, width: A4.w, height: 6, color: NAVY });
+  if (c.providerLogo) {
+    try {
+      const img = c.providerLogo.kind === "png" ? await pdf.embedPng(c.providerLogo.bytes) : await pdf.embedJpg(c.providerLogo.bytes);
+      const scale = Math.min(140 / img.width, 48 / img.height);
+      page.drawImage(img, { x: M, y: y - img.height * scale, width: img.width * scale, height: img.height * scale });
+      y -= img.height * scale + 16;
+    } catch {
+      // unreadable image: the agreement is still valid without a letterhead
+    }
+  }
   text(c.title, { font: bold, size: 18, gap: 2 });
   text(`Booking ${c.reference}  ·  Version ${c.version}  ·  ${c.status === "SIGNED" ? "Signed" : "Not signed"}`, { size: 9, color: GRAY, gap: 10 });
   if (c.status !== "SIGNED") text("DRAFT FOR REVIEW — NOT A SIGNED AGREEMENT", { font: bold, size: 10, color: RED, gap: 8 });

@@ -17,7 +17,7 @@ export default async function ContractPage({ params }: PageProps<"/account/booki
   const user = await requireUser(`/account/bookings/${id}/contract`);
   const supabase = await createClient();
   const { data: b } = await supabase.from("bookings")
-    .select("id, reference, status, renter_id, contracts(id, current_version, contract_versions(id, version, status, title, sections, content_hash, data, signed_at, viewed_at, contract_signatures(signer_role, signer_name, signature_type, signature_data, signed_at, ip_address, content_hash)))")
+    .select("id, reference, status, renter_id, businesses(logo_path), contracts(id, current_version, contract_versions(id, version, status, title, sections, content_hash, data, signed_at, viewed_at, contract_signatures(signer_role, signer_name, signature_type, signature_data, signed_at, ip_address, content_hash)))")
     .eq("id", id).eq("renter_id", user.id).maybeSingle();
   if (!b) notFound();
   const versions = [...(b.contracts?.contract_versions ?? [])].sort((x, y) => y.version - x.version);
@@ -39,7 +39,7 @@ export default async function ContractPage({ params }: PageProps<"/account/booki
       {!signed && <p className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">Please read the full agreement. {vars.provider_name} is your Rental Provider; 13C is only the technology platform.</p>}
       <ContractDocument title={current.title} version={current.version} reference={b.reference} sections={current.sections as ContractSection[]}
         signatures={current.contract_signatures as ContractSignature[]} contentHash={current.content_hash}
-        providerName={vars.provider_name} renterName={vars.renter_name} />
+        providerName={vars.provider_name} renterName={vars.renter_name} providerLogo={b.businesses?.logo_path} />
       {current.status === "SENT" && <SignPanel versionId={current.id} contentHash={current.content_hash} defaultName={vars.renter_name ?? user.full_name} />}
     </div>
   );

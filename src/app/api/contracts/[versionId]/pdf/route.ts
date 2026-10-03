@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { renderContractPdf } from "@/lib/contracts/pdf";
-import { finalizeSignedPdf, loadVersion, pdfInput } from "@/lib/contracts/service";
+import { contractPdfInput, finalizeSignedPdf, loadVersion } from "@/lib/contracts/service";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/contract
     return NextResponse.redirect(data.signedUrl);
   }
 
-  const bytes = await renderContractPdf(pdfInput(version));
+  const bytes = await renderContractPdf(await contractPdfInput(version));
   return new NextResponse(Buffer.from(bytes), {
     headers: {
       "Content-Type": "application/pdf",

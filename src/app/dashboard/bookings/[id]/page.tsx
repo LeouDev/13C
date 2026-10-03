@@ -96,7 +96,7 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
               {b.status === "CONTRACT_DRAFT" && <p className="rounded-2xl bg-sky-50 p-3 text-sm text-sky-900">Review the agreement below. It was filled automatically from this booking, your business profile and your store policies. Sign & send when it looks right.</p>}
               <ContractDocument title={current.title} version={current.version} reference={b.reference} sections={current.sections as ContractSection[]}
                 signatures={current.contract_signatures as ContractSignature[]} contentHash={current.content_hash}
-                providerName={vars.provider_name ?? business.name} renterName={vars.renter_name ?? b.renter?.full_name ?? ""} />
+                providerName={vars.provider_name ?? business.name} renterName={vars.renter_name ?? b.renter?.full_name ?? ""} providerLogo={business.logo_path} />
               {versions.length > 1 && (
                 <div className="rounded-2xl border bg-white p-4 text-sm">
                   <p className="mb-2 font-semibold">Version history</p>

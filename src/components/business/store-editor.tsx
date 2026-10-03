@@ -73,7 +73,7 @@ export function StoreEditor({
       <Section title="Brand" description="Logo, cover and accent color. Your layout stays 13C-quality on every device.">
         <div className="grid gap-5 sm:grid-cols-[160px_1fr]">
           <Field label="Logo">
-            <ImageUpload prefix={`b/${business.id}`} value={logo} maxPx={600} label="Upload logo" onChange={async (p) => {
+            <ImageUpload prefix={`b/${business.id}`} value={logo} maxPx={600} png label="Upload logo" onChange={async (p) => {
               const r = await setBusinessLogo(business.id, p);
               if (r.ok) { setLogo(p); router.refresh(); onSaved?.(); } else toast.error(r.error);
             }} />

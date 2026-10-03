@@ -12,8 +12,8 @@ export function validateFile(file: File, types: string[], maxMB: number): string
   return null;
 }
 
-/** Downscale to ≤ max px on the long edge and re-encode (WebP, JPEG fallback). Strips EXIF/GPS too. */
-export async function resizeImage(file: File, max = 2000, quality = 0.85) {
+/** Downscale to ≤ max px on the long edge and re-encode (WebP, or PNG for logos; JPEG fallback). Strips EXIF/GPS too. */
+export async function resizeImage(file: File, max = 2000, quality = 0.85, type: "image/webp" | "image/png" = "image/webp") {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
   const width = Math.round(bitmap.width * scale);
@@ -24,10 +24,10 @@ export async function resizeImage(file: File, max = 2000, quality = 0.85) {
   canvas.getContext("2d")!.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
   const encode = (type: string) => new Promise<Blob | null>((res) => canvas.toBlob(res, type, quality));
-  let blob = await encode("image/webp");
-  if (!blob || blob.type !== "image/webp") blob = await encode("image/jpeg");
+  let blob = await encode(type);
+  if (!blob || blob.type !== type) blob = await encode("image/jpeg");
   if (!blob) throw new Error("Could not process image");
-  return { blob, width, height, ext: blob.type === "image/webp" ? "webp" : "jpg" };
+  return { blob, width, height, ext: ({ "image/webp": "webp", "image/png": "png" } as Record<string, string>)[blob.type] ?? "jpg" };
 }
 
 export async function uploadToBucket(bucket: "media" | "business-docs" | "kyc", path: string, body: Blob, contentType: string) {
@@ -37,8 +37,8 @@ export async function uploadToBucket(bucket: "media" | "business-docs" | "kyc", 
 }
 
 /** Resize + upload an image to the public media bucket under `prefix`. */
-export async function uploadImage(prefix: string, file: File, max = 2000) {
-  const { blob, width, height, ext } = await resizeImage(file, max);
+export async function uploadImage(prefix: string, file: File, max = 2000, type?: "image/png") {
+  const { blob, width, height, ext } = await resizeImage(file, max, 0.85, type);
   const path = `${prefix}/${crypto.randomUUID()}.${ext}`;
   await uploadToBucket("media", path, blob, blob.type);
   return { path, width, height };
