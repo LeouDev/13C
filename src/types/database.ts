@@ -2240,6 +2240,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      notification_email_due: { Args: { p_id: string }; Returns: boolean }
       notify_admins: {
         Args: {
           p_body: string

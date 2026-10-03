@@ -512,6 +512,20 @@ describe("notification emails", () => {
     }
   });
 
+  it("chat messages email only people who are away (5 minutes unread); other notifications go right away", async () => {
+    const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
+    const rows = must(await service.from("notifications").insert([
+      { user_id: renter.id, type: "message", title: "t", body: "just now", link: "/account/messages/x", created_at: minutesAgo(0) },
+      { user_id: renter.id, type: "message", title: "t", body: "unread 10 min", link: "/account/messages/x", created_at: minutesAgo(10) },
+      { user_id: renter.id, type: "message", title: "t", body: "read in app", link: "/account/messages/x", created_at: minutesAgo(10), read_at: minutesAgo(8) },
+      { user_id: renter.id, type: "booking_confirmed", title: "t", body: "now", link: "/account/bookings/x", created_at: minutesAgo(0) },
+    ]).select("id, body"));
+    const due: Record<string, boolean> = {};
+    for (const r of rows) due[r.body!] = must(await service.rpc("notification_email_due", { p_id: r.id })) as boolean;
+    expect(due).toEqual({ "just now": false, "unread 10 min": true, "read in app": false, now: true });
+    must(await service.from("notifications").delete().in("id", rows.map((r) => r.id)));
+  });
+
   it("the dispatch endpoint needs the shared secret", async () => {
     const call = (auth?: string) => emailDispatch(new Request("http://localhost/api/email/dispatch", { method: "POST", headers: auth ? { authorization: auth } : {} }));
     process.env.EMAIL_DISPATCH_SECRET = "vitest-dispatch-secret";
