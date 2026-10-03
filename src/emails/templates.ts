@@ -30,6 +30,11 @@ export type EmailData = {
   amount?: string;
   /** Absolute URL of the rental business's logo (PNG/JPEG) for the email header */
   logo?: string;
+  /** Both signatures for the signed-agreement panel (image: an inline cid: reference) */
+  signatures?: { role: string; name: string; signedAt: string; image?: string }[];
+  /** The signed PDF attached to this email */
+  attachmentName?: string;
+  attachmentPages?: number;
   plan?: string;
   role?: string;
   version?: number;
@@ -211,13 +216,18 @@ export const EMAILS = {
     audience: "Renter",
     trigger: "The renter signs the agreement — booking confirmed",
     notificationType: "booking_confirmed",
-    sample: { ...SAMPLE, paymentInstructions: "Send ₱1,800 via GCash to 0917 123 4567 (Maria Santos) before pickup." },
+    sample: {
+      ...SAMPLE, paymentInstructions: "Send ₱1,800 via GCash to 0917 123 4567 (Maria Santos) before pickup.",
+      signatures: [{ role: "Rental provider", name: "Maria Santos", signedAt: "Oct 6, 3:12 PM" }, { role: "Renter", name: "Juan Dela Cruz", signedAt: "Oct 7, 9:41 AM" }],
+      attachmentName: "13C-7G2AXE-v1-signed.pdf", attachmentPages: 4,
+    },
     build: (d) => ({
       subject: `You're confirmed: ${d.vehicle}`,
       preheader: `Pickup ${d.pickup} · ${d.pickupLocation}`,
       heading: "You're all set!",
       blocks: [
         { p: `${hi(d)} your rental agreement is signed and your booking with **${d.businessName}** is confirmed.` },
+        ...(d.signatures?.length ? [{ signatures: d.signatures, attachment: d.attachmentName ? { filename: d.attachmentName, pages: d.attachmentPages } : undefined } as Block] : []),
         bookingDetails(d),
         ...(d.paymentInstructions ? [{ note: `**Payment:** ${d.paymentInstructions}`, tone: "warning" } as Block] : []),
         { list: ["Bring your driver's license and one valid government ID", "Inspect the car with the business at pickup", "Your signed agreement is always available in 13C"] },

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/api/contract
 
   const version = await loadVersion(supabase, versionId);
   if (!version) return new NextResponse("Not found", { status: 404 });
-  const filename = `13C-${version.bookings?.reference ?? "contract"}-v${version.version}${version.status === "SIGNED" ? "-signed" : "-draft"}.pdf`;
+  const filename = `${version.bookings?.reference ?? "13C-contract"}-v${version.version}${version.status === "SIGNED" ? "-signed" : "-draft"}.pdf`;
 
   if (version.status === "SIGNED") {
     const path = version.pdf_path ?? (await finalizeSignedPdf(version.id));

@@ -10,7 +10,7 @@ export type Mail = {
   subject: string;
   html: string;
   text: string;
-  attachments?: { filename: string; content: string }[]; // content: base64
+  attachments?: { filename: string; content: string; content_id?: string }[]; // content: base64; content_id = inline image (cid:)
   idempotencyKey?: string; // `<type>/<id>`; Resend dedupes the same key for 24 hours
 };
 

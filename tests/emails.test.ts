@@ -40,6 +40,20 @@ describe("app emails", () => {
     expect(toBusiness).not.toContain(logo);
   });
 
+  it("booking_confirmed shows both signatures (inline images) and the attached PDF", () => {
+    const sample = EMAILS.booking_confirmed.sample;
+    const withImages = { ...sample, signatures: sample.signatures!.map((s, i) => ({ ...s, image: `cid:signature-${i}` })) };
+    const { html, text } = renderAppEmail("booking_confirmed", withImages, BASE);
+    expect(html).toContain('src="cid:signature-0"');
+    expect(html).toContain("Signed Oct 7, 9:41 AM");
+    expect(html).toContain("13C-7G2AXE-v1-signed.pdf");
+    expect(html).toContain(" · 4 pages");
+    expect(html.indexOf("cid:signature-0")).toBeLessThan(html.indexOf("Vehicle")); // right after the intro
+    expect(text).toContain("Renter: Juan Dela Cruz, signed Oct 7, 9:41 AM");
+    // Without images (e.g. older signatures) the names still show.
+    expect(renderAppEmail("booking_confirmed", sample, BASE).html).toContain("Maria Santos");
+  });
+
   it("only accepts hex accent colors", () => {
     const { html } = renderAppEmail("contract_sent", { ...EMAILS.contract_sent.sample, accent: "red;background:url(x)" }, BASE);
     expect(html).not.toContain("url(x)");

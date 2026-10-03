@@ -1,8 +1,10 @@
 import "server-only";
+import { PDFDocument } from "pdf-lib";
 import { EMAILS, renderAppEmail, type EmailData, type EmailKey } from "@/emails";
 import type { EmailTemplate } from "@/emails/templates";
 import { formatDate, formatDateTime, formatPHP, labelize } from "@/lib/format";
 import { emailEnabled, sendEmail } from "@/lib/mailer";
+import { isValidSignatureImage } from "@/lib/signature";
 import { mediaUrl } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -78,7 +80,9 @@ async function signedPdf(versionId: string | undefined, reference: string | unde
     if (v.pdf_path) {
       const { data: file } = await admin.storage.from("contracts").download(v.pdf_path);
       if (!file) return undefined;
-      return { filename: `13C-${reference ?? "agreement"}-v${v.version}-signed.pdf`, content: Buffer.from(await file.arrayBuffer()).toString("base64") };
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const pages = await PDFDocument.load(bytes, { updateMetadata: false }).then((p) => p.getPageCount(), () => undefined);
+      return { filename: `${reference ?? "13C-agreement"}-v${v.version}-signed.pdf`, content: Buffer.from(bytes).toString("base64"), pages };
     }
     await pause(2000);
   }
@@ -136,8 +140,23 @@ export async function prepareNotificationEmail(n: OutboxRow) {
     if (p) Object.assign(d, { plan: labelize(p.plan), amount: formatPHP((p.amount_paid_centavos ?? 0) / 100, true), paymentMethod: p.payment_method ? labelize(p.payment_method) : "PayMongo", periodEnd: formatDate(p.period_end!) });
   }
 
-  const attachment = key === "booking_confirmed" || key === "contract_signed" ? await signedPdf(d.versionId, d.reference) : undefined;
-  return { key, ...renderAppEmail(key, d), attachments: attachment ? [attachment] : undefined };
+  const pdf = key === "booking_confirmed" || key === "contract_signed" ? await signedPdf(d.versionId, d.reference) : undefined;
+  const attachments: { filename: string; content: string; content_id?: string }[] = pdf ? [{ filename: pdf.filename, content: pdf.content }] : [];
+  if (key === "booking_confirmed" && d.versionId) {
+    // Both signatures as inline images (cid:), so they show without being hosted anywhere public.
+    const { data: sigs } = await admin.from("contract_signatures").select("signer_role, signer_name, signature_data, signed_at").eq("contract_version_id", d.versionId);
+    const at = (iso: string) => formatDate(iso, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    d.signatures = (["PROVIDER", "RENTER"] as const).flatMap((role) => {
+      const s = sigs?.find((x) => x.signer_role === role);
+      if (!s) return [];
+      const cid = `signature-${role.toLowerCase()}`;
+      const image = isValidSignatureImage(s.signature_data) ? `cid:${cid}` : undefined;
+      if (image) attachments.push({ filename: `${cid}.png`, content: s.signature_data!.split(",")[1]!, content_id: cid });
+      return [{ role: role === "PROVIDER" ? "Rental provider" : "Renter", name: s.signer_name, signedAt: at(s.signed_at), image }];
+    });
+    if (pdf) Object.assign(d, { attachmentName: pdf.filename, attachmentPages: pdf.pages });
+  }
+  return { key, ...renderAppEmail(key, d), attachments: attachments.length ? attachments : undefined };
 }
 
 /** Sends every due notification email (claimed in batches, so parallel runs never double-send). */

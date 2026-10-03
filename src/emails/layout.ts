@@ -13,7 +13,9 @@ export type Block =
   | { quote: string; by?: string }
   | { code: string }
   | { list: string[] }
-  | { provider: string };
+  | { provider: string }
+  // Both signatures (image = an inline cid: or https URL; the name shows without one) and the attached PDF
+  | { signatures: { role: string; name: string; signedAt: string; image?: string }[]; attachment?: { filename: string; pages?: number } };
 
 export type Email = {
   subject: string;
@@ -95,6 +97,24 @@ function blockHtml(b: Block): string {
   if ("list" in b) {
     return `<ul class="text" style="margin:0 0 16px;padding-left:20px;font:15px/1.6 ${FONT};color:${TEXT};">${b.list.map((i) => `<li style="margin:0 0 6px;">${rich(i)}</li>`).join("")}</ul>`;
   }
+  if ("signatures" in b) {
+    // Fixed light colours on purpose: signatures are navy ink, so this panel stays white in dark mode.
+    const cells = b.signatures.map((s, i) => {
+      const mark = s.image
+        ? `<img src="${esc(s.image)}" height="36" alt="Signature of ${esc(s.name)}" style="display:block;height:36px;width:auto;max-width:100%;margin:4px 0 2px;">`
+        : `<p style="margin:2px 0;font:italic 24px/1.2 Georgia,'Times New Roman',serif;color:${NAVY};">${esc(s.name)}</p>`;
+      const edge = i < b.signatures.length - 1 ? `border-right:1px solid ${RULE};` : "";
+      return `<td class="sig${i ? " sig2" : ""}" width="${Math.floor(100 / b.signatures.length)}%" style="${edge}padding:14px 16px;vertical-align:top;background:#ffffff;"><p style="margin:0;font:12px/1.4 ${FONT};color:${MUTED};">${esc(s.role)}</p>${mark}<p style="margin:0;font:12px/1.4 ${FONT};color:#065f46;">&#10003; Signed ${esc(s.signedAt)}</p></td>`;
+    });
+    const file = b.attachment
+      ? `<tr><td colspan="${b.signatures.length}" style="border-top:1px solid ${RULE};background:#f8fafc;padding:10px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td width="44" style="vertical-align:middle;"><span style="display:inline-block;padding:0 8px;border-radius:6px;background:#e0312b;font:700 10px/24px ${FONT};color:#ffffff;">PDF</span></td>
+<td style="vertical-align:middle;font:600 13px/1.4 ${FONT};color:${NAVY};word-break:break-all;">${esc(b.attachment.filename)}</td>
+<td align="right" style="vertical-align:middle;white-space:nowrap;padding-left:10px;font:12px/1.4 ${FONT};color:${MUTED};">Attached${b.attachment.pages ? `<span class="hide-sm"> · ${b.attachment.pages} pages</span>` : ""}</td>
+</tr></table></td></tr>`
+      : "";
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;border:1px solid ${RULE};border-radius:12px;border-collapse:separate;overflow:hidden;"><tr>${cells.join("")}</tr>${file}</table>`;
+  }
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px;"><tr><td class="panel" style="padding:12px 16px;border:1px solid ${RULE};border-radius:12px;font:13px/1.4 ${FONT};color:${MUTED};">Rental provider<br><span class="value" style="font:700 16px/1.4 ${FONT};color:${NAVY};">${esc(b.provider)}</span></td></tr></table>`;
 }
 
@@ -105,6 +125,9 @@ function blockText(b: Block): string {
   if ("quote" in b) return `"${b.quote}"${b.by ? ` — ${b.by}` : ""}`;
   if ("code" in b) return b.code;
   if ("list" in b) return b.list.map((i) => `- ${plain(i)}`).join("\n");
+  if ("signatures" in b) {
+    return [...b.signatures.map((s) => `${s.role}: ${s.name}, signed ${s.signedAt}`), ...(b.attachment ? [`Attached: ${b.attachment.filename}`] : [])].join("\n");
+  }
   return `Rental provider: ${b.provider}`;
 }
 
@@ -147,7 +170,7 @@ export function renderEmail(e: Email, opts: { base: string }): { subject: string
 <style>
 body{margin:0;padding:0;-webkit-text-size-adjust:100%;}
 img{border:0;outline:none;text-decoration:none;}
-@media (max-width:620px){.container{width:100%!important}.px{padding-left:20px!important;padding-right:20px!important}.h1{font-size:22px!important}}
+@media (max-width:620px){.container{width:100%!important}.px{padding-left:20px!important;padding-right:20px!important}.h1{font-size:22px!important}.sig{display:block!important;width:auto!important;border-right:0!important}.sig2{border-top:1px solid #e3e7ee!important}.hide-sm{display:none!important}}
 @media (prefers-color-scheme:dark){.bg{background:#0a1430!important}.card{background:#121f3b!important}.text,.h1,.value,.strong{color:#f2eee6!important}.muted{color:#aab3c5!important}.panel{background:#1b2b4f!important;border-color:#273b69!important}.rule{border-color:#273b69!important}}
 </style>
 </head>
