@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Fragment } from "react";
-import { ArrowRight, BadgeCheck, Car, Check, CircleCheck, Download, FileCheck2, FileText, Fingerprint, IdCard, MapPin, MessageSquare, ShieldCheck } from "lucide-react";
+import { ArrowRight, BadgeCheck, Car, Check, CircleCheck, Download, Eye, FileCheck2, FileSignature, FileText, Fingerprint, IdCard, MapPin, MessageSquare, PenLine, Send, ShieldCheck } from "lucide-react";
 import { cn } from "cn";
 import { Pill } from "@/components/common/badges";
 import { ContractDocument, SignatureMark } from "@/components/contract/contract-document";
 import { buttonVariants } from "@/components/ui/button";
 import type { ContractSection, ContractSignature } from "@/lib/contracts/pdf";
+import { PICKUP_CHECKLIST } from "@/lib/constants";
 import { formatDate, formatDateTime, formatPHP, formatTime, labelize } from "@/lib/format";
 import { groupFingerprint } from "@/lib/signature";
 import type { Database } from "@/types/database";
@@ -27,6 +28,94 @@ const PAYMENT_PILL = {
 };
 const day = (iso: string) => formatDate(iso, { month: "short", day: "numeric" });
 const dayTime = (iso: string) => formatDate(iso, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
+/** The business's view of a signed agreement (1e desktop / 2d phone). `children` go below (history, full text). */
+export function SignedAgreementSummary({ bookingId, version: v, children }: {
+  bookingId: string; children?: React.ReactNode;
+  version: { id: string; version: number; content_hash: string; sent_at: string | null; viewed_at: string | null; signatures: ContractSignature[] };
+}) {
+  const provider = v.signatures.find((s) => s.signer_role === "PROVIDER");
+  const renter = v.signatures.find((s) => s.signer_role === "RENTER");
+  const steps = [
+    { icon: PenLine, label: "You signed", at: provider?.signed_at },
+    { icon: Send, label: "Sent to renter", at: v.sent_at },
+    { icon: Eye, label: "Renter opened", at: v.viewed_at },
+    { icon: Check, label: "Renter signed", at: renter?.signed_at },
+  ].filter((s) => !!s.at) as { icon: typeof Check; label: string; at: string }[];
+  const pdf = `/api/contracts/${v.id}/pdf`;
+  const certificate = `/dashboard/bookings/${bookingId}/certificate`;
+  return (
+    <section className="overflow-hidden rounded-3xl border bg-white">
+      <div className="flex items-center gap-2 px-5 pt-5 pb-3.5 sm:pb-5">
+        <h2 className="flex flex-1 items-center gap-2 text-[15px] font-semibold text-navy-900 sm:text-base">
+          <FileSignature className="size-5 text-electric" /> Rental agreement v{v.version} <Pill tone="success" className="ml-auto sm:ml-0">Signed</Pill>
+        </h2>
+        <a href={pdf} target="_blank" className={buttonVariants({ variant: "outline", className: "hidden sm:inline-flex" })}><Download /> Download signed PDF</a>
+      </div>
+      {renter && (
+        <p className="mx-5 flex gap-2 rounded-2xl bg-emerald-50 px-3.5 py-3 text-[13px] leading-snug font-medium text-emerald-800 sm:items-center sm:px-4 sm:py-3.5 sm:text-sm">
+          <CircleCheck className="mt-px size-[18px] shrink-0 sm:mt-0 sm:size-5" />
+          <span className="sm:hidden">{renter.signer_name} signed {dayTime(renter.signed_at)}. Booking confirmed automatically.</span>
+          <span className="hidden sm:inline">{renter.signer_name} signed on {formatDateTime(renter.signed_at)}. The booking was confirmed automatically.</span>
+        </p>
+      )}
+      <ol className="mt-[18px] mr-5 ml-[33px] grid gap-3.5 border-l-2 pl-[22px] sm:mx-5 sm:mt-5 sm:grid-cols-4 sm:gap-0 sm:border-l-0 sm:pl-0">
+        {steps.map((s, i) => (
+          <li key={s.label} className="relative sm:grid sm:content-start sm:gap-1">
+            <span className="flex items-center">
+              <span className={cn("absolute -top-0.5 -left-9 grid size-6 place-items-center rounded-full text-white ring-3 ring-white sm:static sm:size-7 sm:ring-0", i === steps.length - 1 ? "bg-emerald-500" : "bg-electric")}>
+                <s.icon className="size-3 sm:size-3.5" strokeWidth={i === steps.length - 1 ? 3 : 2} />
+              </span>
+              {i < steps.length - 1 && <span className={cn("mx-1.5 hidden h-0.5 flex-1 sm:block", i === steps.length - 2 ? "bg-emerald-500" : "bg-electric")} />}
+            </span>
+            <p className="text-[13px] font-semibold text-navy-900">{s.label}</p>
+            <p className="text-[11px] text-muted-foreground">{formatDate(s.at, { month: "short", day: "numeric" })} · {formatTime(s.at)}</p>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-5 grid gap-2.5 border-t px-5 pt-4 pb-5 sm:grid-cols-2 sm:gap-4 sm:pt-5">
+        {[provider, renter].map((s) => s && (
+          <div key={s.signer_role} className="flex items-center gap-2.5 sm:block sm:rounded-2xl sm:border sm:p-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase sm:text-[11px]">{s.signer_role === "PROVIDER" ? "Rental Provider" : "Renter"}</p>
+              <SignatureMark sig={s} className="h-8 max-w-full object-contain object-left sm:mt-1.5 sm:h-10" />
+              <p className="mt-1 hidden items-center gap-1 text-xs text-emerald-700 sm:flex">
+                <BadgeCheck className="size-3.5 shrink-0" /> {formatDateTime(s.signed_at)}{s.ip_address ? ` · IP ${String(s.ip_address)}` : ""}
+              </p>
+            </div>
+            {!!s.ip_address && <span className="text-[11px] text-muted-foreground sm:hidden">IP {String(s.ip_address)}</span>}
+          </div>
+        ))}
+        <div className="mt-1 grid grid-cols-2 gap-2 sm:hidden">
+          <a href={pdf} target="_blank" className={buttonVariants({ variant: "outline", className: "h-10" })}><Download /> Signed PDF</a>
+          <Link href={certificate} className={buttonVariants({ variant: "outline", className: "h-10" })}><ShieldCheck /> Certificate</Link>
+        </div>
+        <p className="hidden justify-between gap-3 text-[11px] text-muted-foreground sm:col-span-2 sm:flex">
+          <span className="font-mono">SHA-256 {groupFingerprint(v.content_hash)}</span>
+          <Link href={certificate} className="shrink-0 font-semibold text-electric hover:underline">Certificate →</Link>
+        </p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** The business's checklist and money summary while a confirmed booking waits for pickup (1e / 2d aside). */
+export function BeforePickupCard({ booking: b }: { booking: Pick<Booking, "pickup_at" | "payment_method" | "payment_status" | "total_amount" | "security_deposit"> }) {
+  return (
+    <section className="rounded-3xl border bg-white p-5">
+      <h2 className="mb-3 text-[15px] font-semibold text-navy-900 sm:text-base">Before pickup · {day(b.pickup_at)}</h2>
+      <ul className="grid gap-2.5 text-sm text-navy-800">
+        {PICKUP_CHECKLIST.map((c) => <li key={c} className="flex gap-2.5"><span aria-hidden className="mt-px size-[18px] shrink-0 rounded-md border-[1.5px] border-input" />{c}</li>)}
+      </ul>
+      <dl className="mt-4 grid gap-1.5 rounded-2xl bg-canvas p-4 text-sm">
+        <div className="flex justify-between"><dt>Total · {labelize(b.payment_method)}</dt><dd className="font-bold text-navy-900">{formatPHP(b.total_amount)}</dd></div>
+        {Number(b.security_deposit) > 0 && <div className="flex justify-between"><dt>Security deposit</dt><dd>{formatPHP(b.security_deposit)}</dd></div>}
+        <div className="flex items-center justify-between border-t border-black/10 pt-1.5"><dt>Payment</dt><dd>{PAYMENT_PILL[b.payment_status]}</dd></div>
+      </dl>
+    </section>
+  );
+}
 
 /** The booking page's card for the latest signed version (1d desktop / 2c phone). */
 export function SignedAgreementCard({ bookingId, providerName, version: v, older }: {

@@ -1,4 +1,4 @@
-import { PLAN_VEHICLE_LIMIT, PLANS, TRIAL_DAYS } from "@/lib/constants";
+import { PICKUP_CHECKLIST, PLAN_VEHICLE_LIMIT, PLANS, TRIAL_DAYS } from "@/lib/constants";
 import type { Block, Email } from "./layout";
 
 /** Values arrive pre-formatted (dates in Manila time, amounts as ₱). */
@@ -561,7 +561,7 @@ export const EMAILS = {
       heading: "Pickup tomorrow",
       blocks: [
         bookingDetails(d),
-        { list: ["Check the renter's license and ID against the booking", "Collect payment and deposit as agreed, then record it in 13C", "Do the walk-around inspection, then mark the booking as picked up"] },
+        { list: PICKUP_CHECKLIST },
       ],
       cta: { label: "Open booking", url: businessBooking(d) },
     }),

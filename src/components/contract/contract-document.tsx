@@ -13,6 +13,20 @@ export function SignatureMark({ sig, className }: { sig: Pick<ContractSignature,
     : <p className={cn("font-serif text-2xl text-navy-900 italic", className)}>{sig.signer_name}</p>;
 }
 
+/** The agreement's numbered sections. */
+export function ContractSections({ sections, className }: { sections: ContractSection[]; className?: string }) {
+  return (
+    <div className={cn("prose-contract grid gap-6 text-[14px] leading-relaxed text-navy-800", className)}>
+      {sections.map((s) => (
+        <section key={s.key}>
+          <h3 className="font-semibold text-navy-900">{s.title}</h3>
+          <p>{s.body}</p>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 export function ContractDocument({
   title, version, reference, sections, signatures, contentHash, providerName, renterName, providerLogo, signedAt, collapsible,
 }: {
@@ -23,16 +37,7 @@ export function ContractDocument({
   /** Show a preview of the sections on large screens until the reader expands them. */
   collapsible?: boolean;
 }) {
-  const body = (
-    <div className={cn("prose-contract grid gap-6 px-5 text-[14px] leading-relaxed text-navy-800 sm:px-10", collapsible ? "pt-6 pb-6 lg:pb-2" : "py-6")}>
-      {sections.map((s) => (
-        <section key={s.key}>
-          <h3 className="font-semibold text-navy-900">{s.title}</h3>
-          <p>{s.body}</p>
-        </section>
-      ))}
-    </div>
-  );
+  const body = <ContractSections sections={sections} className={cn("px-5 sm:px-10", collapsible ? "pt-6 pb-6 lg:pb-2" : "py-6")} />;
   return (
     <article className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/5">
       <header className="relative border-b px-5 py-6 sm:px-10">

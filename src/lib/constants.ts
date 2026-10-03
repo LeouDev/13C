@@ -110,3 +110,10 @@ export const POLICY_FIELDS = [
 ] as const;
 
 export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+
+/** What the business does at pickup (pickup_soon email + dashboard "Before pickup" card). */
+export const PICKUP_CHECKLIST = [
+  "Check the renter's license and ID against the booking",
+  "Collect payment and deposit as agreed, then record it in 13C",
+  "Do the walk-around inspection, then mark the booking as picked up",
+];

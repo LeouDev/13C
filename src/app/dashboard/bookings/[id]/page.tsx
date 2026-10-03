@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Download, FileSignature, MessageSquare, Phone } from "lucide-react";
+import { ChevronDown, Download, FileSignature, MessageSquare, Phone } from "lucide-react";
 import { DocumentLink } from "@/components/admin/business-review";
 import { PaymentsPanel, RegenerateButton, TermsEditor, TransitionActions } from "@/components/booking/booking-actions";
 import { BookingProgress, StatusHistory } from "@/components/booking/booking-timeline";
 import { BookingStatusBadge, Pill } from "@/components/common/badges";
 import { PageHeader } from "@/components/common/states";
-import { ContractDocument } from "@/components/contract/contract-document";
+import { ContractDocument, ContractSections } from "@/components/contract/contract-document";
+import { BeforePickupCard, SignedAgreementSummary } from "@/components/contract/signed-agreement";
 import { SendContractDialog } from "@/components/contract/sign-panel";
 import { buttonVariants } from "@/components/ui/button";
 import { hasRole, requireBusiness } from "@/lib/auth";
@@ -23,7 +24,7 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
   const { user, business, role } = await requireBusiness();
   const supabase = await createClient();
   const { data: b } = await supabase.from("bookings")
-    .select("*, vehicles(id, make, model, year, plate_number, slug), renter:profiles!bookings_renter_id_fkey(id, full_name, email, phone), booking_status_history(to_status, note, created_at), payments(id, amount, method, reference, paid_at), contracts(id, status, current_version, contract_versions(id, version, status, title, sections, content_hash, sent_at, signed_at, pdf_path, data, contract_signatures(signer_role, signer_name, signature_type, signature_data, signed_at, ip_address, content_hash)))")
+    .select("*, vehicles(id, make, model, year, plate_number, slug), renter:profiles!bookings_renter_id_fkey(id, full_name, email, phone), booking_status_history(to_status, note, created_at), payments(id, amount, method, reference, paid_at), contracts(id, status, current_version, contract_versions(id, version, status, title, sections, content_hash, sent_at, viewed_at, signed_at, pdf_path, data, contract_signatures(signer_role, signer_name, signature_type, signature_data, signed_at, ip_address, content_hash)))")
     .eq("id", id).eq("business_id", business.id)
     .order("created_at", { referencedTable: "booking_status_history" })
     .maybeSingle();
@@ -39,6 +40,15 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
   const canManage = hasRole(role, "MANAGER");
   const editable = ["BOOKING_REQUESTED", "PENDING_OWNER_APPROVAL", "CONTRACT_DRAFT", "CONTRACT_SENT", "AWAITING_SIGNATURE", "SIGNED", "CONFIRMED"].includes(b.status);
   const vars = (current?.data ?? {}) as Record<string, string>;
+  const signedNow = current?.status === "SIGNED";
+  const history = versions.length > 1 && (
+    <div className="rounded-2xl border bg-white p-4 text-sm">
+      <p className="mb-2 font-semibold">Version history</p>
+      <ul className="grid gap-1.5">{versions.map((v) => (
+        <li key={v.id} className="flex justify-between gap-3"><span>v{v.version} · {labelize(v.status)}{v.signed_at ? ` · signed ${formatDate(v.signed_at)}` : ""}</span><a className="text-electric hover:underline" href={`/api/contracts/${v.id}/pdf`} target="_blank">PDF</a></li>
+      ))}</ul>
+    </div>
+  );
 
   return (
     <>
@@ -63,6 +73,18 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
         <div className="grid content-start gap-6">
+          {current && signedNow && (
+            <SignedAgreementSummary bookingId={b.id} version={{ ...current, signatures: current.contract_signatures as ContractSignature[] }}>
+              {history && <div className="border-t p-5">{history}</div>}
+              <details className="group border-t">
+                <summary className="flex cursor-pointer items-center justify-between px-5 py-3.5 text-sm font-medium text-navy-900 [&::-webkit-details-marker]:hidden">
+                  Agreement text · {(current.sections as ContractSection[]).length} sections <ChevronDown className="size-4 transition group-open:rotate-180" />
+                </summary>
+                <ContractSections sections={current.sections as ContractSection[]} className="px-5 pb-6" />
+              </details>
+            </SignedAgreementSummary>
+          )}
+
           <section className="rounded-3xl border bg-white p-5">
             <h2 className="mb-4 font-semibold text-navy-900">Rental details</h2>
             <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
@@ -88,7 +110,7 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
             <PaymentsPanel bookingId={b.id} total={Number(b.total_amount)} status={b.payment_status} method={b.payment_method} payments={b.payments} canEdit />
           </section>
 
-          {current ? (
+          {current && !signedNow ? (
             <section className="grid gap-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="flex items-center gap-2 font-semibold text-navy-900"><FileSignature className="size-5 text-electric" /> Rental agreement v{current.version} <Pill tone={current.status === "SIGNED" ? "success" : current.status === "SENT" ? "brand" : "neutral"}>{labelize(current.status)}</Pill></h2>
@@ -98,19 +120,13 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
               <ContractDocument title={current.title} version={current.version} reference={b.reference} sections={current.sections as ContractSection[]}
                 signatures={current.contract_signatures as ContractSignature[]} contentHash={current.content_hash}
                 providerName={vars.provider_name ?? business.name} renterName={vars.renter_name ?? b.renter?.full_name ?? ""} providerLogo={business.logo_path} />
-              {versions.length > 1 && (
-                <div className="rounded-2xl border bg-white p-4 text-sm">
-                  <p className="mb-2 font-semibold">Version history</p>
-                  <ul className="grid gap-1.5">{versions.map((v) => (
-                    <li key={v.id} className="flex justify-between gap-3"><span>v{v.version} · {labelize(v.status)}{v.signed_at ? ` · signed ${formatDate(v.signed_at)}` : ""}</span><a className="text-electric hover:underline" href={`/api/contracts/${v.id}/pdf`} target="_blank">PDF</a></li>
-                  ))}</ul>
-                </div>
-              )}
+              {history}
             </section>
           ) : null}
         </div>
 
         <aside className="grid content-start gap-6">
+          {(b.status === "SIGNED" || b.status === "CONFIRMED") && <BeforePickupCard booking={b} />}
           <section className="rounded-3xl border bg-white p-5">
             <h2 className="mb-3 font-semibold text-navy-900">Renter</h2>
             <p className="font-semibold">{renter?.legal_name || b.renter?.full_name}</p>
