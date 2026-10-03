@@ -24,6 +24,7 @@ export type ContractPdfInput = {
 const NAVY = rgb(0.07, 0.12, 0.23);
 const GRAY = rgb(0.38, 0.42, 0.5);
 const RED = rgb(0.88, 0.19, 0.17);
+const EMERALD = rgb(0.02, 0.59, 0.41);
 const A4 = { w: 595.28, h: 841.89 };
 const M = 56;
 
@@ -65,6 +66,7 @@ function wrap(text: string, font: PDFFont, size: number, width: number) {
 
 const fmt = (iso: string, timeStyle: "short" | "medium" = "short") =>
   new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium", timeStyle }).format(new Date(iso)) + " (PHT)";
+const fmtDate = (iso: string) => new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium" }).format(new Date(iso));
 
 export async function renderContractPdf(c: ContractPdfInput): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
@@ -128,33 +130,64 @@ export async function renderContractPdf(c: ContractPdfInput): Promise<Uint8Array
     text(s.body, { gap: 10 });
   }
 
-  // Signatures
-  ensure(160);
+  // Signatures: a ruled header, both parties side by side, then the fingerprint/status box.
+  const provider = c.signatures.find((x) => x.signer_role === "PROVIDER");
+  const renter = c.signatures.find((x) => x.signer_role === "RENTER");
+  ensure(250);
   y -= 6;
-  text("SIGNATURES", { font: bold, size: 12, gap: 6 });
-  for (const role of ["PROVIDER", "RENTER"] as const) {
-    const sig = c.signatures.find((x) => x.signer_role === role);
-    ensure(110);
-    const label = role === "PROVIDER" ? `Rental Provider — ${c.providerName}` : `Renter — ${c.renterName}`;
-    text(label, { font: bold, size: 9.5, gap: 4 });
-    if (!sig) { text("Not yet signed.", { color: GRAY, gap: 12 }); continue; }
+  page.drawLine({ start: { x: M, y }, end: { x: M + width, y }, thickness: 1.5, color: NAVY });
+  y -= 10;
+  page.drawText("SIGNATURES", { x: M, y: y - 12, size: 12.5, font: bold, color: NAVY });
+  if (provider && renter) {
+    const tag = "SIGNED BY BOTH PARTIES", tagW = bold.widthOfTextAtSize(tag, 9) + 16;
+    page.drawRectangle({ x: M + width - tagW, y: y - 15, width: tagW, height: 17, borderColor: EMERALD, borderWidth: 1.5 });
+    page.drawText(tag, { x: M + width - tagW + 8, y: y - 10, size: 9, font: bold, color: EMERALD });
+  }
+  y -= 30;
+  const colW = (width - 28) / 2;
+  let lowest = y;
+  for (const [i, role] of (["PROVIDER", "RENTER"] as const).entries()) {
+    const sig = role === "PROVIDER" ? provider : renter;
+    const x = M + i * (colW + 28);
+    let cy = y;
+    const line = (s: string, font: PDFFont, size: number, color = NAVY) => {
+      for (const l of wrap(s, font, size, colW)) { page.drawText(l, { x, y: cy - size, size, font, color }); cy -= size * 1.5; }
+    };
+    line(role === "PROVIDER" ? `Rental Provider — ${c.providerName}` : `Renter — ${c.renterName}`, bold, 10);
+    cy -= 6;
+    if (!sig) { line("Not yet signed.", regular, 9, GRAY); lowest = Math.min(lowest, cy); continue; }
     if (isValidSignatureImage(sig.signature_data)) {
       const png = await pdf.embedPng(Buffer.from(sig.signature_data.split(",")[1]!, "base64"));
-      const scale = Math.min(180 / png.width, 50 / png.height);
-      ensure(png.height * scale + 6);
-      page.drawImage(png, { x: M, y: y - png.height * scale, width: png.width * scale, height: png.height * scale });
-      y -= png.height * scale + 4;
+      const scale = Math.min(colW / png.width, 40 / png.height);
+      page.drawImage(png, { x, y: cy - 40 + (40 - png.height * scale) / 2, width: png.width * scale, height: png.height * scale });
     } else {
-      ensure(30);
-      page.drawText(toWinAnsi(sig.signer_name), { x: M, y: y - 22, size: 22, font: italic, color: NAVY });
-      y -= 30;
+      page.drawText(toWinAnsi(sig.signer_name), { x, y: cy - 30, size: 22, font: italic, color: NAVY });
     }
-    page.drawLine({ start: { x: M, y }, end: { x: M + 220, y }, thickness: 0.6, color: GRAY });
-    y -= 4;
-    text(`${sig.signer_name} · ${sig.signature_type === "DRAWN" ? "drawn" : "typed"} electronic signature · ${fmt(sig.signed_at)}${sig.ip_address ? ` · IP ${String(sig.ip_address)}` : ""}`, { size: 8, color: GRAY, gap: 12 });
+    cy -= 46;
+    page.drawLine({ start: { x, y: cy }, end: { x: x + colW, y: cy }, thickness: 0.6, color: GRAY });
+    cy -= 5;
+    line(`${sig.signer_name} · ${sig.signature_type === "DRAWN" ? "drawn" : "typed"} electronic signature`, regular, 8.5, GRAY);
+    line(`${fmt(sig.signed_at)}${sig.ip_address ? ` · IP ${String(sig.ip_address)}` : ""}`, regular, 8.5, GRAY);
+    lowest = Math.min(lowest, cy);
   }
-  text(`Document fingerprint (SHA-256 of the agreement content): ${c.contentHash}`, { size: 7.5, color: GRAY, gap: 2 });
-  text("Executed electronically under Republic Act No. 8792 (Electronic Commerce Act of 2000). Any change requires a new version signed by both parties.", { size: 7.5, color: GRAY });
+  y = lowest - 18;
+
+  const facts: [string, string, PDFFont, number][] = [
+    ["FINGERPRINT", groupFingerprint(c.contentHash), mono, 8.5],
+    ["STATUS", c.status === "SIGNED" ? `Signed · Version ${c.version}${renter ? ` · Booking confirmed ${fmtDate(renter.signed_at)}` : ""}` : `Not signed · Version ${c.version}`, regular, 8.5],
+    ...(c.status === "SIGNED" ? [["AUDIT TRAIL", `Signature certificate on page ${pdf.getPageCount() + 1}`, regular, 8.5] as [string, string, PDFFont, number]] : []),
+  ];
+  const boxH = facts.length * 15 + 18;
+  ensure(boxH + 40);
+  page.drawRectangle({ x: M, y: y - boxH, width, height: boxH, color: rgb(0.95, 0.96, 0.98) });
+  y -= 14;
+  for (const [k, v, font, size] of facts) {
+    page.drawText(k, { x: M + 16, y: y - 7.5, size: 7.5, font: bold, color: GRAY });
+    page.drawText(fit(v, font), { x: M + 92, y: y - 8, size, font, color: NAVY });
+    y -= 15;
+  }
+  y -= 18;
+  text("Executed electronically under Republic Act No. 8792 (Electronic Commerce Act of 2000). Any change requires a new version signed by both parties.", { size: 8, color: GRAY });
 
   // Signature certificate: the audit trail of this exact version.
   if (c.status === "SIGNED") {
