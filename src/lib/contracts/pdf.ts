@@ -1,4 +1,7 @@
 import "server-only";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage } from "pdf-lib";
 import { groupFingerprint, isValidSignatureImage } from "@/lib/signature";
 
@@ -30,9 +33,22 @@ export function toWinAnsi(s: string) {
     .replace(/[^\x09\x0a\x0d\x20-\x7e¡-ÿ]/g, "?");
 }
 
+// Body text font with the ₱ glyph (listed in outputFileTracingIncludes so it ships with the server code).
+const GEIST = path.join(process.cwd(), "src/lib/contracts/fonts/Geist-Regular.ttf");
+let geistBytes: Promise<Buffer> | undefined;
+
+const charsets = new WeakMap<PDFFont, Set<number> | null>();
+/** Text a font can draw: standard fonts get WinAnsi normalisation; embedded fonts swap unknown glyphs for "?". */
+function fit(s: string, font: PDFFont) {
+  if (!charsets.has(font)) charsets.set(font, font.name.includes("Geist") ? new Set(font.getCharacterSet()) : null);
+  const set = charsets.get(font);
+  if (!set) return toWinAnsi(s);
+  return Array.from(s.replace(/★/g, "*"), (ch) => (ch === "\n" || set.has(ch.codePointAt(0)!) ? ch : "?")).join("");
+}
+
 function wrap(text: string, font: PDFFont, size: number, width: number) {
   const lines: string[] = [];
-  for (const para of toWinAnsi(text).split("\n")) {
+  for (const para of fit(text, font).split("\n")) {
     if (!para.trim()) { lines.push(""); continue; }
     let line = "";
     for (const word of para.split(/\s+/)) {
@@ -54,7 +70,8 @@ export async function renderContractPdf(c: ContractPdfInput): Promise<Uint8Array
   pdf.setAuthor(c.providerName);
   pdf.setCreator("13C (technology platform)");
   pdf.setSubject(`Vehicle rental agreement between ${c.providerName} and ${c.renterName}`);
-  const regular = await pdf.embedFont(StandardFonts.Helvetica);
+  pdf.registerFontkit(fontkit);
+  const regular = await pdf.embedFont(await (geistBytes ??= readFile(GEIST)), { subset: true });
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const italic = await pdf.embedFont(StandardFonts.TimesRomanItalic);
   const mono = await pdf.embedFont(StandardFonts.Courier);
@@ -88,7 +105,7 @@ export async function renderContractPdf(c: ContractPdfInput): Promise<Uint8Array
   y -= 6;
   for (const [k, v] of rows) {
     page.drawText(k.toUpperCase(), { x: M + 10, y: y - 10, size: 7.5, font: bold, color: GRAY });
-    page.drawText(toWinAnsi(v), { x: M + 130, y: y - 10, size: 9.5, font: regular, color: NAVY });
+    page.drawText(fit(v, regular), { x: M + 130, y: y - 10, size: 9.5, font: regular, color: NAVY });
     y -= 16;
   }
   y = Math.min(y, boxTop - rows.length * 16 - 10) - 16;
@@ -161,7 +178,7 @@ export async function renderContractPdf(c: ContractPdfInput): Promise<Uint8Array
   // Footer on every page
   const pages = pdf.getPages();
   pages.forEach((p, i) => {
-    p.drawText(toWinAnsi(`${c.reference} v${c.version}  ·  Prepared via 13C  ·  Page ${i + 1} of ${pages.length}`), { x: M, y: 28, size: 7.5, font: regular, color: GRAY });
+    p.drawText(fit(`${c.reference} v${c.version}  ·  Prepared via 13C  ·  Page ${i + 1} of ${pages.length}`, regular), { x: M, y: 28, size: 7.5, font: regular, color: GRAY });
   });
   return pdf.save();
 }

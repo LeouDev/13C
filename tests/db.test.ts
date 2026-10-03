@@ -188,7 +188,7 @@ describe("bookings", () => {
     expect(sections[0]!.body).toContain("ZZ Test Car Rental");
     expect(sections[0]!.body).toContain("Juan Dela Cruz");
     expect(sections[0]!.body).not.toMatch(/\{\{/);
-    expect(sections[3]!.body).toContain("PHP 1,500.00");
+    expect(sections[3]!.body).toContain("₱1,500.00");
 
     await expectError(owner.client.rpc("transition_booking", { p_booking_id: booking2Id, p_to: "APPROVED" }), /bookings_no_overlap|VEHICLE_UNAVAILABLE/);
     const again = await renter.client.rpc("request_booking", {

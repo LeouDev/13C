@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "2mb" },
   },
+  // Contract PDFs are rendered in API routes and server actions; ship the ₱-capable font with all of them.
+  outputFileTracingIncludes: { "/*": ["src/lib/contracts/fonts/*.ttf"] },
   async redirects() {
     return [{ source: "/favicon.ico", destination: "/icon.svg", permanent: true }];
   },

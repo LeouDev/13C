@@ -110,7 +110,7 @@ describe("MVP workflow (35 steps)", () => {
     const c = must(await owner.client.from("contracts").select("id, contract_versions(sections)").eq("booking_id", bookingId).single());
     contractId = c.id;
     const text = JSON.stringify(c.contract_versions[0]!.sections);
-    for (const needle of ["ZZ Test Cebu XYZ Car Rental", "Juan Dela Cruz", "Toyota Vios", "GAA 1234", "PHP 1,500.00", "PHP 1,800.00", "GCash", "Full-to-full.", "Maria Santos", "not a party to this rental"]) {
+    for (const needle of ["ZZ Test Cebu XYZ Car Rental", "Juan Dela Cruz", "Toyota Vios", "GAA 1234", "₱1,500.00", "₱1,800.00", "GCash", "Full-to-full.", "Maria Santos", "not a party to this rental"]) {
       expect(text, needle).toContain(needle);
     }
     // 25. Sent to customer (provider signature captured server-side)

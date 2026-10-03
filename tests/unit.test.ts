@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { canTransition, nextStatuses, STATUS_META, TRANSITIONS } from "@/lib/bookings/status";
 import { createHmac } from "node:crypto";
-import { PDFDocument } from "pdf-lib";
+import { PDFDict, PDFDocument, PDFName } from "pdf-lib";
 import { paidPayment, parseWebhookEvent, verifyWebhookSignature } from "@/lib/billing";
 import { templateFor } from "@/lib/notification-email";
 import { EMAILS } from "@/emails";
@@ -163,6 +163,16 @@ describe("contract PDF", () => {
       { signer_role: "PROVIDER", signer_name: "Maria Santos", signer_email: "maria@example.com", signature_type: "TYPED", signature_data: SIG, signed_at: now, ip_address: "1.2.3.4", user_agent: "Chrome", content_hash: "a" },
       ...(status === "SIGNED" ? [{ signer_role: "RENTER" as const, signer_name: "Juan Dela Cruz", signature_type: "DRAWN" as const, signature_data: SIG, signed_at: now, ip_address: null, content_hash: "a" }] : []),
     ],
+  });
+
+  it("embeds a font with the peso sign for body text", async () => {
+    const bytes = await renderContractPdf({ ...doc("SENT"), sections: [{ key: "fees", title: "4. Fees", body: "Daily rate ₱1,500.00 · deposit ₱3,000.00 — “cash” ★" }] });
+    const loaded = await PDFDocument.load(bytes);
+    const fonts = loaded.context.enumerateIndirectObjects()
+      .map(([, o]) => (o instanceof PDFDict && o.get(PDFName.of("Type")) === PDFName.of("Font") ? String(o.get(PDFName.of("BaseFont"))) : null))
+      .filter(Boolean);
+    expect(fonts.some((f) => f!.startsWith("/Geist-Regular")), fonts.join(", ")).toBe(true);
+    expect(loaded.getPageCount()).toBe(1);
   });
 
   it("renders a signed agreement with both signatures and a certificate page", async () => {
