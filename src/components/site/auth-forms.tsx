@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
 import { Loader2, MailCheck } from "lucide-react";
 import { signIn, signUp, requestPasswordReset } from "@/app/actions/auth";
-import { Field } from "@/components/common/field";
+import { Field, PhoneInput } from "@/components/common/field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -86,7 +86,7 @@ export function SignUpForm({ next }: { next?: string }) {
         <Input id="email" name="email" type="email" autoComplete="email" required />
       </Field>
       <Field label="Mobile number" htmlFor="phone" error={fe?.phone} hint="Rental businesses use this to coordinate pickup.">
-        <Input id="phone" name="phone" type="tel" autoComplete="tel" placeholder="+63 9XX XXX XXXX" />
+        <PhoneInput id="phone" name="phone" />
       </Field>
       <Field label="Password" htmlFor="password" error={fe?.password} hint="At least 8 characters." required>
         <Input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} />

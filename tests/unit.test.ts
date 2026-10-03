@@ -12,7 +12,7 @@ import { friendlyError } from "@/lib/errors";
 import { formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
 import { groupFingerprint, isValidSignatureImage } from "@/lib/signature";
-import { businessSchema, slugSchema, vehicleSchema } from "@/lib/validation";
+import { businessSchema, localPhone, phoneSchema, slugSchema, toPhilippinePhone, vehicleSchema } from "@/lib/validation";
 
 describe("booking state machine (UI mirror)", () => {
   it("only businesses approve/reject requests; renters accept proposals", () => {
@@ -127,6 +127,22 @@ describe("notification → email template", () => {
       const link = t.audience === "Admin" ? "/admin/x" : t.audience === "Business" ? "/dashboard/x" : "/account/x";
       expect(templateFor(nt!, link), key).toBe(key);
     }
+  });
+});
+
+describe("Philippine phone numbers", () => {
+  it("stores every common way of typing a number as +63…", () => {
+    for (const typed of ["9399029892", "09399029892", "639399029892", "+63 939 902 9892", "+63-939-902-9892", "0939 902 9892"]) {
+      expect(toPhilippinePhone(typed), typed).toBe("+639399029892");
+    }
+    expect(phoneSchema.parse(" 939 902 9892 ")).toBe("+639399029892");
+    expect(phoneSchema.parse("32 234 5678")).toBe("+63322345678"); // Cebu landline
+  });
+  it("rejects numbers that are too short or long, and shows only the part after +63", () => {
+    for (const bad of ["", "0917", "12345", "9399029892123"]) expect(phoneSchema.safeParse(bad).success, bad).toBe(false);
+    expect(localPhone("+639399029892")).toBe("9399029892");
+    expect(localPhone("+63 939 902 9892")).toBe("939 902 9892");
+    expect(localPhone(null)).toBe("");
   });
 });
 

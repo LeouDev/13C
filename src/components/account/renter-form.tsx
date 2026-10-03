@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { saveRenterDetails } from "@/app/actions/account";
-import { Field } from "@/components/common/field";
+import { Field, PhoneInput } from "@/components/common/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { RenterInput } from "@/lib/validation";
@@ -30,7 +30,7 @@ export function RenterFields({ form }: { form: ReturnType<typeof useRenterForm> 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Full name" htmlFor="r-full_name" error={errors.full_name} required><Input autoComplete="name" {...bind("full_name")} /></Field>
-      <Field label="Mobile number" htmlFor="r-phone" error={errors.phone} required><Input type="tel" autoComplete="tel" placeholder="+63 9XX XXX XXXX" {...bind("phone")} /></Field>
+      <Field label="Mobile number" htmlFor="r-phone" error={errors.phone} required><PhoneInput {...bind("phone")} /></Field>
       <Field label="Name on driver's license" htmlFor="r-legal_name" error={errors.legal_name} hint="If different from your full name."><Input {...bind("legal_name")} /></Field>
       <Field label="Date of birth" htmlFor="r-date_of_birth" error={errors.date_of_birth}><Input type="date" {...bind("date_of_birth")} /></Field>
       <Field label="Home address" htmlFor="r-address" error={errors.address} required className="sm:col-span-2"><Input autoComplete="street-address" {...bind("address")} /></Field>

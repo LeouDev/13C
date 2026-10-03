@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { phoneSchema } from "@/lib/validation";
 import { createClient } from "@/lib/supabase/server";
 import { fail, invalid, ok, type ActionResult } from "@/lib/actions";
 import { SITE_URL } from "@/lib/constants";
@@ -30,7 +31,7 @@ export async function signIn(_: unknown, form: FormData): Promise<ActionResult> 
 const signUpSchema = z.object({
   full_name: z.string().trim().min(2, "Enter your full name").max(120),
   email: z.email("Enter a valid email").trim().toLowerCase(),
-  phone: z.string().trim().max(30).optional(),
+  phone: z.union([z.literal(""), phoneSchema]).optional(),
   password: z.string().min(8, "Use at least 8 characters").max(72),
   terms: z.literal("on", { error: "Please accept the Terms and Privacy Policy" }),
   marketing: z.string().optional(),

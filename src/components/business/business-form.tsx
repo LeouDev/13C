@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { Check, Loader2, X } from "lucide-react";
 import { checkSlug } from "@/app/actions/business";
-import { Field, NativeSelect } from "@/components/common/field";
+import { Field, NativeSelect, PhoneInput } from "@/components/common/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -80,7 +80,7 @@ export function BusinessForm({
           <Input id="address" value={values.address} onChange={set("address")} placeholder="Street, barangay" autoComplete="street-address" />
         </Field>
         <Field label="Contact number" htmlFor="phone" error={errors.phone} required>
-          <Input id="phone" type="tel" value={values.phone} onChange={set("phone")} placeholder="+63 9XX XXX XXXX" />
+          <PhoneInput id="phone" value={values.phone} onChange={set("phone")} autoComplete="tel-national" />
         </Field>
         <Field label="Business email" htmlFor="email" error={errors.email} required>
           <Input id="email" type="email" value={values.email} onChange={set("email")} placeholder="hello@yourbusiness.ph" />

@@ -1,5 +1,7 @@
 import { cn } from "cn";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { localPhone } from "@/lib/validation";
 
 export function Field({
   label, htmlFor, error, hint, required, labelAside, className, children,
@@ -43,5 +45,16 @@ export function NativeSelect({ className, ...props }: React.ComponentProps<"sele
       )}
       {...props}
     />
+  );
+}
+
+/** Phone field with a fixed +63 prefix: people type only their number (917 123 4567). The server normalises it. */
+export function PhoneInput({ className, value, defaultValue, ...props }: React.ComponentProps<"input">) {
+  return (
+    <div className="relative">
+      <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-base text-muted-foreground md:text-sm" aria-hidden>+63</span>
+      <Input type="tel" inputMode="tel" autoComplete="tel-national" placeholder="917 123 4567" className={cn("pl-12", className)}
+        value={typeof value === "string" ? localPhone(value) : value} defaultValue={typeof defaultValue === "string" ? localPhone(defaultValue) : defaultValue} {...props} />
+    </div>
   );
 }

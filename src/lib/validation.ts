@@ -9,7 +9,17 @@ export const slugSchema = z
   .regex(/^[a-z0-9][a-z0-9-]{1,46}[a-z0-9]$/, "Use 3–48 lowercase letters, numbers and dashes")
   .refine((s) => !RESERVED_SLUGS.includes(s), "That link is reserved — try another");
 
-export const phoneSchema = z.string().trim().regex(/^[+0-9 ()-]{7,20}$/, "Enter a valid phone number");
+/** Philippine numbers are stored as +63 followed by 9–10 digits. Accepts "917…", "0917…", "63917…" and "+63 917…". */
+export function toPhilippinePhone(input: string) {
+  const digits = input.replace(/\D/g, "");
+  return `+63${digits.startsWith("63") ? digits.slice(2) : digits.startsWith("0") ? digits.slice(1) : digits}`;
+}
+/** The part after +63, for showing in a field that already displays the prefix. */
+export const localPhone = (stored: string | null | undefined) => (stored ?? "").replace(/^\s*\+?63\s*/, "");
+
+export const phoneSchema = z.string().trim().min(1, "Enter your mobile number")
+  .transform(toPhilippinePhone)
+  .pipe(z.string().regex(/^\+63\d{9,10}$/, "Enter a valid Philippine number, e.g. 917 123 4567"));
 
 export const businessSchema = z.object({
   name: z.string().trim().min(2, "Enter your business name").max(80),
