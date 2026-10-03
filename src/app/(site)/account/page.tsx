@@ -38,12 +38,12 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
           address: renter?.address ?? "", city: renter?.city ?? "", license_number: renter?.license_number ?? "", license_expiry: renter?.license_expiry ?? "",
         }} />
       </section>
-      <section className={card}>
+      <section id="documents" className={card}>
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <h2 className="font-semibold text-navy-900">Driver&apos;s license & ID</h2>
           <Pill tone={renter?.kyc_status === "VERIFIED" ? "success" : renter?.kyc_status === "REJECTED" ? "danger" : "neutral"}>{labelize(renter?.kyc_status ?? "UNVERIFIED")}</Pill>
         </div>
-        <p className="mb-4 flex gap-2 text-sm text-muted-foreground"><ShieldCheck className="size-4 shrink-0 text-emerald-600" /> Stored privately. Only rental businesses with an approved booking from you can view them — never public.</p>
+        <p className="mb-4 flex gap-2 text-sm text-muted-foreground"><ShieldCheck className="size-4 shrink-0 text-emerald-600" /> Stored privately. Only rental businesses you request a booking from can view them, while that booking is pending or in progress. Never public.</p>
         <DriverDocuments userId={user.id} docs={docs ?? []} />
       </section>
       {!reset && security}

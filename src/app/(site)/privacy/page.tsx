@@ -141,8 +141,8 @@ export default function PrivacyPage() {
         <p>
           We share your data only with the rental business you message or book with, and only what it needs. A business can see your name and contact
           details once you message it or request a booking, and your verification details (legal name, address, date of birth and license number) once
-          you have a booking with it, because they go into the rental agreement. Your uploaded license/ID images are available to a business only after it
-          approves your booking request, and only while that booking is in progress. Other rental businesses cannot see your data.
+          you have a booking with it, because they go into the rental agreement. Your uploaded license/ID images are available to a business once you
+          request a booking with it, so it can review your request, and only while that booking is pending or in progress. Other rental businesses cannot see your data.
         </p>
         <h3>Service providers (processors)</h3>
         <p>

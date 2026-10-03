@@ -39,6 +39,7 @@ const CODES: Record<string, string> = {
   NO_PAYMENT_METHODS: "Add at least one payment method in Payment Settings first.",
   VEHICLE_UNAVAILABLE: "This vehicle is already booked for the selected dates.",
   DUPLICATE_REQUEST: "You already have a pending request for these dates.",
+  RENTER_DOCUMENTS_MISSING: "Upload your driver's license (front and back) and a government ID first. You'll find them in Profile & documents.",
   RENTER_PROFILE_INCOMPLETE: "Add your full name, phone, address and driver's license number first.",
   INVALID_TRANSITION: "This booking can't be updated that way anymore. Refresh to see its latest status.",
   NO_ACTIVE_TEMPLATE: "No contract template is active. Please contact 13C support.",

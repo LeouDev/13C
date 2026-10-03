@@ -148,6 +148,13 @@ describe("bookings", () => {
     }), "RENTER_PROFILE_INCOMPLETE");
   });
 
+  it("requires the driver's license (front and back) and a government ID before booking", async () => {
+    await completeRenterProfile(renter, { documents: false });
+    await expectError(renter.client.rpc("request_booking", {
+      p_vehicle_id: vehicleId, p_pickup_at: day(10), p_return_at: day(11), p_pickup_location: "Cebu City", p_return_location: "Cebu City", p_payment_method: "GCASH",
+    }), "RENTER_DOCUMENTS_MISSING");
+  });
+
   it("creates PENDING_OWNER_APPROVAL requests; pending requests don't block each other", async () => {
     await completeRenterProfile(renter);
     await completeRenterProfile(renter2);
@@ -156,6 +163,9 @@ describe("bookings", () => {
     booking2Id = must(await renter2.client.rpc("request_booking", { ...args, p_return_at: day(12) }));
     const b = must(await renter.client.from("bookings").select("status, total_amount, conversation_id").eq("id", bookingId).single());
     expect(b.status).toBe("PENDING_OWNER_APPROVAL");
+    // The business can review the renter's license and ID while deciding; nobody else can.
+    expect(must(await owner.client.from("driver_documents").select("doc_type").eq("user_id", renter.id))).toHaveLength(3);
+    expect(must(await outsider.client.from("driver_documents").select("doc_type").eq("user_id", renter.id))).toHaveLength(0);
     expect(Number(b.total_amount)).toBe(1500);
     expect(b.conversation_id).toBeTruthy();
     await expectError(renter.client.rpc("request_booking", args), "DUPLICATE_REQUEST");

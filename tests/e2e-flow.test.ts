@@ -89,6 +89,12 @@ describe("MVP workflow (35 steps)", () => {
     // 19. Request Oct 10–11
     must(await customer.client.from("profiles").update({ full_name: "Juan Dela Cruz", phone: "+63 918 765 4321" }).eq("id", customer.id));
     must(await customer.client.from("renters").update({ legal_name: "Juan Dela Cruz", address: "12 Mango Ave, Cebu City", license_number: "N01-23-456789" }).eq("user_id", customer.id));
+    // License (front/back) and government ID, uploaded privately like the booking page does
+    for (const doc_type of ["DRIVERS_LICENSE_FRONT", "DRIVERS_LICENSE_BACK", "GOVERNMENT_ID"] as const) {
+      const path = `${customer.id}/${doc_type.toLowerCase()}.png`;
+      must(await customer.client.storage.from("kyc").upload(path, png(), { contentType: "image/png" }));
+      must(await customer.client.from("driver_documents").insert({ user_id: customer.id, doc_type, storage_path: path }).select("id"));
+    }
     bookingId = must(await customer.client.rpc("request_booking", {
       p_vehicle_id: vehicleId, p_pickup_at: PICKUP, p_return_at: RETURN, p_pickup_location: "Mactan-Cebu International Airport",
       p_return_location: "Mactan-Cebu International Airport", p_payment_method: "GCASH", p_delivery: true,

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DriverDocuments } from "@/components/account/account-panels";
 import { BookingRequestForm } from "@/components/storefront/booking-request-form";
 import { requireUser } from "@/lib/auth";
 import { getStorefront, getVehicleBySlug } from "@/lib/queries";
@@ -19,7 +20,11 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[bu
   if (!v || v.status !== "ACTIVE") notFound();
 
   const supabase = await createClient();
-  const { data: renter } = await supabase.from("renters").select("*").eq("user_id", user.id).single();
+  const [{ data: renter }, { data: docs }] = await Promise.all([
+    supabase.from("renters").select("*").eq("user_id", user.id).single(),
+    supabase.from("driver_documents").select("doc_type, storage_path").eq("user_id", user.id),
+  ]);
+  const docsReady = new Set(docs?.map((d) => d.doc_type)).size >= 3;
   const renterInput = {
     full_name: user.full_name, phone: user.phone ?? "", legal_name: renter?.legal_name ?? "", date_of_birth: renter?.date_of_birth ?? "",
     address: renter?.address ?? "", city: renter?.city ?? "", license_number: renter?.license_number ?? "", license_expiry: renter?.license_expiry ?? "",
@@ -40,6 +45,8 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[bu
           pickupDefault={v.pickup_location || sf.store.pickup_locations[0] || sf.business.city}
           renter={renterInput}
           profileComplete={complete}
+          docsReady={docsReady}
+          documents={<DriverDocuments userId={user.id} docs={docs ?? []} />}
           initial={{ from: sp.from, to: sp.to, ft: sp.ft, tt: sp.tt, driver: sp.driver === "1", delivery: sp.delivery === "1" }}
         />
       )}

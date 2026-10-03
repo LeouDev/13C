@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BookingOnOtherAccount } from "@/components/booking/other-account";
 import { CheckCircle2, Download, FileSignature, MapPin, MessageSquare, Phone, Wallet } from "lucide-react";
+import { DriverDocuments } from "@/components/account/account-panels";
 import { AcceptProposal, PaymentsPanel, ReviewForm, TransitionActions } from "@/components/booking/booking-actions";
 import { BookingProgress, StatusHistory } from "@/components/booking/booking-timeline";
 import { BookingStatusBadge, Stars } from "@/components/common/badges";
@@ -23,7 +24,11 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
     .select("*, vehicles(make, model, year, slug, vehicle_images(storage_path, position)), businesses(id, name, slug, phone, email, address, city, logo_path), booking_status_history(to_status, note, created_at), payments(id, amount, method, reference, paid_at), contracts(id, status, current_version, contract_versions(id, version, status, signed_at)), reviews(id, rating, comment)")
     .eq("id", id).eq("renter_id", user.id).order("created_at", { referencedTable: "booking_status_history" }).maybeSingle();
   if (!b) return <BookingOnOtherAccount bookingId={id} email={user.email} />;
-  const { data: methods } = await supabase.from("payment_methods").select("method, account_name, account_number, instructions").eq("business_id", b.business_id).eq("is_enabled", true);
+  const [{ data: methods }, { data: myDocs }] = await Promise.all([
+    supabase.from("payment_methods").select("method, account_name, account_number, instructions").eq("business_id", b.business_id).eq("is_enabled", true),
+    supabase.from("driver_documents").select("doc_type, storage_path").eq("user_id", user.id),
+  ]);
+  const docsReady = new Set(myDocs?.map((d) => d.doc_type)).size >= 3;
   const payInfo = methods?.find((m) => m.method === b.payment_method);
   const img = [...(b.vehicles?.vehicle_images ?? [])].sort((x, y) => x.position - y.position)[0];
   const versions = b.contracts?.contract_versions ?? [];
@@ -58,7 +63,13 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
         <div className="grid content-start gap-6">
-          {b.status === "BOOKING_REQUESTED" && methods && <AcceptProposal bookingId={b.id} methods={methods.map((m) => m.method)} />}
+          {b.status === "BOOKING_REQUESTED" && methods && (docsReady ? <AcceptProposal bookingId={b.id} methods={methods.map((m) => m.method)} /> : (
+            <div className="grid gap-3 rounded-2xl bg-electric/5 p-4">
+              <p className="text-sm font-semibold text-navy-900">Upload your driver&apos;s license and ID to accept this proposal</p>
+              <p className="text-sm text-muted-foreground">Front and back of your license, plus a government-issued ID. Only {b.businesses?.name} can view them. Never public.</p>
+              <DriverDocuments userId={user.id} docs={myDocs ?? []} />
+            </div>
+          ))}
 
           <section className="rounded-3xl bg-white p-5 ring-1 ring-black/5">
             <h2 className="mb-4 font-semibold text-navy-900">Trip</h2>

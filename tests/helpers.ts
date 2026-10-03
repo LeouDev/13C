@@ -38,11 +38,18 @@ export function day(offset: number, hour = 10) {
   return new Date(`${ymd}T${String(hour).padStart(2, "0")}:00:00+08:00`).toISOString();
 }
 
-export async function completeRenterProfile(u: TestUser) {
+export const RENTER_DOCS = ["DRIVERS_LICENSE_FRONT", "DRIVERS_LICENSE_BACK", "GOVERNMENT_ID"] as const;
+
+/** Profile details and, unless `documents: false`, the license (front/back) and ID records booking requires. */
+export async function completeRenterProfile(u: TestUser, { documents = true } = {}) {
   must(await u.client.from("profiles").update({ phone: "+63 917 000 0000", full_name: "Juan Dela Cruz" }).eq("id", u.id));
   must(await u.client.from("renters").update({
     legal_name: "Juan Dela Cruz", address: "123 Osmeña Blvd, Cebu City", license_number: "G01-23-456789",
   }).eq("user_id", u.id));
+  if (!documents) return;
+  const have = new Set(must(await u.client.from("driver_documents").select("doc_type").eq("user_id", u.id)).map((d) => d.doc_type));
+  const missing = RENTER_DOCS.filter((t) => !have.has(t)).map((doc_type) => ({ user_id: u.id, doc_type, storage_path: `${u.id}/${doc_type.toLowerCase()}.png` }));
+  if (missing.length) must(await u.client.from("driver_documents").insert(missing).select("id"));
 }
 
 /** 1×1 PNG as a signature image (what the signature pad sends). */

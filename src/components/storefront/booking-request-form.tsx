@@ -20,7 +20,7 @@ import type { Enums } from "@/types/database";
 type Quote = { rental_days: number; base_amount: number; driver_fee: number; delivery_fee: number; total_amount: number; security_deposit: number };
 
 export function BookingRequestForm({
-  vehicle, businessName, methods, pickupDefault, renter, profileComplete, initial,
+  vehicle, businessName, methods, pickupDefault, renter, profileComplete, docsReady, documents, initial,
 }: {
   vehicle: { id: string; name: string; self_drive: boolean; with_driver: boolean; delivery_available: boolean };
   businessName: string;
@@ -28,6 +28,9 @@ export function BookingRequestForm({
   pickupDefault: string;
   renter: RenterInput;
   profileComplete: boolean;
+  /** License (front/back) and government ID uploaded — required before requesting */
+  docsReady: boolean;
+  documents: React.ReactNode;
   initial: { from?: string; to?: string; ft?: string; tt?: string; driver?: boolean; delivery?: boolean };
 }) {
   const router = useRouter();
@@ -106,6 +109,18 @@ export function BookingRequestForm({
         </section>
 
         <section className={card}>
+          <h2 className="font-bold text-navy-900">Driver&apos;s license & ID</h2>
+          {docsReady ? (
+            <p className="mt-2 flex gap-2 text-sm text-muted-foreground"><ShieldCheck className="size-4 shrink-0 text-emerald-600" /> Uploaded. {businessName} can view them while reviewing your request.</p>
+          ) : (
+            <>
+              <p className="mt-1 text-sm text-muted-foreground">Upload your driver&apos;s license (front and back) and a government-issued ID. Only {businessName} can view them, to review your request. Never public.</p>
+              <div className="mt-4">{documents}</div>
+            </>
+          )}
+        </section>
+
+        <section className={card}>
           <h2 className="font-bold text-navy-900">How will you pay?</h2>
           <p className="mt-1 text-sm text-muted-foreground">You pay {businessName} directly. 13C never handles your money — choosing a method doesn&apos;t charge you.</p>
           <div className="mt-4 grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Payment method">
@@ -136,7 +151,8 @@ export function BookingRequestForm({
               </dl>
             ) : <p className="text-destructive">{quoteError ?? "Calculating…"}</p>}
           </div>
-          <button type="submit" disabled={pending || !quote}
+          {!docsReady && <p className="mt-3 text-center text-xs text-muted-foreground">Upload your license and ID to send your request.</p>}
+          <button type="submit" disabled={pending || !quote || !docsReady}
             className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full text-[15px] font-semibold text-white shadow-md transition hover:brightness-110 disabled:opacity-50"
             style={{ background: "var(--store-accent)" }}>
             {pending && <Loader2 className="size-4 animate-spin" />} Request Booking
