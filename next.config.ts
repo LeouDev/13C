@@ -8,12 +8,12 @@ const site = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.VERCEL_URL
 // Next's inline scripts need 'unsafe-inline' (nonces would make every page dynamic); dev also needs eval.
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https://${supabaseHost}`,
   "font-src 'self' data:",
   `connect-src 'self' https://${supabaseHost} wss://${supabaseHost}`,
-  "frame-src 'self'",
+  "frame-src 'self' https://challenges.cloudflare.com", // Turnstile bot check on the auth forms
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

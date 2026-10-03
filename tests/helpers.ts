@@ -19,9 +19,13 @@ export async function makeUser(tag: string) {
     email, password, email_confirm: true, user_metadata: { full_name: `Test ${tag}` },
   });
   if (error) throw error;
-  const client = anon();
-  const signIn = await client.auth.signInWithPassword({ email, password });
+  // Sign in with the secret key, which Supabase exempts from the sign-in bot check (CAPTCHA), then hand the session
+  // to an ordinary client so the test acts as this user.
+  const signIn = await createClient<Database>(url, process.env.SUPABASE_SECRET_KEY!, opts).auth.signInWithPassword({ email, password });
   if (signIn.error) throw signIn.error;
+  const client = anon();
+  const session = await client.auth.setSession(signIn.data.session);
+  if (session.error) throw session.error;
   return { id: data.user!.id, email, client };
 }
 export type TestUser = Awaited<ReturnType<typeof makeUser>>;

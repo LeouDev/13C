@@ -93,6 +93,7 @@ export function friendlyError(err: unknown, fallback = "Something went wrong. Pl
   if (/User already registered/i.test(msg)) return "An account with this email already exists. Try signing in.";
   if (/Password should be/i.test(msg)) return "Use a stronger password (at least 8 characters).";
   if (/rate limit/i.test(msg)) return "Too many attempts. Please wait a minute and try again.";
+  if (e.code === "captcha_failed" || /captcha/i.test(msg)) return "The security check didn't go through. Wait for it to finish, then try again.";
   if (/mime type|invalid_mime_type/i.test(msg)) return "That file type isn't allowed.";
   if (/exceeded the maximum allowed size|Payload too large/i.test(msg)) return "That file is too large.";
   if (/fetch failed|network/i.test(msg)) return "Network problem. Check your connection and try again.";

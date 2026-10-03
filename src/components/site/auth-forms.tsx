@@ -5,6 +5,7 @@ import { useActionState, useRef, useState } from "react";
 import { Loader2, MailCheck } from "lucide-react";
 import { signIn, signUp, requestPasswordReset } from "@/app/actions/auth";
 import { Field, PhoneInput } from "@/components/common/field";
+import { captchaEnabled, Turnstile } from "@/components/common/turnstile";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,6 +26,7 @@ export function SignInForm({ next }: { next?: string }) {
   const fe = state && !state.ok ? state.fieldErrors : undefined;
   const email = useRef<HTMLInputElement>(null);
   const [reset, setReset] = useState<string | null>(null); // open → prefilled email
+  const [captcha, setCaptcha] = useState<string | null>(null);
   return (
     // The reset block has its own <form>, so it sits between two sections; the Sign in button joins the
     // sign-in form through its `form` attribute (it's still the form's default button for Enter).
@@ -45,6 +47,7 @@ export function SignInForm({ next }: { next?: string }) {
           }>
           <Input id="password" name="password" type="password" autoComplete="current-password" required className="h-11 sm:h-10" />
         </Field>
+        <Turnstile action="login" onToken={setCaptcha} resetKey={state} />
       </form>
       {reset !== null && (
         <div id="reset-password" className="grid gap-3 rounded-xl bg-secondary p-4">
@@ -52,7 +55,7 @@ export function SignInForm({ next }: { next?: string }) {
           <ResetForm defaultEmail={reset} />
         </div>
       )}
-      <Button type="submit" form="sign-in-form" size="xl" disabled={pending} className="mt-1 w-full">
+      <Button type="submit" form="sign-in-form" size="xl" disabled={pending || (captchaEnabled && !captcha)} className="mt-1 w-full">
         {pending && <Loader2 className="animate-spin" />} Sign in
       </Button>
       <p className="text-center text-sm text-muted-foreground">
@@ -65,6 +68,7 @@ export function SignInForm({ next }: { next?: string }) {
 
 export function SignUpForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState(signUp, null);
+  const [captcha, setCaptcha] = useState<string | null>(null);
   const fe = state && !state.ok ? state.fieldErrors : undefined;
   if (state?.ok) {
     return (
@@ -103,7 +107,8 @@ export function SignUpForm({ next }: { next?: string }) {
         <Checkbox name="marketing" value="on" className="mt-0.5" />
         <span>Send me occasional offers from 13C (optional).</span>
       </label>
-      <Button type="submit" size="xl" disabled={pending} className="mt-1 w-full">
+      <Turnstile action="signup" onToken={setCaptcha} resetKey={state} />
+      <Button type="submit" size="xl" disabled={pending || (captchaEnabled && !captcha)} className="mt-1 w-full">
         {pending && <Loader2 className="animate-spin" />} Create account
       </Button>
       <p className="text-center text-sm text-muted-foreground">
@@ -117,16 +122,18 @@ export function SignUpForm({ next }: { next?: string }) {
 /** Inline password reset (opened from the sign-in form). Focuses its email field when it appears. */
 export function ResetForm({ defaultEmail }: { defaultEmail?: string }) {
   const [state, action, pending] = useActionState(requestPasswordReset, null);
+  const [captcha, setCaptcha] = useState<string | null>(null);
   return (
     <form action={action} className="grid gap-3">
       {state?.ok ? <p className="text-sm text-emerald-700">{state.message}</p> : <FormError state={state} />}
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input id="reset-email" name="email" type="email" autoComplete="email" required defaultValue={defaultEmail} aria-label="Email for the reset link"
           autoFocus className="h-11 flex-1 bg-white sm:h-10" />
-        <Button type="submit" variant="outline" disabled={pending} className="h-11 rounded-full px-4 sm:h-10">
+        <Button type="submit" variant="outline" disabled={pending || (captchaEnabled && !captcha)} className="h-11 rounded-full px-4 sm:h-10">
           {pending && <Loader2 className="animate-spin" />} Send reset link
         </Button>
       </div>
+      <Turnstile action="reset" onToken={setCaptcha} resetKey={state} />
     </form>
   );
 }

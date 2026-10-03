@@ -38,6 +38,7 @@ npm run dev
 | `RESEND_API_KEY` | **server only**: sends app emails (added by the Vercel Resend integration) |
 | `EMAIL_DISPATCH_SECRET` | **server only**: shared with the database (Vault) to call `/api/email/dispatch` |
 | `PAYMONGO_PAYMENT_METHODS` | optional, default `gcash,paymaya,card,qrph` (each must be enabled on the PayMongo account) |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | optional: Cloudflare Turnstile bot check on sign-in, sign-up and password reset. Set it and deploy **before** turning on CAPTCHA in Supabase Auth (provider Turnstile, the widget's secret key), or every sign-in fails. Tests sign in with the secret key, which Supabase exempts. |
 
 **First admin:** sign up, then in the Supabase SQL editor run
 `update public.profiles set is_admin = true where email = 'you@example.com';`
