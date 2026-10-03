@@ -5,7 +5,7 @@ import { PageHeader, StatCard } from "@/components/common/states";
 import { formatPHP, labelize } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Overview" };
+export const metadata: Metadata = { title: { absolute: "Overview · 13C Admin" } };
 
 type Overview = {
   businesses: Record<string, number> | null; published_stores: number; vehicles: number; users: number;
@@ -25,7 +25,7 @@ export default async function AdminOverview() {
     <>
       <PageHeader title="Platform overview" description="Marketplace health across Cebu." />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Link href="/admin/verification"><StatCard tone="brand" label="Awaiting verification" value={o.pending_verifications ?? 0} icon={ShieldCheck} /></Link>
+        <Link href="/admin/businesses?status=queue"><StatCard tone="brand" label="Awaiting verification" value={o.pending_verifications ?? 0} icon={ShieldCheck} /></Link>
         <StatCard label="Businesses" value={sum(o.businesses)} hint={`${o.published_stores ?? 0} published stores`} icon={Building2} />
         <StatCard label="Vehicles" value={o.vehicles ?? 0} icon={Car} />
         <StatCard label="Users" value={o.users ?? 0} icon={Users} />

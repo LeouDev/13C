@@ -9,7 +9,9 @@ import { createClient } from "@/lib/supabase/server";
 import { cn } from "cn";
 import type { Enums } from "@/types/database";
 
-export const metadata: Metadata = { title: "Businesses" };
+export async function generateMetadata({ searchParams }: PageProps<"/admin/businesses">): Promise<Metadata> {
+  return { title: (await searchParams).status === "queue" ? "Verification" : "Businesses" };
+}
 
 const FILTERS: { key: string; label: string; statuses?: Enums<"business_status">[] }[] = [
   { key: "all", label: "All" },
@@ -33,14 +35,16 @@ export default async function AdminBusinessesPage({ searchParams }: PageProps<"/
 
   return (
     <>
-      <PageHeader title="Businesses" description="Review verification, monitor stores, and take action." />
+      {filter.key === "queue"
+        ? <PageHeader title="Verification" description="Businesses waiting for review. Open one to check its documents, then approve, request changes or reject." />
+        : <PageHeader title="Businesses" description="Review verification, monitor stores, and take action." />}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {FILTERS.map((f) => (
           <Link key={f.key} href={`/admin/businesses?status=${f.key}`} className={cn("rounded-full px-3 py-1.5 text-sm font-medium", f.key === filter.key ? "bg-navy-900 text-white" : "bg-white hover:bg-white/70")}>{f.label}</Link>
         ))}
         <form className="ml-auto"><input name="q" defaultValue={q} placeholder="Search name…" className="h-9 rounded-full border bg-white px-4 text-sm" /><input type="hidden" name="status" value={filter.key} /></form>
       </div>
-      {!rows?.length ? <EmptyState title="No businesses here" /> : (
+      {!rows?.length ? <EmptyState title={filter.key === "queue" ? "Nothing waiting for review" : "No businesses here"} /> : (
         <div className="overflow-hidden rounded-2xl border bg-white">
           <Table>
             <TableHeader><TableRow><TableHead>Business</TableHead><TableHead>Owner</TableHead><TableHead>Status</TableHead><TableHead>Store</TableHead><TableHead>Plan</TableHead><TableHead>Created</TableHead></TableRow></TableHeader>
