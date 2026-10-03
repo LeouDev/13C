@@ -64,16 +64,16 @@ export const VEHICLE_STATUSES: { value: Enums<"vehicle_status">; label: string }
 
 /** Mirrors public.trial_days() and public.plan_vehicle_limit() — tests/db.test.ts keeps them in sync. */
 export const TRIAL_DAYS = 25;
-export const PLAN_VEHICLE_LIMIT: Record<Enums<"subscription_plan">, number | null> = { FREE: 10, PRO: 10, BUSINESS: null };
+export const PLAN_VEHICLE_LIMIT: Record<Enums<"subscription_plan">, number | null> = { FREE: 5, PRO: 5, BUSINESS: null };
 /** Registered business that bills 13C plans; it's the merchant name on PayMongo checkout pages and receipts. */
 export const BILLED_BY = "AIR/RALLY BOOKING SERVICES";
 /** Monthly price in centavos. Must match public.plan_price_centavos() — tests/db.test.ts checks. */
 export const PLAN_PRICE_CENTAVOS: Record<Enums<"subscription_plan">, number> = { FREE: 0, PRO: 49900, BUSINESS: 150000 };
 
 export const PLANS = [
-  { id: "FREE", name: "Free trial", price: "₱0", period: ` for ${TRIAL_DAYS} days`, vehicles: "Up to 10 vehicles",
+  { id: "FREE", name: "Free trial", price: "₱0", period: ` for ${TRIAL_DAYS} days`, vehicles: `Up to ${PLAN_VEHICLE_LIMIT.FREE} vehicles`,
     features: ["Try everything in Pro", "Your own storefront", "Inquiries, bookings & digital contracts", "Calendar, customers & analytics", "No credit card required"] },
-  { id: "PRO", name: "Pro", price: "₱499", period: "/month", vehicles: "Up to 10 vehicles",
+  { id: "PRO", name: "Pro", price: "₱499", period: "/month", vehicles: `Up to ${PLAN_VEHICLE_LIMIT.PRO} vehicles`,
     features: ["Everything in Free", "Unlimited bookings", "Digital contracts & e-signatures", "Customer management", "Calendar", "Analytics", "Automated notifications"] },
   { id: "BUSINESS", name: "Business", price: "₱1,500", period: "/month", vehicles: "Unlimited vehicles",
     features: ["Everything in Pro", "Multiple staff accounts", "Advanced analytics", "Fleet management", "GPS integrations (soon)", "Custom contract settings", "Priority support"] },

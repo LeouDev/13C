@@ -6,7 +6,7 @@ import { BusinessCard } from "@/components/marketplace/business-card";
 import { SearchBar } from "@/components/marketplace/search-bar";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { buttonVariants } from "@/components/ui/button";
-import { LOCATIONS } from "@/lib/constants";
+import { LOCATIONS, PLAN_VEHICLE_LIMIT, TRIAL_DAYS } from "@/lib/constants";
 import { getCategories, getFeaturedBusinesses, searchVehicles } from "@/lib/queries";
 
 const STEPS = [
@@ -158,7 +158,7 @@ export default async function HomePage() {
               ))}
               <li className="flex items-center gap-3 rounded-2xl bg-white p-4 text-navy-900 sm:col-span-2">
                 <BarChart3 className="size-5 text-electric" />
-                <p className="text-sm"><span className="font-semibold">Free for 25 days</span> — up to 10 vehicles, no credit card.</p>
+                <p className="text-sm"><span className="font-semibold">Free for {TRIAL_DAYS} days</span> — up to {PLAN_VEHICLE_LIMIT.FREE} vehicles, no credit card.</p>
               </li>
             </ul>
           </div>

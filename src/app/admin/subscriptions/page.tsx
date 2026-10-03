@@ -55,8 +55,8 @@ export default async function AdminSubscriptionsPage({ searchParams }: PageProps
         </p>
       </div>
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Free trial" value={byPlan("FREE")} hint={`${TRIAL_DAYS} days · up to 10 vehicles`} />
-        <StatCard label="Pro" value={byPlan("PRO")} hint="₱499/mo · up to 10 vehicles" />
+        <StatCard label="Free trial" value={byPlan("FREE")} hint={`${TRIAL_DAYS} days · up to ${VEHICLE_LIMIT.FREE} vehicles`} />
+        <StatCard label="Pro" value={byPlan("PRO")} hint={`₱499/mo · up to ${VEHICLE_LIMIT.PRO} vehicles`} />
         <StatCard label="Business" value={byPlan("BUSINESS")} hint="Unlimited vehicles" />
         <StatCard label="Over limit" value={all.filter((b) => b.over).length} hint="More vehicles than plan allows" />
       </div>

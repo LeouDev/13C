@@ -1,4 +1,4 @@
-import { PLANS, TRIAL_DAYS } from "@/lib/constants";
+import { PLAN_VEHICLE_LIMIT, PLANS, TRIAL_DAYS } from "@/lib/constants";
 import type { Block, Email } from "./layout";
 
 /** Values arrive pre-formatted (dates in Manila time, amounts as ₱). */
@@ -412,7 +412,7 @@ export const EMAILS = {
       heading: "You're verified!",
       blocks: [
         { p: `${hi(d)} **${d.businessName}** is now a Verified Business on 13C. Publish your store to start taking bookings.` },
-        { note: `Your ${TRIAL_DAYS}-day free trial has started${d.trialEnds ? ` and runs until **${d.trialEnds}**` : ""}. Try everything in Pro, with up to 10 vehicles.`, tone: "success" },
+        { note: `Your ${TRIAL_DAYS}-day free trial has started${d.trialEnds ? ` and runs until **${d.trialEnds}**` : ""}. Try everything in Pro, with up to ${PLAN_VEHICLE_LIMIT.FREE} vehicles.`, tone: "success" },
       ],
       cta: { label: "Publish your store", url: "/dashboard/store" },
     }),
