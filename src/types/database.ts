@@ -957,6 +957,38 @@ export type Database = {
           },
         ]
       }
+      fleet_reminders: {
+        Row: {
+          due: string
+          item: string
+          sent_at: string
+          stage: string
+          vehicle_id: string
+        }
+        Insert: {
+          due: string
+          item: string
+          sent_at?: string
+          stage: string
+          vehicle_id: string
+        }
+        Update: {
+          due?: string
+          item?: string
+          sent_at?: string
+          stage?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_reminders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gps_devices: {
         Row: {
           business_id: string
@@ -2581,6 +2613,10 @@ export type Database = {
           p_user_agent: string
         }
         Returns: undefined
+      }
+      send_fleet_reminders: {
+        Args: { p_business_id?: string }
+        Returns: number
       }
       send_rental_reminders: { Args: never; Returns: number }
       send_trial_reminders: { Args: never; Returns: number }

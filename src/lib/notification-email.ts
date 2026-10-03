@@ -2,6 +2,7 @@ import "server-only";
 import { PDFDocument } from "pdf-lib";
 import { EMAILS, renderAppEmail, type EmailData, type EmailKey } from "@/emails";
 import type { EmailTemplate } from "@/emails/templates";
+import { dueKm, dueOn } from "@/lib/fleet";
 import { formatDate, formatDateTime, formatPHP, labelize } from "@/lib/format";
 import { emailEnabled, sendEmail } from "@/lib/mailer";
 import { isValidSignatureImage } from "@/lib/signature";
@@ -89,6 +90,19 @@ async function signedPdf(versionId: string | undefined, reference: string | unde
   return undefined; // the email still links to the download
 }
 
+/** Everything due now or soon across the business's cars, overdue first (same rules as the Fleet page). */
+async function addFleetItems(d: EmailData, businessId: string) {
+  const { data } = await createAdminClient().from("vehicle_fleet")
+    .select("registration_expires_on, insurance_expires_on, next_service_on, next_service_km, odometer_km, vehicles!inner(make, model, plate_number, deleted_at)")
+    .eq("business_id", businessId).is("vehicles.deleted_at", null);
+  d.fleetItems = (data ?? []).flatMap((f) => {
+    const car = [f.vehicles.make, f.vehicles.model, f.vehicles.plate_number].filter(Boolean).join(" ");
+    return ([["Registration", dueOn(f.registration_expires_on)], ["Insurance", dueOn(f.insurance_expires_on)],
+      ["Service", dueOn(f.next_service_on)], ["Service", dueKm(f.next_service_km, f.odometer_km)]] as const)
+      .flatMap(([what, due]) => (due?.urgent ? [{ due, row: [`${what} · ${car}`, due.label] as [string, string] }] : []));
+  }).sort((a, b) => Number(b.due.tone === "danger") - Number(a.due.tone === "danger")).map((x) => x.row);
+}
+
 /** Template + data for one notification, ready to send. Null when no email exists for this type. */
 export async function prepareNotificationEmail(n: OutboxRow) {
   const key = templateFor(n.type, n.link);
@@ -133,6 +147,10 @@ export async function prepareNotificationEmail(n: OutboxRow) {
       d.plan = labelize(s.plan);
       if (s.current_period_end) Object.assign(d, { trialEnds: formatDate(s.current_period_end), periodEnd: formatDate(s.current_period_end), daysLeft: daysUntil(s.current_period_end) });
     }
+  }
+  if (n.type === "fleet_due" && n.business_id) {
+    await addFleetItems(d, n.business_id);
+    if (!d.fleetItems?.length) return null; // everything was renewed since the reminder
   }
   if (n.type === "subscription_paid" && n.business_id) {
     const { data: p } = await admin.from("subscription_payments").select("plan, amount_paid_centavos, payment_method, period_end")

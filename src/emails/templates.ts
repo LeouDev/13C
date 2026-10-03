@@ -41,6 +41,8 @@ export type EmailData = {
   accent?: string;
   reason?: string;
   email?: string;
+  /** Fleet items due now or soon: [what · car, "Due in 12 days"] */
+  fleetItems?: [string, string][];
 };
 
 export type Audience = "Renter" | "Business" | "Admin";
@@ -715,6 +717,26 @@ export const EMAILS = {
       blocks: [{ p: `${hi(d)} you were added to **${d.businessName}** as **${d.role}**. Switch businesses from the menu at the top of your dashboard.` }],
       cta: { label: "Open dashboard", url: "/dashboard" },
     }),
+  },
+  fleet_due: {
+    audience: "Business",
+    trigger: "Daily check: a car's registration, insurance or service comes due within 30 days (or 1,000 km), then again once it's due",
+    notificationType: "fleet_due",
+    sample: { ...SAMPLE, fleetItems: [["Registration · Toyota Vios ABC 1234", "Due in 12 days"], ["Insurance · Mitsubishi Xpander NBC 5678", "Overdue by 3 days"], ["Service · Toyota Vios ABC 1234", "Due in 400 km"]] },
+    build: (d) => {
+      const items = d.fleetItems ?? [];
+      return {
+        subject: `Fleet reminder: ${items.length === 1 ? "1 item needs" : `${items.length} items need`} attention`,
+        preheader: items[0] ? `${items[0][0]}: ${items[0][1].toLowerCase()}` : "Papers and servicing for your cars.",
+        heading: "Papers and servicing due",
+        blocks: [
+          { p: `${hi(d)} these cars at **${d.businessName}** need attention:` },
+          { details: items },
+          { p: "Once a car is renewed or serviced, update its Fleet records and the reminder clears." },
+        ],
+        cta: { label: "Open Fleet", url: "/dashboard/fleet" },
+      };
+    },
   },
 
   // ─────────────────────────────── Admins ───────────────────────────────

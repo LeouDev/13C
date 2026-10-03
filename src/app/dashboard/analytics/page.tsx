@@ -6,7 +6,7 @@ import { DailyBars } from "@/components/dashboard/daily-bars";
 import { PageHeader, StatCard } from "@/components/common/states";
 import { BusinessUpsell } from "@/components/dashboard/business-upsell";
 import { buttonVariants } from "@/components/ui/button";
-import { requireBusiness } from "@/lib/auth";
+import { hasRole, requireBusiness } from "@/lib/auth";
 import { BUSINESS_FEATURES } from "@/lib/constants";
 import { formatDate, formatPHP } from "@/lib/format";
 import { businessPlanActive } from "@/lib/plans";
@@ -37,7 +37,7 @@ const pct = (n: number, of: number) => (of ? `${Math.round((n * 100) / of)}%` : 
 const dayCount = (n: number) => `${n} ${Number(n) === 1 ? "day" : "days"}`;
 
 export default async function AnalyticsPage({ searchParams }: PageProps<"/dashboard/analytics">) {
-  const { business } = await requireBusiness();
+  const { business, role } = await requireBusiness();
   const { days = "30" } = (await searchParams) as { days?: string };
   const range = [7, 30, 90].includes(Number(days)) ? Number(days) : 30;
   const supabase = await createClient();
@@ -96,7 +96,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps<"/dashbo
             <h2 id="advanced" className="font-display text-xl font-bold tracking-tight text-navy-900">Advanced analytics</h2>
             {adv && <p className="text-sm text-muted-foreground">Last {range} days, except the monthly charts and repeat renters.</p>}
           </div>
-          {adv && <a href={`/dashboard/analytics/export?days=${range}`} className={buttonVariants({ variant: "outline" })}><Download /> Export bookings (CSV)</a>}
+          {adv && hasRole(role, "MANAGER") && <a href={`/dashboard/analytics/export?days=${range}`} className={buttonVariants({ variant: "outline" })}><Download /> Export bookings (CSV)</a>}
         </div>
         {!adv ? <BusinessUpsell title="Advanced analytics are on the Business plan" points={BUSINESS_FEATURES.analytics} /> : (
           <>

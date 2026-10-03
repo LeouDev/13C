@@ -27,7 +27,7 @@ export default async function SettingsPage() {
         <section className="rounded-3xl border bg-white p-5 sm:p-6">
           <h2 className="font-semibold text-navy-900">Team</h2>
           <p className="mb-4 text-sm text-muted-foreground">Staff handle bookings, messages, calendar and payments. Managers also edit vehicles, store and contracts. Only owners manage team, payments and publishing.</p>
-          <TeamManager businessId={business.id} canManage={isOwner} planAllows={sub?.plan === "BUSINESS"}
+          <TeamManager businessId={business.id} canManage={isOwner} planAllows={businessPlanActive(sub)}
             members={(members ?? []).map((m) => ({ user_id: m.user_id, role: m.role, name: m.profiles?.full_name ?? "", email: m.profiles?.email ?? null }))} />
         </section>
         <section className="rounded-3xl border bg-white p-5 sm:p-6">

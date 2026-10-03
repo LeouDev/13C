@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireBusiness } from "@/lib/auth";
+import { hasRole, requireBusiness } from "@/lib/auth";
 import { toCsv } from "@/lib/csv";
 import { businessPlanActive } from "@/lib/plans";
 import { getSubscription } from "@/lib/queries";
@@ -9,9 +9,10 @@ const manila = (iso: string | null) =>
   iso ? new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
     .format(new Date(iso)).replace(", ", " ") : "";
 
-/** Bookings made in the last N days as CSV (Business plan). RLS limits rows to the caller's business. */
+/** Bookings made in the last N days as CSV (Business plan; owners and managers, since it lists renters' contact details). */
 export async function GET(request: NextRequest) {
-  const { business } = await requireBusiness();
+  const { business, role } = await requireBusiness();
+  if (!hasRole(role, "MANAGER")) return new NextResponse("Only owners and managers can export bookings.", { status: 403 });
   if (!businessPlanActive(await getSubscription(business.id))) {
     return new NextResponse("CSV export is on the Business plan.", { status: 403 });
   }

@@ -121,6 +121,6 @@ export const PICKUP_CHECKLIST = [
 /** What each Business-plan feature includes (upsell copy on the dashboard). */
 export const BUSINESS_FEATURES = {
   analytics: ["Revenue and utilization for each car", "12-month revenue trend", "Returning renters, average rental length and booking value", "Export your bookings to CSV"],
-  fleet: ["Registration, insurance and service due dates for every car", "Odometer and service history", "One Fleet page that flags anything overdue or due within 30 days"],
+  fleet: ["Registration, insurance and service due dates for every car", "Odometer and service history", "One Fleet page that flags anything overdue or due within 30 days", "Reminders to owners and managers by email and in the app"],
   contract: ["Add your own clauses to every rental agreement", "Up to 10 terms, shown as the agreement's last section"],
 };

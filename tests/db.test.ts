@@ -609,4 +609,65 @@ describe("Business plan features (analytics, fleet, contract terms)", () => {
     expect(a.period_days).toBe(90);
     await expectError(outsider.client.rpc("business_analytics_advanced", { p_business_id: businessId, p_days: 30 }), "NOT_AUTHORIZED");
   });
+
+  // A paid month that ran out without renewal: still BUSINESS, but the period has ended.
+  const lapse = async (lapsed: boolean) => must(await service.from("subscriptions")
+    .update({ current_period_end: lapsed ? new Date(Date.now() - 86_400_000).toISOString() : null }).eq("business_id", businessId).select("business_id"));
+
+  it("team members can only be added while the Business plan is paid up", async () => {
+    const add = () => owner.client.rpc("add_business_member", { p_business_id: businessId, p_email: outsider.email, p_role: "STAFF" });
+    await setPlan("PRO");
+    await expectError(add(), "PLAN_STAFF_LIMIT");
+    await setPlan("BUSINESS");
+    must(await add());
+    must(await owner.client.rpc("remove_business_member", { p_business_id: businessId, p_user_id: outsider.id }));
+    await lapse(true);
+    await expectError(add(), "PLAN_STAFF_LIMIT");
+    await lapse(false);
+  });
+
+  it("fleet reminders reach owners and managers once when an item comes due soon, and once more when it's due", async () => {
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date());
+    const inDays = (n: number) => new Date(Date.parse(today) + n * 86_400_000).toISOString().slice(0, 10);
+    // Scoped to the test business: the suite runs against the live project.
+    const run = async () => must(await service.rpc("send_fleet_reminders", { p_business_id: businessId }));
+    const reminders = async (userId: string) => must(await service.from("notifications")
+      .select("id, user_id, business_id, type, title, body, link").eq("user_id", userId).eq("type", "fleet_due").order("created_at"));
+    must(await owner.client.rpc("add_business_member", { p_business_id: businessId, p_email: outsider.email, p_role: "STAFF" }));
+    must(await owner.client.from("vehicle_fleet").upsert({
+      vehicle_id: vehicleId, business_id: businessId, registration_expires_on: inDays(12), insurance_expires_on: inDays(200),
+      next_service_on: null, odometer_km: 49_600, next_service_km: 50_000,
+    }).select("vehicle_id"));
+
+    expect(await run()).toBe(1); // the owner; staff aren't told
+    const due = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(inDays(12)));
+    let rows = await reminders(owner.id);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ title: "2 fleet items need attention", link: "/dashboard/fleet" });
+    expect(rows[0]!.body).toContain(`(due ${due})`);
+    expect(rows[0]!.body).toContain("(due at 50,000 km)");
+    expect(await reminders(outsider.id)).toHaveLength(0);
+    expect(await run()).toBe(0); // nothing new, nothing repeated
+
+    // Past the service mileage: the same item, now due.
+    must(await owner.client.from("vehicle_fleet").update({ odometer_km: 50_100 }).eq("vehicle_id", vehicleId).select("vehicle_id"));
+    expect(await run()).toBe(1);
+    rows = await reminders(owner.id);
+    expect(rows.at(-1)!.title).toBe("1 fleet item needs attention");
+    expect(rows.at(-1)!.body).toMatch(/^Service · .+ \(overdue\)$/);
+
+    // The email lists everything due now, overdue first, in the Fleet page's words.
+    const mail = await prepareNotificationEmail({ ...rows.at(-1)!, email: "someone@13c.test", full_name: "Test Owner", attempts: 1 });
+    expect(mail?.key).toBe("fleet_due");
+    expect(mail!.text).toContain("Due in 12 days");
+    expect(mail!.text.indexOf("Overdue by 100 km")).toBeGreaterThan(-1);
+    expect(mail!.text.indexOf("Overdue by 100 km")).toBeLessThan(mail!.text.indexOf("Due in 12 days"));
+
+    // Nothing once the Business plan has lapsed.
+    must(await owner.client.from("vehicle_fleet").update({ insurance_expires_on: inDays(5) }).eq("vehicle_id", vehicleId).select("vehicle_id"));
+    await lapse(true);
+    expect(await run()).toBe(0);
+    await lapse(false);
+    must(await owner.client.rpc("remove_business_member", { p_business_id: businessId, p_user_id: outsider.id }));
+  });
 });

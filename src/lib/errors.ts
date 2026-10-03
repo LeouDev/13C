@@ -22,7 +22,7 @@ const CODES: Record<string, string> = {
   PLAN_TOO_SMALL: "You have more vehicles than this plan allows. Archive some vehicles first, or choose Business.",
   INVALID_PLAN: "Choose Pro or Business.",
   INVALID_INPUT: "Please check the details and try again.",
-  PLAN_STAFF_LIMIT: "Team members are available on the Business plan.",
+  PLAN_STAFF_LIMIT: "Adding team members needs an active Business plan.",
   PLAN_BUSINESS_REQUIRED: "This is a Business plan feature. Upgrade to Business under Subscription to use it.",
   USER_NOT_FOUND: "No 13C account uses that email. Ask them to sign up first.",
   INVALID_ROLE: "That role can't be assigned.",

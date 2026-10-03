@@ -46,7 +46,7 @@ export function FleetEditor({ businessId, vehicleId, fleet, logs, canEdit }: {
     <div className="grid gap-6">
       <section className="rounded-3xl border bg-white p-5 sm:p-6">
         <h2 className="font-semibold text-navy-900">Papers & service schedule</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Dates within 30 days (or service within 1,000 km) show up on your Fleet page.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Dates within 30 days (or service within 1,000 km) show up on your Fleet page, and owners and managers get a reminder.</p>
         <div className="mt-4 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Field label="Registration (OR/CR) expires" htmlFor="reg" error={errors.registration_expires_on}>
             <Input id="reg" type="date" value={f.registration_expires_on} disabled={!canEdit} onChange={(e) => setF({ ...f, registration_expires_on: e.target.value })} />
