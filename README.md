@@ -106,16 +106,17 @@ Owners see their payment history under **Subscription**. Admins see recent payme
 - App emails go through the notifications outbox; see **Emails** above.
 - Upgrade Resend when volume passes about 100 a day.
 
-**Domain (13c.online)**
-1. Add the domain to the Vercel project.
-2. Set `NEXT_PUBLIC_SITE_URL=https://www.13c.online` (the apex redirects to `www`) and `NEXT_PUBLIC_ROOT_DOMAIN=13c.online`, then redeploy.
-3. In PayMongo, change the webhook URL to `https://www.13c.online/api/webhooks/paymongo`. Use the `www` address, because webhooks don't follow the redirect from the apex.
-4. Update the Vault secret `email_dispatch_url` to `https://www.13c.online/api/email/dispatch`.
-5. Optional, to send as `@13c.online`: add the domain in Resend and its DNS records, then change `EMAIL_FROM` in `src/lib/mailer.ts` and the Supabase SMTP sender.
-6. In `supabase/config.toml`, change `site_url` and the redirect URLs to the new domain, then run `supabase config push`.
-7. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
-
-**Needs your OK:** the contract PDFs print "PHP" instead of "₱". Showing ₱ needs the `@pdf-lib/fontkit` dependency and an embedded font.
+**Domain (13c.online):** live since Oct 4, 2026. It's registered at Cloudflare Registrar, with DNS in Cloudflare: `A @` → `216.198.79.1` and `64.29.17.1`, `CNAME www` → Vercel, all set to "DNS only". The apex 308-redirects to `www`.
+- Done:
+  - Vercel domains.
+  - `NEXT_PUBLIC_SITE_URL=https://www.13c.online` and `NEXT_PUBLIC_ROOT_DOMAIN=13c.online`.
+  - The Vault `email_dispatch_url`.
+  - The Supabase `site_url` and redirect URLs. The old `13-c.vercel.app` URLs stay allowed, so links in emails sent earlier still work.
+- Cloudflare Email Routing forwards `support@`, `privacy@` and `owner@13c.online` to the owner's inbox.
+- To do:
+  1. In PayMongo, change the webhook URL to `https://www.13c.online/api/webhooks/paymongo`. Use the `www` address, because webhooks don't follow the redirect from the apex.
+  2. In Resend, verify `13c.online` (region Tokyo). Then switch the sender to `support@13c.online`: `EMAIL_FROM` in `src/lib/mailer.ts`, the Supabase SMTP sender, and the support address in the site and emails. Use `privacy@13c.online` in the Privacy Policy.
+  3. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
 
 **Also before launch**
 1. Have the contract template (Admin → Settings), Terms and Privacy Policy reviewed by Philippine legal counsel.
