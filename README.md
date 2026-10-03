@@ -116,7 +116,7 @@ Owners see their payment history under **Subscription**. Admins see recent payme
 - Cloudflare Email Routing forwards `support@`, `privacy@` and `owner@13c.online` to the owner's inbox.
 - To do:
   1. Done: the PayMongo test-mode webhook points to `https://www.13c.online/api/webhooks/paymongo` (verified with a 200), and its secret is `PAYMONGO_WEBHOOK_SECRET`. A live-mode webhook to the same URL is ready.
-  2. When going live: in Vercel, set `PAYMONGO_SECRET_KEY` (`sk_live_…`) and `PAYMONGO_WEBHOOK_SECRET` (the live webhook's secret), redeploy, and confirm with one small real payment.
+  2. Done (Oct 4, 2026): live keys are set in Vercel (`PAYMONGO_SECRET_KEY` = `sk_live_…`, `PAYMONGO_WEBHOOK_SECRET` = the live webhook's secret) and live checkout opens. The live webhook is confirmed by the first real payment: its `POST /api/webhooks/paymongo` should log 200. Returning from checkout also settles a paid session, so a webhook problem shows as a 401 in the logs rather than a missing plan.
   3. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
 
 **Also before launch**
