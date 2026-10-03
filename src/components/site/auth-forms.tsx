@@ -94,8 +94,8 @@ export function SignUpForm({ next }: { next?: string }) {
       <label className="flex items-start gap-2.5 text-sm text-muted-foreground">
         <Checkbox name="terms" value="on" className="mt-0.5" aria-invalid={!!fe?.terms} />
         <span>
-          I agree to the <Link href="/terms" className="font-medium text-electric hover:underline" target="_blank">Terms of Service</Link> and consent to the processing of my personal data under the{" "}
-          <Link href="/privacy" className="font-medium text-electric hover:underline" target="_blank">Privacy Policy</Link>.
+          I agree to the <Link prefetch={false} href="/terms" className="font-medium text-electric hover:underline" target="_blank">Terms of Service</Link> and consent to the processing of my personal data under the{" "}
+          <Link prefetch={false} href="/privacy" className="font-medium text-electric hover:underline" target="_blank">Privacy Policy</Link>.
         </span>
       </label>
       {fe?.terms && <p className="-mt-2 text-xs font-medium text-destructive">{fe.terms}</p>}

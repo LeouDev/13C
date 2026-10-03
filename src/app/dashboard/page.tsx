@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/hover-prefetch-link";
 import { ArrowRight, Car, CheckCircle2, Circle, ClipboardList, Eye, KeyRound, MessageSquare, TrendingUp, Undo2, Wallet } from "lucide-react";
 import { BookingStatusBadge } from "@/components/common/badges";
 import { EmptyState, PageHeader, StatCard } from "@/components/common/states";
@@ -52,17 +52,17 @@ export default async function DashboardHome() {
           <ul className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {onboarding.steps.map((s) => (
               <li key={s.key}>
-                <Link href={s.href} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-canvas">
+                <HoverPrefetchLink href={s.href} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-canvas">
                   {s.done ? <CheckCircle2 className="size-5 text-emerald-600" /> : <Circle className="size-5 text-slate-300" />}
                   <span className={s.done ? "text-muted-foreground line-through decoration-slate-300" : "font-medium text-navy-900"}>{s.label}</span>
                   {s.optional && !s.done && <span className="text-xs text-muted-foreground">(optional)</span>}
-                </Link>
+                </HoverPrefetchLink>
               </li>
             ))}
           </ul>
-          <Link href={onboarding.steps.find((s) => !s.done && !s.optional)?.href ?? "/dashboard/store"} className={buttonVariants({ size: "lg", className: "mt-4" })}>
+          <HoverPrefetchLink href={onboarding.steps.find((s) => !s.done && !s.optional)?.href ?? "/dashboard/store"} className={buttonVariants({ size: "lg", className: "mt-4" })}>
             Complete Store <ArrowRight />
-          </Link>
+          </HoverPrefetchLink>
         </section>
       )}
 
@@ -75,11 +75,11 @@ export default async function DashboardHome() {
             { label: "Pending requests", value: pending.data?.length ?? 0, icon: ClipboardList, href: "/dashboard/bookings?status=pending" },
             { label: "Unread messages", value: unreadCount, icon: MessageSquare, href: "/dashboard/messages" },
           ].map((x) => (
-            <Link key={x.label} href={x.href} className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 transition hover:bg-white/10">
+            <HoverPrefetchLink key={x.label} href={x.href} className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/10 transition hover:bg-white/10">
               <x.icon className="size-5 text-cyan" />
               <p className="mt-3 font-display text-3xl font-bold">{x.value}</p>
               <p className="text-sm text-white/70">{x.label}</p>
-            </Link>
+            </HoverPrefetchLink>
           ))}
         </div>
       </section>
@@ -110,13 +110,13 @@ function BookingList({ title, rows, empty }: { title: string; rows: Row[]; empty
     <section className="rounded-3xl border bg-white p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-semibold text-navy-900">{title}</h2>
-        <Link href="/dashboard/bookings" className="text-xs font-semibold text-electric hover:underline">View all</Link>
+        <HoverPrefetchLink href="/dashboard/bookings" className="text-xs font-semibold text-electric hover:underline">View all</HoverPrefetchLink>
       </div>
       {rows.length === 0 ? <EmptyState title={empty} className="border-0 py-8" /> : (
         <ul className="divide-y">
           {rows.map((b) => (
             <li key={b.id}>
-              <Link href={`/dashboard/bookings/${b.id}`} className="flex items-center gap-3 py-3 hover:bg-canvas/60">
+              <HoverPrefetchLink href={`/dashboard/bookings/${b.id}`} className="flex items-center gap-3 py-3 hover:bg-canvas/60">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-navy-900">{b.vehicles?.make} {b.vehicles?.model} · {b.renter?.full_name}</p>
                   <p className="text-xs text-muted-foreground">{formatRange(b.pickup_at, b.return_at)} · pickup {formatDateTime(b.pickup_at)}</p>
@@ -125,7 +125,7 @@ function BookingList({ title, rows, empty }: { title: string; rows: Row[]; empty
                   <BookingStatusBadge status={b.status} />
                   <p className="mt-1 text-xs font-semibold">{formatPHP(b.total_amount)}</p>
                 </div>
-              </Link>
+              </HoverPrefetchLink>
             </li>
           ))}
         </ul>

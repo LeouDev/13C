@@ -45,7 +45,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
         <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-white/90 px-3 backdrop-blur sm:px-6">
           <DashboardMobileNav badges={badges} header={switcher} />
           <Link href="/" className="lg:hidden" aria-label="13C home"><Logo className="h-6" /></Link>
-          <Link href={`/${business.slug}`} target="_blank" className="ml-auto hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-navy-800 hover:bg-canvas sm:flex">
+          <Link prefetch={false} href={`/${business.slug}`} target="_blank" className="ml-auto hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-navy-800 hover:bg-canvas sm:flex">
             {storeDisplayUrl(business.slug)} <ExternalLink className="size-3.5" />
           </Link>
           <div className="ml-auto sm:ml-0"><NotificationBell userId={user.id} initialUnread={notes.count ?? 0} /></div>

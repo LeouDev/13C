@@ -33,12 +33,11 @@ export async function generateMetadata({ params }: PageProps<"/[business]/[vehic
   const v = d.vehicle;
   const title = `${v.year} ${v.make} ${v.model} for rent in ${v.city} — ${formatPHP(v.vehicle_pricing?.daily_rate)}/day · ${d.business.name}`;
   const description = `Rent a ${v.make} ${v.model} (${labelize(v.transmission)}, ${v.seats} seats) from ${d.business.name} in ${v.city}, Cebu. ${v.description?.slice(0, 120) ?? ""}`.trim();
-  const image = mediaUrl(v.vehicle_images[0]?.storage_path);
   return {
     title: { absolute: title },
     description,
     alternates: { canonical: `/${d.business.slug}/${v.slug}` },
-    openGraph: { title, description, images: image ? [image] : undefined, url: `/${d.business.slug}/${v.slug}` },
+    openGraph: { title, description, url: `/${d.business.slug}/${v.slug}` }, // image: ./opengraph-image.tsx
     robots: d.business.status === "VERIFIED" && d.store.is_published && v.status === "ACTIVE" ? undefined : { index: false },
   };
 }

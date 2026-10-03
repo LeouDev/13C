@@ -46,7 +46,7 @@ export function StoreWorkspace({
             <p className="mt-2 font-display text-2xl font-bold break-all sm:text-3xl">{display}</p>
             <p className="mt-1 text-xs text-white/60">Coming soon: <span className="font-mono">{business.slug}.{ROOT_DOMAIN}</span> and your own custom domain.</p>
             <div className="mt-5 flex flex-wrap gap-2">
-              <Link href={`/${business.slug}`} target="_blank" className={buttonVariants({ variant: "light", size: "lg" })}><ExternalLink /> View Store</Link>
+              <Link prefetch={false} href={`/${business.slug}`} target="_blank" className={buttonVariants({ variant: "light", size: "lg" })}><ExternalLink /> View Store</Link>
               <a href="#customize" className={buttonVariants({ variant: "electric", size: "lg" })}>Customize</a>
               <Button size="lg" variant="outline" className="border-white/20 bg-white/5 text-white hover:bg-white/15 hover:text-white"
                 onClick={() => navigator.clipboard.writeText(url).then(() => toast.success("Store link copied"))}>

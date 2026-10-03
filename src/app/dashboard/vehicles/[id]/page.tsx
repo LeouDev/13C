@@ -38,7 +38,7 @@ export default async function VehiclePage({ params, searchParams }: PageProps<"/
         description={isNew ? "Vehicle added! Now add photos so customers can see it." : vehicle.variant ?? undefined}
         actions={<>
           <Pill tone={VEHICLE_STATUS_TONE[vehicle.status]}>{labelize(vehicle.status)}</Pill>
-          <Link href={`/${business.slug}/${vehicle.slug}`} target="_blank" className="inline-flex items-center gap-1 text-sm font-semibold text-electric hover:underline">View on store <ExternalLink className="size-3.5" /></Link>
+          <Link prefetch={false} href={`/${business.slug}/${vehicle.slug}`} target="_blank" className="inline-flex items-center gap-1 text-sm font-semibold text-electric hover:underline">View on store <ExternalLink className="size-3.5" /></Link>
         </>} />
       <nav className="mb-5 flex gap-1 overflow-x-auto rounded-full bg-white p-1 ring-1 ring-border sm:w-fit" aria-label="Vehicle sections">
         {TABS.map(([key, label]) => (

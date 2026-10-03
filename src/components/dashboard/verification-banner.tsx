@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { HoverPrefetchLink } from "@/components/common/hover-prefetch-link";
 import { AlertTriangle, BadgeCheck, Clock, ShieldAlert } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import type { Tables } from "@/types/database";
@@ -22,7 +22,7 @@ export function VerificationBanner({ business }: { business: Tables<"businesses"
         <p className="font-semibold">{map.title}</p>
         <p className="text-sm opacity-80">{map.body}</p>
       </div>
-      {map.cta && <Link href={map.cta.href} className={buttonVariants({ size: "lg" })}>{map.cta.label}</Link>}
+      {map.cta && <HoverPrefetchLink href={map.cta.href} className={buttonVariants({ size: "lg" })}>{map.cta.label}</HoverPrefetchLink>}
     </div>
   );
 }

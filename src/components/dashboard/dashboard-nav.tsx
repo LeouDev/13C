@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3, Building2, CalendarDays, Car, ClipboardList, CreditCard, FileSignature, Gem, Inbox,
   LayoutDashboard, MessageSquare, Settings, Star, Store, Users, Wrench,
 } from "lucide-react";
 import { cn } from "cn";
+import { HoverPrefetchLink } from "@/components/common/hover-prefetch-link";
 
 export const DASHBOARD_NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -35,7 +35,7 @@ export function DashboardNav({ badges, onNavigate }: { badges: { requests: numbe
         const active = item.href === "/dashboard" ? pathname === item.href : pathname.startsWith(item.href);
         const count = "badge" in item ? badges[item.badge] : 0;
         return (
-          <Link key={item.href} href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined}
+          <HoverPrefetchLink key={item.href} href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined}
             className={cn("flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition",
               active ? "bg-navy-900 text-white" : "text-navy-800 hover:bg-canvas")}>
             <item.icon className={cn("size-[18px]", active ? "text-cyan" : "text-navy-700/70")} />
@@ -43,7 +43,7 @@ export function DashboardNav({ badges, onNavigate }: { badges: { requests: numbe
             {count > 0 && (
               <span className={cn("ml-auto rounded-full px-1.5 text-[11px] font-bold leading-5", active ? "bg-white/15" : "bg-brand-red text-white")}>{count}</span>
             )}
-          </Link>
+          </HoverPrefetchLink>
         );
       })}
     </nav>

@@ -24,13 +24,12 @@ export async function generateMetadata({ params }: PageProps<"/[business]">): Pr
   const { business, store } = sf;
   const title = `${business.name} — Car Rental in ${business.city}`;
   const description = store.tagline || business.description || `Rent cars from ${business.name} in ${business.city}, Cebu. Book online on 13C.`;
-  const image = mediaUrl(store.cover_path) ?? mediaUrl(business.logo_path);
   const isPublic = business.status === "VERIFIED" && store.is_published;
   return {
     title: { absolute: title },
     description,
     alternates: { canonical: `/${business.slug}` },
-    openGraph: { title, description, url: `/${business.slug}`, images: image ? [image] : undefined, type: "website" },
+    openGraph: { title, description, url: `/${business.slug}`, type: "website" }, // image: ./opengraph-image.tsx
     robots: isPublic ? undefined : { index: false, follow: false },
   };
 }

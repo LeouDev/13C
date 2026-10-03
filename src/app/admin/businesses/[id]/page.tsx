@@ -21,7 +21,7 @@ export default async function AdminBusinessPage({ params }: PageProps<"/admin/bu
   const { data: audit } = await supabase.from("audit_logs").select("action, created_at, metadata").eq("business_id", id).order("created_at", { ascending: false }).limit(15);
 
   const info: [string, React.ReactNode][] = [
-    ["Store link", <Link key="l" href={`/${b.slug}`} target="_blank" className="inline-flex items-center gap-1 text-electric hover:underline">/{b.slug} <ExternalLink className="size-3" /></Link>],
+    ["Store link", <Link prefetch={false} key="l" href={`/${b.slug}`} target="_blank" className="inline-flex items-center gap-1 text-electric hover:underline">/{b.slug} <ExternalLink className="size-3" /></Link>],
     ["Address", [b.address, b.city, b.province].filter(Boolean).join(", ")],
     ["Phone / email", `${b.phone ?? "—"} · ${b.email ?? "—"}`],
     ["Representative", [b.representative_name, b.representative_title].filter(Boolean).join(", ") || "—"],

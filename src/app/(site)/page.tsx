@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, BarChart3, CalendarRange, Car, FileSignature, KeyRound, MessageCircle, Search, ShieldCheck, Store, Users } from "lucide-react";
 import { LogoBadge } from "@/components/brand/logo";
@@ -8,6 +9,8 @@ import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { buttonVariants } from "@/components/ui/button";
 import { LOCATIONS, PLAN_VEHICLE_LIMIT, TRIAL_DAYS } from "@/lib/constants";
 import { getCategories, getFeaturedBusinesses, searchVehicles } from "@/lib/queries";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 const STEPS = [
   { icon: Search, title: "Find a car", body: "Search verified local businesses by place, dates and type." },

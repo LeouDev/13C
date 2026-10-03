@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { RESERVED_SLUGS } from "@/lib/constants";
 
+// No eval-compiled parsers: Zod would otherwise probe `Function("")`, which the Content-Security-Policy
+// reports (and will block once enforced). These forms are small, so the faster path doesn't matter.
+z.config({ jitless: true });
+
 const optionalText = (max: number) =>
   z.string().trim().max(max).optional().transform((v) => (v ? v : null));
 
