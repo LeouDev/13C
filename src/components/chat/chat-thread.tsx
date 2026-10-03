@@ -71,7 +71,9 @@ export function ChatThread({
               {m.sender_role === "SYSTEM" ? (
                 <div className="mx-auto max-w-md rounded-2xl bg-electric/5 px-4 py-2.5 text-center text-xs text-navy-800">
                   {m.body}
-                  {m.booking_id && <Link href={`${bookingBase}${m.booking_id}`} className="mt-1 block font-semibold text-electric hover:underline">View booking →</Link>}
+                  {m.booking_id && (viewer === "CUSTOMER" && m.body.startsWith("Booking proposal")
+                    ? <Link href={`${bookingBase}${m.booking_id}`} className="mx-auto mt-2 flex w-fit rounded-full bg-electric px-4 py-1.5 font-semibold text-white hover:bg-electric/90">Review &amp; accept</Link>
+                    : <Link href={`${bookingBase}${m.booking_id}`} className="mt-1 block font-semibold text-electric hover:underline">View booking →</Link>)}
                 </div>
               ) : (
                 <div className={cn("flex", mine ? "justify-end" : "justify-start")}>

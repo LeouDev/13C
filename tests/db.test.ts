@@ -304,6 +304,23 @@ describe("messaging", () => {
   });
 });
 
+describe("booking proposals in chat", () => {
+  it("the proposal is a system message with the booking attached, not the business's own message", async () => {
+    const convId = must(await renter2.client.rpc("start_conversation", { p_business_id: businessId, p_vehicle_id: vehicleId, p_body: "Can I book it for a day?" }));
+    const before = must(await renter2.client.from("notifications").select("id").eq("user_id", renter2.id).eq("type", "message")).length;
+    const bookingId = must(await owner.client.rpc("propose_booking", {
+      p_conversation_id: convId, p_vehicle_id: vehicleId, p_pickup_at: day(60), p_return_at: day(61), p_pickup_location: "Cebu City", p_return_location: "Cebu City",
+    }));
+    const msgs = must(await renter2.client.from("messages").select("sender_role, sender_id, booking_id, body").eq("conversation_id", convId).order("created_at"));
+    const proposal = msgs.find((m) => m.booking_id === bookingId)!;
+    expect(proposal).toMatchObject({ sender_role: "SYSTEM", sender_id: null });
+    expect(proposal.body).toMatch(/^Booking proposal /);
+    // The renter hears about it once (booking_proposal), not again as a chat message.
+    expect(must(await renter2.client.from("notifications").select("id").eq("user_id", renter2.id).eq("type", "message")).length).toBe(before);
+    must(await owner.client.rpc("transition_booking", { p_booking_id: bookingId, p_to: "CANCELLED" }));
+  });
+});
+
 describe("rental completion & reviews", () => {
   it("only completed rentals can be reviewed, once", async () => {
     // fresh booking through the full path
