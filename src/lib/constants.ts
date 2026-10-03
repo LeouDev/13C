@@ -1,6 +1,9 @@
 import type { Enums } from "@/types/database";
 
-export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+/** Explicit in production; Vercel previews fall back to their own deployment URL. */
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "http://localhost:3000");
 export const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "13c.ph";
 /** How a storefront URL is displayed to owners (13c.ph/<slug>). */
 export const storeDisplayUrl = (slug: string) => `${ROOT_DOMAIN}/${slug}`;
