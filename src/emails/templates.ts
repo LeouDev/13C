@@ -28,6 +28,8 @@ export type EmailData = {
   daysLeft?: number;
   periodEnd?: string;
   amount?: string;
+  /** Absolute URL of the rental business's logo (PNG/JPEG) for the email header */
+  logo?: string;
   plan?: string;
   role?: string;
   version?: number;
@@ -49,6 +51,8 @@ export type EmailTemplate = {
 
 const renterBooking = (d: EmailData) => `/account/bookings/${d.bookingId}`;
 const businessBooking = (d: EmailData) => `/dashboard/bookings/${d.bookingId}`;
+/** Business-branded header for emails about a booking with that business. */
+const brand = (d: EmailData) => (d.businessName ? { name: d.businessName, logo: d.logo } : undefined);
 const hi = (d: EmailData) => (d.name ? `Hi ${d.name.split(" ")[0]},` : "Hi,");
 const provider = (d: EmailData) =>
   `${d.businessName} is the rental provider for this booking. 13C is the technology platform and doesn't process payments.`;
@@ -121,6 +125,7 @@ export const EMAILS = {
       ],
       cta: { label: "View booking", url: renterBooking(d) },
       accent: d.accent,
+      brand: brand(d),
       disclaimer: provider(d),
     }),
   },
@@ -139,6 +144,7 @@ export const EMAILS = {
       ],
       cta: { label: "Review proposal", url: renterBooking(d) },
       accent: d.accent,
+      brand: brand(d),
       disclaimer: provider(d),
     }),
   },
@@ -157,6 +163,7 @@ export const EMAILS = {
       ],
       cta: { label: "View booking", url: renterBooking(d) },
       accent: d.accent,
+      brand: brand(d),
       disclaimer: provider(d),
     }),
   },
@@ -176,6 +183,7 @@ export const EMAILS = {
       ],
       cta: { label: "Review & sign", url: `${renterBooking(d)}/contract` },
       accent: d.accent,
+      brand: brand(d),
       disclaimer: provider(d),
     }),
   },
@@ -195,6 +203,7 @@ export const EMAILS = {
       ],
       cta: { label: "View booking", url: renterBooking(d) },
       accent: d.accent,
+      brand: brand(d),
       disclaimer: provider(d),
     }),
   },
@@ -216,6 +225,7 @@ export const EMAILS = {
       cta: { label: "Download signed agreement", url: `/api/contracts/${d.versionId}/pdf` },
       secondary: { label: "View booking", url: renterBooking(d) },
       accent: d.accent,
+      brand: brand(d),
       disclaimer: provider(d),
     }),
   },
@@ -284,6 +294,7 @@ export const EMAILS = {
       ],
       cta: { label: "View booking", url: renterBooking(d) },
       accent: d.accent,
+      brand: brand(d),
       disclaimer: provider(d),
     }),
   },
@@ -302,6 +313,7 @@ export const EMAILS = {
       ],
       cta: { label: "Message the business", url: d.conversationId ? `/account/messages/${d.conversationId}` : renterBooking(d) },
       accent: d.accent,
+      brand: brand(d),
       disclaimer: provider(d),
     }),
   },
@@ -320,6 +332,7 @@ export const EMAILS = {
       ],
       cta: { label: "Leave a review", url: renterBooking(d) },
       accent: d.accent,
+      brand: brand(d),
     }),
   },
   message_to_customer: {
@@ -336,6 +349,7 @@ export const EMAILS = {
       ],
       cta: { label: "Reply", url: `/account/messages/${d.conversationId}` },
       accent: d.accent,
+      brand: brand(d),
     }),
   },
   deletion_received: {

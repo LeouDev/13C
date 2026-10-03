@@ -3,6 +3,7 @@ import { EMAILS, renderAppEmail, type EmailData, type EmailKey } from "@/emails"
 import type { EmailTemplate } from "@/emails/templates";
 import { formatDate, formatDateTime, formatPHP, labelize } from "@/lib/format";
 import { emailEnabled, sendEmail } from "@/lib/mailer";
+import { mediaUrl } from "@/lib/storage";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /** A notifications row as returned by claim_notification_emails(). */
@@ -92,10 +93,12 @@ export async function prepareNotificationEmail(n: OutboxRow) {
   const d: EmailData = { name: n.full_name ?? undefined };
 
   if (n.business_id) {
-    const { data: biz } = await admin.from("businesses").select("name, business_storefronts(accent_color)").eq("id", n.business_id).maybeSingle();
+    const { data: biz } = await admin.from("businesses").select("name, logo_path, business_storefronts(accent_color)").eq("id", n.business_id).maybeSingle();
     d.businessId = n.business_id;
     d.businessName = biz?.name;
     d.accent = biz?.business_storefronts?.accent_color ?? undefined;
+    // Email clients handle PNG/JPEG everywhere; older WebP logos fall back to the name alone.
+    if (biz?.logo_path && /\.(png|jpe?g)$/i.test(biz.logo_path)) d.logo = mediaUrl(biz.logo_path) ?? undefined;
   }
   const bookingId = n.link?.match(BOOKING)?.[1];
   if (bookingId) await addBooking(d, bookingId);

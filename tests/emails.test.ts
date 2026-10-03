@@ -29,6 +29,17 @@ describe("app emails", () => {
     expect(text).toContain(evil); // plain text isn't HTML
   });
 
+  it("emails about a booking lead with the rental business's logo and name", () => {
+    const logo = "https://example.supabase.co/storage/v1/object/public/media/b/x/logo.png";
+    const branded = renderAppEmail("booking_confirmed", { ...EMAILS.booking_confirmed.sample, logo }, BASE).html;
+    expect(branded).toContain(`src="${logo}"`);
+    expect(branded).toContain(EMAILS.booking_confirmed.sample.businessName!);
+    expect(branded).toContain('width="64" height="29" alt="13C"'); // 13C moves to the corner
+    const toBusiness = renderAppEmail("contract_signed", EMAILS.contract_signed.sample, BASE).html;
+    expect(toBusiness).toContain('width="96" height="43" alt="13C"');
+    expect(toBusiness).not.toContain(logo);
+  });
+
   it("only accepts hex accent colors", () => {
     const { html } = renderAppEmail("contract_sent", { ...EMAILS.contract_sent.sample, accent: "red;background:url(x)" }, BASE);
     expect(html).not.toContain("url(x)");

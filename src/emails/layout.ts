@@ -24,6 +24,8 @@ export type Email = {
   secondary?: { label: string; url: string };
   /** CTA color — e.g. the rental business's storefront accent */
   accent?: string;
+  /** The rental business this email is about: its logo and name lead the header, 13C shrinks to the corner */
+  brand?: { name: string; logo?: string };
   footer?: "account" | "auth" | "admin";
   /** e.g. who the rental provider is */
   disclaimer?: string;
@@ -35,6 +37,21 @@ const TEXT = "#334155";
 const MUTED = "#64748b";
 const RULE = "#e3e7ee";
 const ELECTRIC = "#2f6bff";
+
+const logo13c = (base: string, w: number, h: number) =>
+  `<a href="${esc(base)}" target="_blank"><img src="${esc(base)}/assets/email-logo.png" width="${w}" height="${h}" alt="13C" style="display:block;width:${w}px;height:${h}px;"></a>`;
+
+/** 13C logo, or — for emails about a rental business — that business's logo and name with a small 13C mark. */
+function headerHtml(e: Email, base: string) {
+  if (!e.brand) return logo13c(base, 96, 43);
+  const logo = e.brand.logo
+    ? `<td style="padding-right:12px;vertical-align:middle;"><img src="${esc(e.brand.logo)}" width="44" height="44" alt="${esc(e.brand.name)}" style="display:block;width:44px;height:44px;border-radius:10px;background:#ffffff;"></td>`
+    : "";
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="vertical-align:middle;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>${logo}<td style="vertical-align:middle;font:700 17px/1.25 ${FONT};color:#ffffff;">${esc(e.brand.name)}</td></tr></table></td>
+<td align="right" style="vertical-align:middle;width:64px;">${logo13c(base, 64, 29)}</td>
+</tr></table>`;
+}
 
 const TONES: Record<Tone, [bg: string, fg: string]> = {
   info: ["#eef4ff", "#1e3a8a"],
@@ -139,7 +156,7 @@ img{border:0;outline:none;text-decoration:none;}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="bg" style="background:#eef0f4;">
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
-<tr><td class="px" bgcolor="${NAVY}" style="background:${NAVY};border-radius:16px 16px 0 0;padding:20px 32px;"><a href="${esc(base)}" target="_blank"><img src="${esc(base)}/assets/email-logo.png" width="96" height="43" alt="13C" style="display:block;width:96px;height:43px;"></a></td></tr>
+<tr><td class="px" bgcolor="${NAVY}" style="background:${NAVY};border-radius:16px 16px 0 0;padding:20px 32px;">${headerHtml(e, base)}</td></tr>
 <tr><td bgcolor="#e0312b" style="background:#e0312b;height:4px;line-height:4px;font-size:0;">&nbsp;</td></tr>
 <tr><td class="card px" bgcolor="#ffffff" style="background:#ffffff;padding:32px;border-radius:0 0 16px 16px;">
 <h1 class="h1" style="margin:0 0 16px;font:700 24px/1.25 ${FONT};color:${NAVY};">${esc(e.heading)}</h1>
