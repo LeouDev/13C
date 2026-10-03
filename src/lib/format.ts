@@ -65,3 +65,22 @@ export const initials = (name: string | null | undefined) =>
 
 /** ISO timestamp `days` from now (server render helper). */
 export const isoDaysFromNow = (days: number) => new Date(Date.now() + days * 86400000).toISOString();
+
+/**
+ * A readable summary of a recorded user agent for the signature certificate, e.g. "Chrome 129 on Windows" or
+ * "Safari on iPhone (iOS 18)". The full string stays the evidence; this is only a label.
+ */
+export function browserLabel(ua: string | null | undefined) {
+  if (!ua) return null;
+  const browsers: [RegExp, string][] = [[/Edg(?:A|iOS)?\/(\d+)/, "Edge"], [/OPR\/(\d+)/, "Opera"], [/SamsungBrowser\/(\d+)/, "Samsung Internet"],
+    [/(?:Firefox|FxiOS)\/(\d+)/, "Firefox"], [/(?:CriOS|Chrome)\/(\d+)/, "Chrome"], [/Safari\//, "Safari"]];
+  const hit = browsers.find(([re]) => re.test(ua));
+  const ios = ua.match(/(iPhone|iPad).*? OS (\d+)_/);
+  const android = ua.match(/Android (\d+)/);
+  const os = ios ? `${ios[1]} (${ios[1] === "iPad" ? "iPadOS" : "iOS"} ${ios[2]})` : android ? `Android ${android[1]}`
+    : /Windows/.test(ua) ? "Windows" : /CrOS/.test(ua) ? "ChromeOS" : /Mac OS X/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : null;
+  if (!hit && !os) return ua.length > 60 ? `${ua.slice(0, 59)}…` : ua; // not a browser we recognise: show what was recorded
+  const version = hit && hit[1] !== "Safari" ? ua.match(hit[0])?.[1] : undefined;
+  const name = hit ? `${hit[1]}${version ? ` ${version}` : ""}` : "Browser";
+  return os ? `${name} on ${os}` : name;
+}

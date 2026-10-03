@@ -9,7 +9,7 @@ import { EMAILS } from "@/emails";
 import { PLAN_PRICE_CENTAVOS, PLANS } from "@/lib/constants";
 import { renderContractPdf, toWinAnsi, type ContractPdfInput } from "@/lib/contracts/pdf";
 import { friendlyError } from "@/lib/errors";
-import { formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
+import { browserLabel, formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
 import { storeSections, type Storefront } from "@/lib/queries";
 import { groupFingerprint, isValidSignatureImage } from "@/lib/signature";
@@ -130,6 +130,19 @@ describe("notification → email template", () => {
       const link = t.audience === "Admin" ? "/admin/x" : t.audience === "Business" ? "/dashboard/x" : "/account/x";
       expect(templateFor(nt!, link), key).toBe(key);
     }
+  });
+});
+
+describe("browser labels (signature certificate)", () => {
+  it("summarises recorded user agents without inventing detail", () => {
+    expect(browserLabel("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36")).toBe("Chrome 129 on Windows");
+    expect(browserLabel("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1")).toBe("Safari on iPhone (iOS 18)");
+    expect(browserLabel("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/128.0.6613.98 Mobile/15E148 Safari/604.1")).toBe("Chrome 128 on iPhone (iOS 17)");
+    expect(browserLabel("Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/25.0 Chrome/121.0.0.0 Mobile Safari/537.36")).toBe("Samsung Internet 25 on Android 14");
+    expect(browserLabel("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0")).toBe("Edge 129 on macOS");
+    expect(browserLabel("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:131.0) Gecko/20100101 Firefox/131.0")).toBe("Firefox 131 on macOS");
+    expect(browserLabel("vitest")).toBe("vitest");
+    expect(browserLabel(null)).toBeNull();
   });
 });
 
