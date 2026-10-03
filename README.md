@@ -62,7 +62,7 @@ tests/                 unit, db (RLS/integrity), e2e-flow (spec §62)
 
 ## Emails
 
-All 45 emails share one branded layout (`src/emails/`): 8 Supabase Auth/security emails and 37 app emails for renters, businesses and admins, each with HTML + plain text. Preview them at **Admin → Emails** (`/admin/emails`).
+All 44 emails share one branded layout (`src/emails/`): 8 Supabase Auth/security emails and 36 app emails (15 renter, 18 business, 3 admin) for renters, businesses and admins, each with HTML + plain text. Preview them at **Admin → Emails** (`/admin/emails`).
 
 - **Auth emails** (confirm sign-up, reset password, change email, magic link, invite, re-auth, password/email changed) render to `supabase/templates/*.html` via `npm run emails:build`. Supabase only accepts custom templates once **custom SMTP** is configured: then uncomment the template block in `supabase/config.toml` and run `supabase config push`.
 - **App emails** render with `renderAppEmail(key, data)` → `{ subject, html, text }` for any provider. They map to the in-app notification types and go out once an email provider is connected.
