@@ -173,7 +173,7 @@ export default async function VehiclePage({ params, searchParams }: PageProps<"/
           </div>
 
           <aside className="grid content-start gap-4 lg:sticky lg:top-20 lg:self-start">
-            <div id="book" className="scroll-mt-24">
+            <div id="book" className="scroll-mt-32 lg:scroll-mt-24">
               {bookable && p ? (
                 <BookingWidget vehicleId={v.id} bookHref={`/${business.slug}/${v.slug}/book`} dailyRate={Number(p.daily_rate)}
                   selfDrive={v.self_drive} withDriver={v.with_driver} delivery={v.delivery_available} initialFrom={sp.from} initialTo={sp.to} />

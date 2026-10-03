@@ -106,13 +106,13 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
       </section>
 
       {/* Fleet */}
-      <section id="fleet" className="container-page scroll-mt-20 pt-12">
+      <section id="fleet" className="container-page scroll-mt-30 lg:scroll-mt-20 pt-12">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="eyebrow text-[var(--store-accent)]">Our fleet</p>
             <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-navy-900 sm:text-3xl">{dated ? `Available ${formatDate(sp.from!, { month: "short", day: "numeric" })} – ${formatDate(sp.to!, { month: "short", day: "numeric" })}` : "Choose your car"}</h2>
           </div>
-          <form id="availability" className="flex scroll-mt-24 flex-wrap items-end gap-2 rounded-2xl bg-white p-2 ring-1 ring-black/5">
+          <form id="availability" className="flex scroll-mt-32 lg:scroll-mt-24 flex-wrap items-end gap-2 rounded-2xl bg-white p-2 ring-1 ring-black/5">
             <label className="grid gap-0.5 px-2 text-[11px] font-semibold text-muted-foreground uppercase">Pickup<input type="date" name="from" min={todayManila()} defaultValue={sp.from} required className="text-sm font-semibold text-navy-900 normal-case outline-none" /></label>
             <label className="grid gap-0.5 px-2 text-[11px] font-semibold text-muted-foreground uppercase">Return<input type="date" name="to" min={todayManila(1)} defaultValue={sp.to} required className="text-sm font-semibold text-navy-900 normal-case outline-none" /></label>
             <button className="h-10 rounded-xl px-4 text-sm font-semibold text-white" style={{ background: "var(--store-accent)" }}>Check</button>
@@ -130,7 +130,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
 
       <div className="container-page mt-14 grid gap-6 lg:grid-cols-2">
         {show.has("about") && (
-          <section id="about" className="scroll-mt-20 rounded-3xl bg-white p-6 sm:p-8 lg:col-span-2">
+          <section id="about" className="scroll-mt-30 lg:scroll-mt-20 rounded-3xl bg-white p-6 sm:p-8 lg:col-span-2">
             <p className="eyebrow text-[var(--store-accent)]">About us</p>
             <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-navy-900">Meet {business.name}</h2>
             <p className="mt-4 max-w-3xl leading-relaxed whitespace-pre-line text-navy-800">{store.about}</p>
@@ -154,7 +154,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
         )}
 
         {show.has("policies") && (
-          <section id="policies" className="scroll-mt-20 rounded-3xl bg-white p-6 sm:p-8">
+          <section id="policies" className="scroll-mt-30 lg:scroll-mt-20 rounded-3xl bg-white p-6 sm:p-8">
             <p className="eyebrow text-[var(--store-accent)]">Rental policies</p>
             <h2 className="mt-1 text-xl font-extrabold tracking-tight text-navy-900">Good to know</h2>
             <dl className="mt-4 grid gap-4">
@@ -170,7 +170,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
       </div>
 
       {show.has("reviews") && (
-        <section id="reviews" className="container-page mt-14 scroll-mt-20">
+        <section id="reviews" className="container-page mt-14 scroll-mt-30 lg:scroll-mt-20">
           <div className="flex items-end justify-between">
             <div>
               <p className="eyebrow text-[var(--store-accent)]">Reviews</p>

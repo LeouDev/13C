@@ -18,7 +18,8 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
   const social = store.social_links as Record<string, string | undefined>;
   const show = storeSections(sf);
   const tabs = [["fleet", "Fleet"], ["about", "About"], ["policies", "Policies"], ["reviews", "Reviews"], ["contact", "Contact"]]
-    .filter(([id]) => id === "fleet" || id === "contact" || show.has(id));
+    .filter(([id]) => id === "fleet" || id === "contact" || show.has(id))
+    .map(([id, label]) => <Link key={id} href={`/${business.slug}#${id}`} className="shrink-0 rounded-full px-3 py-1.5 hover:bg-canvas">{label}</Link>);
 
   return (
     <div className="flex min-h-svh flex-col bg-[#f6f7f9]" style={{ ["--store-accent" as string]: store.accent_color }}>
@@ -35,11 +36,7 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
             <span className="truncate font-bold tracking-tight text-navy-900">{business.name}</span>
             {business.status === "VERIFIED" && <VerifiedBadge compact className="hidden sm:inline-flex" />}
           </Link>
-          <nav className="ml-6 hidden items-center gap-1 text-sm font-medium text-navy-800 lg:flex" aria-label="Store">
-            {tabs.map(([id, label]) => (
-              <Link key={id} href={`/${business.slug}#${id}`} className="rounded-full px-3 py-1.5 hover:bg-canvas">{label}</Link>
-            ))}
-          </nav>
+          <nav className="ml-6 hidden items-center gap-1 text-sm font-medium text-navy-800 lg:flex" aria-label="Store">{tabs}</nav>
           <div className="ml-auto flex items-center gap-2">
             {user ? (
               <Link href="/account/bookings" className="hidden rounded-full px-3 py-2 text-sm font-medium text-navy-800 hover:bg-canvas sm:block">My bookings</Link>
@@ -51,11 +48,12 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
             </Link>
           </div>
         </div>
+        <nav className="container-page flex gap-1 overflow-x-auto pb-2 pl-1 sm:pl-3 text-sm font-medium text-navy-800 [scrollbar-width:none] lg:hidden" aria-label="Store">{tabs}</nav>
       </header>
 
       <main className="flex-1">{children}</main>
 
-      <footer id="contact" className="mt-16 bg-white">
+      <footer id="contact" className="mt-16 scroll-mt-30 bg-white lg:scroll-mt-20">
         <div className="container-page grid gap-8 py-12 md:grid-cols-[1.5fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-3">
