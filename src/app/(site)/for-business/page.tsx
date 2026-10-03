@@ -49,7 +49,7 @@ const MOBILE_FEATURES = [
 ];
 const STEPS = [
   ["Register", "Create your business account and pick your store address."],
-  ["Get verified", "Upload your documents. Reviews usually take 1–2 business days."],
+  ["Get verified", "Upload your documents. Reviews usually take 1–\u20602 business days."],
   ["Add your cars", "Photos, pricing, policies and payment methods."],
   ["Publish your store", "Share your link and start taking bookings."],
 ] as const;
@@ -183,37 +183,40 @@ export default function ForBusinessPage() {
           </details>
         </div>
 
-        <div className="mt-5 hidden items-center gap-5 rounded-3xl bg-gradient-to-r from-accent to-canvas px-8 py-7 lg:flex">
-          <span className="grid size-14 shrink-0 place-items-center rounded-[18px] bg-electric text-white"><Search className="size-[26px]" /></span>
-          <p className="flex-1 text-base leading-[1.55] text-navy-800"><b className="text-navy-900">Plus a marketplace.</b> Verified stores also appear in 13C search, so customers looking for cars in Cebu can find you. That&apos;s an extra channel on top of your own website. 13C never takes a commission on your rentals in this version.</p>
-          <span className="flex max-w-[300px] flex-wrap gap-1.5 lg:justify-end">
+        <div className="mt-3 flex flex-col gap-4 rounded-[25px] bg-gradient-to-r from-accent to-canvas p-[22px] lg:mt-5 lg:flex-row lg:items-center lg:gap-5 lg:rounded-3xl lg:px-8 lg:py-7">
+          <span className="grid size-11 shrink-0 place-items-center rounded-[14px] bg-electric text-white lg:size-14 lg:rounded-[18px]"><Search className="size-5 lg:size-[26px]" /></span>
+          <p className="flex-1 text-sm leading-[1.55] text-navy-800 lg:text-base"><b className="text-navy-900">Plus a marketplace.</b> Verified stores also appear in 13C search, so customers looking for cars in Cebu can find you. That&apos;s an extra channel on top of your own website. 13C never takes a commission on your rentals in this version.</p>
+          <span className="flex flex-wrap gap-1.5 lg:max-w-[300px] lg:justify-end">
             {LOCATIONS.slice(0, 5).map((l) => <Link key={l.slug} href={`/explore/${l.slug}`} className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-white/70">{l.name}</Link>)}
           </span>
         </div>
       </section>
 
-      {/* How it works (desktop only, as in the phone design) */}
-      <section className="container-page hidden pt-28 lg:block">
-        <div className="flex items-end justify-between gap-6">
+      {/* How it works: a vertical timeline on phones, four columns on desktop */}
+      <section className="container-page pt-14 lg:pt-28">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
           <div>
             <Eyebrow>How it works</Eyebrow>
-            <h2 className="mt-2.5 font-display text-[46px] leading-[1.08] font-bold tracking-tight text-navy-900">Live the same week.</h2>
+            <h2 className="mt-2 font-display text-[30px] leading-[1.1] font-bold tracking-tight text-navy-900 lg:mt-2.5 lg:text-[46px] lg:leading-[1.08]">Live the same week.</h2>
           </div>
-          <p className="max-w-[380px] text-[15px] leading-[1.6] text-muted-foreground">Register, get verified, add your cars and publish your store. Most businesses are live the same week.</p>
+          <p className="max-w-[380px] text-sm leading-[1.6] text-muted-foreground lg:text-[15px]">Register, get verified, add your cars and publish your store. Most businesses are live the same week.</p>
         </div>
-        <ol className="mt-11 grid grid-cols-4 gap-5">
-          {STEPS.map(([title, body], i) => (
-            <li key={title} className="grid content-start gap-3">
-              <span className="flex items-center gap-3">
-                {i < STEPS.length - 1
-                  ? <span className="grid size-11 shrink-0 place-items-center rounded-full bg-navy-900 font-display text-lg font-bold text-white">{i + 1}</span>
-                  : <span className="grid size-11 shrink-0 place-items-center rounded-full bg-brand-red text-white"><Rocket className="size-5" /></span>}
-                {i < STEPS.length - 1 && <span className="h-0.5 flex-1 bg-[repeating-linear-gradient(90deg,var(--input)_0_8px,transparent_8px_14px)]" aria-hidden />}
-              </span>
-              <b className="text-[17px] text-navy-900">{title}</b>
-              <span className="text-sm leading-[1.55] text-muted-foreground">{body}</span>
-            </li>
-          ))}
+        <ol className="mt-7 grid lg:mt-11 lg:grid-cols-4 lg:gap-5">
+          {STEPS.map(([title, body], i) => {
+            const last = i === STEPS.length - 1;
+            return (
+              <li key={title} className="grid grid-cols-[44px_1fr] gap-x-4 gap-y-1 lg:grid-cols-1 lg:content-start lg:gap-3">
+                <span className="row-span-2 flex flex-col items-center gap-2 lg:row-span-1 lg:flex-row lg:gap-3">
+                  {last
+                    ? <span className="grid size-11 shrink-0 place-items-center rounded-full bg-brand-red text-white"><Rocket className="size-5" /></span>
+                    : <span className="grid size-11 shrink-0 place-items-center rounded-full bg-navy-900 font-display text-lg font-bold text-white">{i + 1}</span>}
+                  {!last && <span className="mb-2 w-0.5 flex-1 bg-[repeating-linear-gradient(180deg,var(--input)_0_8px,transparent_8px_14px)] lg:mb-0 lg:h-0.5 lg:w-auto lg:bg-[repeating-linear-gradient(90deg,var(--input)_0_8px,transparent_8px_14px)]" aria-hidden />}
+                </span>
+                <b className="pt-2.5 text-base text-navy-900 lg:pt-0 lg:text-[17px]">{title}</b>
+                <span className={cn("text-[13px] leading-[1.55] text-muted-foreground lg:pb-0 lg:text-sm", !last && "pb-7")}>{body}</span>
+              </li>
+            );
+          })}
         </ol>
       </section>
 
@@ -351,7 +354,7 @@ function Pricing() {
   const free = PLANS.find((p) => p.id === "FREE")!;
   const business = PLANS.find((p) => p.id === "BUSINESS")!;
   return (
-    <section id="pricing" className="mt-11 scroll-mt-20 bg-canvas py-[52px] lg:mt-28 lg:py-[104px]">
+    <section id="pricing" className="mt-14 scroll-mt-20 bg-canvas py-[52px] lg:mt-28 lg:py-[104px]">
       <div className="container-page">
         <div className="grid gap-6 lg:grid-cols-2 lg:items-end lg:gap-10">
           <div>
