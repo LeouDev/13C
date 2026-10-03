@@ -11,7 +11,7 @@ export type Mail = {
   html: string;
   text: string;
   attachments?: { filename: string; content: string }[]; // content: base64
-  idempotencyKey?: string; // Resend dedupes the same key for 24 hours
+  idempotencyKey?: string; // `<type>/<id>`; Resend dedupes the same key for 24 hours
 };
 
 /** Sends through Resend's REST API. Throws on failure so callers can retry. */
@@ -25,7 +25,9 @@ export async function sendEmail(m: Mail) {
     },
     body: JSON.stringify({ from: EMAIL_FROM, to: [m.to], subject: m.subject, html: m.html, text: m.text, attachments: m.attachments }),
   });
-  const json = (await res.json().catch(() => null)) as { id?: string; message?: string } | null;
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${json?.message ?? res.statusText}`);
+  const json = (await res.json().catch(() => null)) as { id?: string; name?: string; message?: string } | null;
+  // Same key, different payload (e.g. a retry that now has the PDF): the first send already went out.
+  if (res.status === 409 && json?.name === "invalid_idempotent_request") return null;
+  if (!res.ok) throw new Error(`Resend ${res.status} ${json?.name ?? ""}: ${json?.message ?? res.statusText}`);
   return json?.id ?? null;
 }

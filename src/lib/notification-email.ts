@@ -157,7 +157,7 @@ export async function dispatchNotificationEmails(budgetMs = 45_000) {
           stats.skipped++;
           continue;
         }
-        await sendEmail({ to: n.email, subject: mail.subject, html: mail.html, text: mail.text, attachments: mail.attachments, idempotencyKey: `notification-${n.id}` });
+        await sendEmail({ to: n.email, subject: mail.subject, html: mail.html, text: mail.text, attachments: mail.attachments, idempotencyKey: `notification/${n.id}` });
         await mark(n.id, { emailed_at: new Date().toISOString(), email_error: null, email_locked_until: null });
         stats.sent++;
       } catch (e) {
