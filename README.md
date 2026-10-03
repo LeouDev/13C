@@ -35,6 +35,8 @@ npm run dev
 | `STOREFRONT_SUBDOMAINS` | optional, `1` enables `<slug>.<root-domain>` routing in `src/proxy.ts` |
 | `PAYMONGO_SECRET_KEY` | **server only**: creates and reads checkout sessions (`sk_test_…` = test mode) |
 | `PAYMONGO_WEBHOOK_SECRET` | **server only**: verifies the `Paymongo-Signature` header on `/api/webhooks/paymongo` |
+| `RESEND_API_KEY` | **server only**: sends app emails (added by the Vercel Resend integration) |
+| `EMAIL_DISPATCH_SECRET` | **server only**: shared with the database (Vault) to call `/api/email/dispatch` |
 | `PAYMONGO_PAYMENT_METHODS` | optional, default `gcash,paymaya,card,qrph` (each must be enabled on the PayMongo account) |
 
 **First admin:** sign up, then in the Supabase SQL editor run
@@ -65,10 +67,18 @@ tests/                 unit, db (RLS/integrity), e2e-flow (spec §62)
 
 ## Emails
 
-All 47 emails share one branded layout (`src/emails/`): 8 Supabase Auth/security emails and 39 app emails (15 renter, 21 business, 3 admin) for renters, businesses and admins, each with HTML + plain text. Preview them at **Admin → Emails** (`/admin/emails`).
+All 47 emails share one branded layout (`src/emails/`): 8 Supabase Auth/security emails and 39 app emails (15 renter, 21 business, 3 admin), each with HTML and plain text. Preview them at **Admin → Emails** (`/admin/emails`). Everything is sent through **Resend**, from `13C <support@air-rally.com>`.
 
-- **Auth emails** (confirm sign-up, reset password, change email, magic link, invite, re-auth, password/email changed) render to `supabase/templates/*.html` via `npm run emails:build`. Supabase only accepts custom templates once **custom SMTP** is configured: then uncomment the template block in `supabase/config.toml` and run `supabase config push`.
-- **App emails** render with `renderAppEmail(key, data)` → `{ subject, html, text }` for any provider. They map to the in-app notification types and go out once an email provider is connected.
+- **Auth emails** (confirm sign-up, reset password, change email, magic link, invite, re-auth, password/email changed) go through Supabase Auth's custom SMTP, which points at Resend. They render to `supabase/templates/*.html` via `npm run emails:build`, and the template block in `supabase/config.toml` uploads them with `supabase config push`.
+- **App emails:** every row in `notifications` is also an outbox entry.
+  1. Inserting notifications makes Postgres (`pg_net`) call `POST /api/email/dispatch` with a bearer secret.
+  2. The endpoint claims due rows (`claim_notification_emails`, so parallel runs never double-send), picks the template for the notification type and the recipient's side, and fills it from the booking, conversation, business or subscription.
+  3. It sends through Resend with an idempotency key. Booking-confirmed and contract-signed emails attach the signed PDF.
+  4. A `pg_cron` sweep every 5 minutes retries failures, up to 5 attempts within 2 days.
+- **Configuration:**
+  - `RESEND_API_KEY` and `EMAIL_DISPATCH_SECRET` are in Vercel.
+  - Vault holds `email_dispatch_url` and `email_dispatch_secret`. Without them, nothing is called, so local and test databases never send.
+- **Safety:** addresses on reserved test domains (`@*.test`, `.example`, `.invalid`, `.localhost`) are never emailed, and the test suite only uses `@13c.test`.
 
 ## Contract signing
 

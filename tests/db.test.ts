@@ -6,7 +6,9 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { TRANSITIONS } from "@/lib/bookings/status";
 import { createHmac } from "node:crypto";
+import { POST as emailDispatch } from "@/app/api/email/dispatch/route";
 import { POST as paymongoWebhook } from "@/app/api/webhooks/paymongo/route";
+import { prepareNotificationEmail, templateFor } from "@/lib/notification-email";
 import { PLAN_PRICE_CENTAVOS, PLAN_VEHICLE_LIMIT, RESERVED_SLUGS, TRIAL_DAYS } from "@/lib/constants";
 import { anon, completeRenterProfile, day, makeUser, must, service, SIGNATURE, type TestUser } from "./helpers";
 
@@ -463,5 +465,42 @@ describe("admin", () => {
     must(await admin.client.rpc("admin_review_business", { p_business_id: businessId, p_decision: "SUSPENDED", p_note: "Test suspension" }));
     const pub = must(await anon().from("businesses").select("id").eq("id", businessId));
     expect(pub).toHaveLength(0);
+  });
+});
+
+describe("notification emails", () => {
+  it("only real inboxes are ever emailed", async () => {
+    for (const [email, ok] of [["juan@gmail.com", true], ["owner@air-rally.com", true], ["x@13c.test", false], ["a@example", false], ["a@b.example", false], ["nope", false]] as const) {
+      expect(must(await service.rpc("is_deliverable_email", { p: email })), email).toBe(ok);
+    }
+  });
+
+  it("confirming an email creates the welcome notification", async () => {
+    const email = `welcome-${crypto.randomUUID().slice(0, 8)}@13c.test`;
+    const { data } = await service.auth.admin.createUser({ email, password: crypto.randomUUID(), email_confirm: false, user_metadata: { full_name: "Test welcome" } });
+    expect((await service.auth.admin.updateUserById(data.user!.id, { email_confirm: true })).error).toBeNull();
+    const n = must(await service.from("notifications").select("type, link").eq("user_id", data.user!.id));
+    expect(n).toEqual([{ type: "welcome", link: "/explore" }]);
+  });
+
+  it("every notification the suite created renders a complete email", async () => {
+    const ids = [owner, admin, renter, renter2, outsider].map((u) => u.id);
+    const rows = must(await service.from("notifications").select("id, user_id, business_id, type, title, body, link").in("user_id", ids));
+    const one = new Map(rows.map((r) => [`${r.type}|${templateFor(r.type, r.link)}`, r]));
+    expect([...one.keys()].map((k) => k.split("|")[0])).toEqual(expect.arrayContaining(["business_submitted", "plan_changed", "booking_request", "booking_request_sent", "contract_sent", "booking_confirmed", "contract_signed", "message", "review_received", "verification_verified", "subscription_paid"]));
+    for (const r of one.values()) {
+      const mail = await prepareNotificationEmail({ ...r, email: "someone@13c.test", full_name: "Test Person", attempts: 1 });
+      expect(mail, r.type).not.toBeNull();
+      expect(`${mail!.subject}\n${mail!.text}`, `${r.type} → ${mail!.key}`).not.toMatch(/undefined|NaN|\bnull\b/);
+    }
+  });
+
+  it("the dispatch endpoint needs the shared secret", async () => {
+    const call = (auth?: string) => emailDispatch(new Request("http://localhost/api/email/dispatch", { method: "POST", headers: auth ? { authorization: auth } : {} }));
+    process.env.EMAIL_DISPATCH_SECRET = "vitest-dispatch-secret";
+    expect((await call()).status).toBe(401);
+    expect((await call("Bearer wrong")).status).toBe(401);
+    delete process.env.RESEND_API_KEY; // never send from tests
+    expect((await call("Bearer vitest-dispatch-secret")).status).toBe(503);
   });
 });

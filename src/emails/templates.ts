@@ -90,6 +90,7 @@ export const EMAILS = {
   welcome: {
     audience: "Renter",
     trigger: "After a new account confirms its email",
+    notificationType: "welcome",
     sample: SAMPLE,
     build: (d) => ({
       subject: "Welcome to 13C",
@@ -107,6 +108,7 @@ export const EMAILS = {
   booking_request_sent: {
     audience: "Renter",
     trigger: "Right after a renter submits a booking request",
+    notificationType: "booking_request_sent",
     sample: SAMPLE,
     build: (d) => ({
       subject: `Request sent: ${d.vehicle}`,
@@ -339,6 +341,7 @@ export const EMAILS = {
   deletion_received: {
     audience: "Renter",
     trigger: "A user requests account deletion (Data Privacy Act)",
+    notificationType: "deletion_received",
     sample: SAMPLE,
     build: (d) => ({
       subject: "We received your account deletion request",
@@ -356,6 +359,7 @@ export const EMAILS = {
   business_submitted: {
     audience: "Business",
     trigger: "An owner submits their business for verification",
+    notificationType: "business_submitted",
     sample: SAMPLE,
     build: (d) => ({
       subject: `We're reviewing ${d.businessName}`,
@@ -659,6 +663,7 @@ export const EMAILS = {
   plan_changed: {
     audience: "Business",
     trigger: "An admin changes the business's plan",
+    notificationType: "plan_changed",
     sample: { ...SAMPLE, plan: "Pro" },
     build: (d) => {
       const p = PLANS.find((x) => x.name.toLowerCase() === (d.plan ?? "").toLowerCase());
@@ -723,6 +728,7 @@ export const EMAILS = {
   admin_report_submitted: {
     audience: "Admin",
     trigger: "A user reports a listing, business or review",
+    notificationType: "report_submitted",
     sample: { ...SAMPLE, reason: "Misleading listing or photos", note: "Photos are of a newer model than the actual car." },
     build: (d) => ({
       subject: `New report: ${d.reason}`,

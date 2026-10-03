@@ -1181,6 +1181,10 @@ export type Database = {
           body: string | null
           business_id: string | null
           created_at: string
+          email_attempts: number
+          email_error: string | null
+          email_locked_until: string | null
+          emailed_at: string | null
           id: string
           link: string | null
           read_at: string | null
@@ -1192,6 +1196,10 @@ export type Database = {
           body?: string | null
           business_id?: string | null
           created_at?: string
+          email_attempts?: number
+          email_error?: string | null
+          email_locked_until?: string | null
+          emailed_at?: string | null
           id?: string
           link?: string | null
           read_at?: string | null
@@ -1203,6 +1211,10 @@ export type Database = {
           body?: string | null
           business_id?: string | null
           created_at?: string
+          email_attempts?: number
+          email_error?: string | null
+          email_locked_until?: string | null
+          emailed_at?: string | null
           id?: string
           link?: string | null
           read_at?: string | null
@@ -2131,6 +2143,21 @@ export type Database = {
           vehicle_count: number
         }[]
       }
+      claim_notification_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          body: string
+          business_id: string
+          email: string
+          full_name: string
+          id: string
+          link: string
+          title: string
+          type: string
+          user_id: string
+        }[]
+      }
       contract_vars: { Args: { p_booking_id: string }; Returns: Json }
       create_review: {
         Args: {
@@ -2173,6 +2200,7 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_booking_party: { Args: { p_booking: string }; Returns: boolean }
       is_business_public: { Args: { p_business: string }; Returns: boolean }
+      is_deliverable_email: { Args: { p: string }; Returns: boolean }
       is_reserved_slug: { Args: { p: string }; Returns: boolean }
       is_slug_available: { Args: { p_slug: string }; Returns: boolean }
       is_vehicle_available: {
@@ -2349,6 +2377,7 @@ export type Database = {
         }
         Returns: string
       }
+      request_email_dispatch: { Args: never; Returns: undefined }
       respond_to_review: {
         Args: { p_response: string; p_review_id: string }
         Returns: undefined

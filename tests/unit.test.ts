@@ -4,6 +4,8 @@ import { canTransition, nextStatuses, STATUS_META, TRANSITIONS } from "@/lib/boo
 import { createHmac } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
 import { paidPayment, parseWebhookEvent, verifyWebhookSignature } from "@/lib/billing";
+import { templateFor } from "@/lib/notification-email";
+import { EMAILS } from "@/emails";
 import { PLAN_PRICE_CENTAVOS, PLANS } from "@/lib/constants";
 import { renderContractPdf, toWinAnsi, type ContractPdfInput } from "@/lib/contracts/pdf";
 import { friendlyError } from "@/lib/errors";
@@ -105,6 +107,26 @@ describe("PayMongo webhooks", () => {
     expect(paidPayment(classic.resource!)).toEqual({ id: "pay_1", amount: 49900, method: "gcash", livemode: false });
     expect(paidPayment(v2.resource!)).toEqual({ id: "pay_2", amount: 150000, method: "card", livemode: true });
     expect(paidPayment({ id: "cs_3", attributes: {} })).toBeNull();
+  });
+});
+
+describe("notification → email template", () => {
+  it("picks the template for the recipient's side", () => {
+    expect(templateFor("booking_cancelled", "/account/bookings/x")).toBe("booking_cancelled_by_business");
+    expect(templateFor("booking_cancelled", "/dashboard/bookings/x")).toBe("booking_cancelled_by_renter");
+    expect(templateFor("message", "/account/messages/x")).toBe("message_to_customer");
+    expect(templateFor("message", "/dashboard/messages/x")).toBe("inquiry");
+    expect(templateFor("rental_starting", "/dashboard/bookings/x")).toBe("pickup_soon");
+    expect(templateFor("verification_submitted", "/admin/businesses/x")).toBe("admin_verification_submitted");
+    expect(templateFor("nothing_like_this", "/account")).toBeNull();
+  });
+  it("every template is reachable from a notification", () => {
+    for (const [key, t] of Object.entries(EMAILS)) {
+      const nt = (t as { notificationType?: string }).notificationType;
+      expect(nt, key).toBeTruthy();
+      const link = t.audience === "Admin" ? "/admin/x" : t.audience === "Business" ? "/dashboard/x" : "/account/x";
+      expect(templateFor(nt!, link), key).toBe(key);
+    }
   });
 });
 
