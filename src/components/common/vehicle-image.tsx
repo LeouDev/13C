@@ -18,7 +18,7 @@ export function VehicleImage({
   return (
     <div className={cn("relative overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200", className)}>
       {src ? (
-        <Image src={src} alt={alt} fill sizes={sizes} priority={priority} className={fit === "cover" ? "object-cover" : "object-contain"} />
+        <Image src={src} alt={alt} fill sizes={sizes} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "auto"} className={fit === "cover" ? "object-cover" : "object-contain"} />
       ) : (
         <div className="absolute inset-0 grid place-items-center">
           <CarSilhouette className="w-1/2 text-slate-300" />

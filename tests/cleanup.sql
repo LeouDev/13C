@@ -1,23 +1,32 @@
 -- Removes all data created by integration tests (users with @13c.test emails).
-set session_replication_role = replica;
-create temp table t_users as select id from auth.users where email like '%@13c.test';
-create temp table t_biz as select id from public.businesses where owner_id in (select id from t_users);
-create temp table t_book as select id from public.bookings where business_id in (select id from t_biz) or renter_id in (select id from t_users);
-delete from storage.objects where bucket_id = 'contracts' and (storage.foldername(name))[1] in (select id::text from t_biz);
-delete from storage.objects where bucket_id in ('media', 'business-docs', 'kyc') and (
-  (storage.foldername(name))[1] in (select id::text from t_biz union select id::text from t_users)
-  or (storage.foldername(name))[2] in (select id::text from t_biz union select id::text from t_users));
+-- Foreign-key cascades stay ON (never use session_replication_role here: it disables them and
+-- leaves orphans). Only the contract-immutability guards are lifted, inside this transaction.
+-- Storage files are removed beforehand through the Storage API (tests/global-setup.ts).
+begin;
+create temp table t_users on commit drop as select id from auth.users where email like '%@13c.test';
+create temp table t_biz on commit drop as select id from public.businesses where owner_id in (select id from t_users);
+create temp table t_book on commit drop as
+  select id from public.bookings where business_id in (select id from t_biz) or renter_id in (select id from t_users);
+
+alter table public.contract_versions disable trigger guard_contract_version;
+alter table public.contract_signatures disable trigger guard_contract_signature;
 delete from public.contract_signatures where booking_id in (select id from t_book);
 delete from public.contract_versions where booking_id in (select id from t_book);
 delete from public.contracts where booking_id in (select id from t_book);
+alter table public.contract_versions enable trigger guard_contract_version;
+alter table public.contract_signatures enable trigger guard_contract_signature;
+
 delete from public.reviews where booking_id in (select id from t_book);
-delete from public.payments where booking_id in (select id from t_book);
-delete from public.booking_status_history where booking_id in (select id from t_book);
-delete from public.messages where booking_id in (select id from t_book);
-delete from public.bookings where id in (select id from t_book);
-delete from public.audit_logs where business_id in (select id from t_biz) or actor_id in (select id from t_users);
-delete from public.businesses where id in (select id from t_biz);
-delete from public.reports where reporter_id in (select id from t_users);
-delete from auth.users where id in (select id from t_users);
-set session_replication_role = origin;
-select count(*) as remaining_test_users from auth.users where email like '%@13c.test';
+delete from public.bookings where id in (select id from t_book);                       -- cascades history, payments
+delete from public.conversations where business_id in (select id from t_biz) or customer_id in (select id from t_users);
+delete from public.businesses where id in (select id from t_biz);                       -- cascades members, storefront, fleet, …
+delete from auth.users where id in (select id from t_users);                            -- cascades profiles, renters, notifications, …
+commit;
+
+-- Must both be 0.
+select
+  (select count(*) from auth.users where email like '%@13c.test') as remaining_test_users,
+  (select count(*) from public.profiles where id not in (select id from auth.users))
+    + (select count(*) from public.vehicles where business_id not in (select id from public.businesses))
+    + (select count(*) from public.conversations where business_id not in (select id from public.businesses))
+    + (select count(*) from public.business_storefronts where business_id not in (select id from public.businesses)) as orphans;

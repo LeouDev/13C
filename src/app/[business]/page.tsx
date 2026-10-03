@@ -77,7 +77,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
       {/* Hero */}
       <section className="container-page pt-4 sm:pt-6">
         <div className="relative overflow-hidden rounded-[2rem] bg-navy-900" style={!cover ? { background: `linear-gradient(135deg, var(--store-accent), #0a1430)` } : undefined}>
-          {cover && <Image src={cover} alt={`${business.name} cover`} fill priority sizes="100vw" className="object-cover" />}
+          {cover && <Image src={cover} alt={`${business.name} cover`} fill loading="eager" fetchPriority="high" sizes="100vw" className="object-cover" />}
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/5" />
           <div className="relative flex min-h-[340px] flex-col justify-end p-5 text-white sm:min-h-[420px] sm:p-10">
             <BusinessLogo path={business.logo_path} name={business.name} accent={store.accent_color} className="size-16 border-4 border-white/90 shadow-lg sm:size-20" />

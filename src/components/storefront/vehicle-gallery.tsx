@@ -22,7 +22,7 @@ export function VehicleGallery({ images, alt }: { images: { id: string; storage_
       <div className="relative aspect-[16/10] overflow-hidden rounded-[2rem] bg-gradient-to-b from-white to-[#eceef2]"
         onKeyDown={(e) => { if (e.key === "ArrowLeft") go(-1); if (e.key === "ArrowRight") go(1); }}>
         {images.map((img, k) => (
-          <Image key={img.id} src={mediaUrl(img.storage_path)!} alt={`${alt} — photo ${k + 1}`} fill priority={k === 0}
+          <Image key={img.id} src={mediaUrl(img.storage_path)!} alt={`${alt} — photo ${k + 1}`} fill loading={k === 0 ? "eager" : "lazy"} fetchPriority={k === 0 ? "high" : "auto"}
             sizes="(max-width: 1024px) 100vw, 60vw" className={cn("object-cover transition-opacity duration-500", k === i ? "opacity-100" : "opacity-0")} />
         ))}
         {images.length > 1 && (
@@ -38,7 +38,7 @@ export function VehicleGallery({ images, alt }: { images: { id: string; storage_
           {images.map((img, k) => (
             <button key={img.id} type="button" onClick={() => setI(k)} aria-label={`Show photo ${k + 1}`}
               className={cn("relative h-16 w-24 shrink-0 overflow-hidden rounded-xl ring-2 transition", k === i ? "ring-[var(--store-accent)]" : "ring-transparent opacity-70 hover:opacity-100")}>
-              <Image src={mediaUrl(img.storage_path)!} alt="" fill sizes="96px" className="object-cover" />
+              <Image src={mediaUrl(img.storage_path)!} alt="" fill sizes="96px" loading="eager" fetchPriority="low" className="object-cover" />
             </button>
           ))}
         </div>
