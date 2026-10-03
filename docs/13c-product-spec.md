@@ -94,15 +94,15 @@ INQUIRY → NEGOTIATING → BOOKING_REQUESTED → PENDING_OWNER_APPROVAL → APP
 
 ## Plans (billing not implemented)
 
-| | FREE ₱0 | PRO ₱499/mo | BUSINESS ₱999–1,499/mo |
+| | FREE ₱0 · 25-day trial | PRO ₱499/mo | BUSINESS ₱1,500/mo |
 |---|---|---|---|
-| Vehicles | 3 | 20 | Unlimited |
+| Vehicles | 3 | 10 | Unlimited |
 | Team members | Owner only | Owner only | Multiple staff |
 | Storefront, inquiries, bookings, contracts | ✓ | ✓ | ✓ |
 | Analytics, notifications | basic | ✓ | advanced |
 | GPS integrations, custom contracts, priority support | — | — | future |
 
-Vehicle and staff limits are enforced in the database. Plans are assigned by admins until billing (PayMongo) ships. Marketplace commission (5–10%) is explicitly **not** in the MVP.
+The free trial starts when 13C verifies the business and lasts 25 days; when it ends without a paid plan the store is hidden from customers and no vehicles can be added (existing bookings and contracts continue). Vehicle and staff limits are enforced in the database. Plans are assigned by admins until billing (PayMongo) ships. Marketplace commission (5–10%) is explicitly **not** in the MVP.
 
 ## Privacy (PH Data Privacy Act)
 

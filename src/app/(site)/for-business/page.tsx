@@ -6,7 +6,7 @@ import { PLANS, ROOT_DOMAIN } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: { absolute: "13C for rental businesses — your car rental business, online" },
-  description: "Get your own professional car-rental website powered by 13C. Manage cars, availability, inquiries, bookings, digital contracts and customers in one place. Free for up to 3 vehicles.",
+  description: "Get your own professional car-rental website powered by 13C. Manage cars, availability, inquiries, bookings, digital contracts and customers in one place. Free for 25 days.",
   alternates: { canonical: "/for-business" },
 };
 
@@ -33,7 +33,7 @@ export default function ForBusinessPage() {
               <Link href="/register/business" className={buttonVariants({ variant: "electric", size: "xl" })}>Create Your Rental Business</Link>
               <Link href="#pricing" className={buttonVariants({ variant: "light", size: "xl" })}>See pricing</Link>
             </div>
-            <p className="mt-4 text-sm text-white/60">Free for up to 3 vehicles · No credit card · You keep 100% of your rental income</p>
+            <p className="mt-4 text-sm text-white/60">25-day free trial · No credit card · You keep 100% of your rental income</p>
           </div>
           {/* Storefront illustration */}
           <div className="relative mx-auto w-full max-w-md">
@@ -79,7 +79,7 @@ export default function ForBusinessPage() {
       <section id="pricing" className="scroll-mt-20 bg-canvas py-16 sm:py-24">
         <div className="container-page">
           <p className="eyebrow text-electric">Pricing</p>
-          <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-navy-900 sm:text-4xl">Start free. Grow with your fleet.</h2>
+          <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-navy-900 sm:text-4xl">Try it free for 25 days. Grow with your fleet.</h2>
           <div className="mt-10 grid gap-4 lg:grid-cols-3">
             {PLANS.map((p) => (
               <div key={p.id} className={`flex flex-col rounded-3xl bg-white p-6 ${p.id === "PRO" ? "ring-2 ring-electric" : "ring-1 ring-black/5"}`}>

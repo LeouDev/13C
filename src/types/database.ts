@@ -2311,6 +2311,7 @@ export type Database = {
         Returns: undefined
       }
       send_rental_reminders: { Args: never; Returns: number }
+      send_trial_reminders: { Args: never; Returns: number }
       set_storefront_published: {
         Args: { p_business_id: string; p_publish: boolean }
         Returns: undefined
@@ -2338,6 +2339,7 @@ export type Database = {
         Args: { p_business_id: string; p_documents: Json; p_note?: string }
         Returns: undefined
       }
+      subscription_is_active: { Args: { p_business: string }; Returns: boolean }
       track_view: {
         Args: {
           p_business_id: string
@@ -2354,6 +2356,7 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["booking_status"]
       }
+      trial_days: { Args: never; Returns: number }
       try_uuid: { Args: { p: string }; Returns: string }
       update_booking_terms: {
         Args: {

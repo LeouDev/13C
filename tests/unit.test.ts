@@ -4,6 +4,7 @@ import { canTransition, nextStatuses, STATUS_META, TRANSITIONS } from "@/lib/boo
 import { renderContractPdf, toWinAnsi } from "@/lib/contracts/pdf";
 import { friendlyError } from "@/lib/errors";
 import { formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
+import { subscriptionState } from "@/lib/plans";
 import { businessSchema, slugSchema, vehicleSchema } from "@/lib/validation";
 
 describe("booking state machine (UI mirror)", () => {
@@ -49,6 +50,19 @@ describe("formatting (Asia/Manila)", () => {
     expect(labelize("PAYMENT_ON_PICKUP")).toBe("Payment on pickup");
     expect(plural(1, "vehicle")).toBe("1 vehicle");
     expect(plural(12, "vehicle")).toBe("12 vehicles");
+  });
+});
+
+describe("subscription state", () => {
+  const now = Date.parse("2026-10-03T00:00:00Z");
+  it("free trial counts down, then ends", () => {
+    expect(subscriptionState({ plan: "FREE", status: "TRIALING", current_period_end: null }, now)).toMatchObject({ active: true, started: false });
+    expect(subscriptionState({ plan: "FREE", status: "TRIALING", current_period_end: "2026-10-28T00:00:00Z" }, now)).toMatchObject({ active: true, daysLeft: 25 });
+    expect(subscriptionState({ plan: "FREE", status: "TRIALING", current_period_end: "2026-10-02T00:00:00Z" }, now)).toMatchObject({ active: false, ended: true });
+  });
+  it("paid plans stay active until cancelled", () => {
+    expect(subscriptionState({ plan: "PRO", status: "ACTIVE", current_period_end: null }, now).active).toBe(true);
+    expect(subscriptionState({ plan: "BUSINESS", status: "CANCELLED", current_period_end: null }, now).active).toBe(false);
   });
 });
 

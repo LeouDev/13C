@@ -5,7 +5,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import { TRANSITIONS } from "@/lib/bookings/status";
-import { RESERVED_SLUGS } from "@/lib/constants";
+import { PLAN_VEHICLE_LIMIT, RESERVED_SLUGS, TRIAL_DAYS } from "@/lib/constants";
 import { anon, completeRenterProfile, day, makeUser, must, service, type TestUser } from "./helpers";
 
 let owner: TestUser, admin: TestUser, renter: TestUser, renter2: TestUser, outsider: TestUser;
@@ -32,6 +32,13 @@ describe("reference data", () => {
     const db = rows.map((r) => `${r.from_status}>${r.to_status}>${r.actor}`).sort();
     const ts = TRANSITIONS.map(([f, t, a]) => `${f}>${t}>${a}`).sort();
     expect(ts).toEqual(db);
+  });
+
+  it("plan limits and trial length match the database", async () => {
+    for (const [plan, limit] of Object.entries(PLAN_VEHICLE_LIMIT)) {
+      expect(await anon().rpc("plan_vehicle_limit", { p: plan as "FREE" }).then((r) => r.data), plan).toBe(limit);
+    }
+    expect(must(await anon().rpc("trial_days"))).toBe(TRIAL_DAYS);
   });
 
   it("reserved slugs match the database list", async () => {
@@ -301,6 +308,31 @@ describe("rental completion & reviews", () => {
     expect(pub[0]!.reviewer_name).toBe("Juan D.");
     const stats = must(await anon().rpc("business_public_stats", { p_ids: [businessId] }));
     expect(Number(stats[0]!.rating)).toBe(5);
+  });
+});
+
+describe("free trial", () => {
+  it("starts on verification and lasts TRIAL_DAYS", async () => {
+    const s = must(await owner.client.from("subscriptions").select("plan, status, current_period_end").eq("business_id", businessId).single());
+    expect(s.plan).toBe("FREE");
+    expect(s.status).toBe("TRIALING");
+    const days = (new Date(s.current_period_end!).getTime() - Date.now()) / 86400000;
+    expect(days).toBeGreaterThan(TRIAL_DAYS - 1);
+    expect(days).toBeLessThanOrEqual(TRIAL_DAYS);
+  });
+
+  it("an expired trial hides the store and blocks publishing and new vehicles; upgrading restores it", async () => {
+    must(await service.from("subscriptions").update({ current_period_end: new Date(Date.now() - 60_000).toISOString() }).eq("business_id", businessId));
+    expect(must(await anon().from("businesses").select("id").eq("id", businessId))).toHaveLength(0);
+    expect(must(await anon().rpc("search_vehicles", { p_business_id: businessId }))).toHaveLength(0);
+    await expectError(owner.client.rpc("set_storefront_published", { p_business_id: businessId, p_publish: true }), "TRIAL_ENDED");
+    await expectError(owner.client.rpc("save_vehicle", { p_business_id: businessId, p_vehicle_id: null as never,
+      p_vehicle: { make: "Kia", model: "Picanto", year: 2022, category_slug: "hatchback", transmission: "MANUAL", fuel_type: "GASOLINE", seats: 4, city: "Cebu City" },
+      p_pricing: { daily_rate: 1000 } }), "TRIAL_ENDED");
+    // Renters with bookings still see the business
+    expect(must(await renter2.client.from("businesses").select("id").eq("id", businessId))).toHaveLength(1);
+    must(await admin.client.rpc("admin_set_plan", { p_business_id: businessId, p_plan: "PRO", p_status: "ACTIVE" }));
+    expect(must(await anon().from("businesses").select("id").eq("id", businessId))).toHaveLength(1);
   });
 });
 

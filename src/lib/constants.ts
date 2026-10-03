@@ -58,12 +58,16 @@ export const VEHICLE_STATUSES: { value: Enums<"vehicle_status">; label: string }
   { value: "UNAVAILABLE", label: "Unavailable" },
 ];
 
+/** Mirrors public.trial_days() and public.plan_vehicle_limit() — tests/db.test.ts keeps them in sync. */
+export const TRIAL_DAYS = 25;
+export const PLAN_VEHICLE_LIMIT: Record<Enums<"subscription_plan">, number | null> = { FREE: 3, PRO: 10, BUSINESS: null };
+
 export const PLANS = [
-  { id: "FREE", name: "Free", price: "₱0", period: "/month", vehicles: "Up to 3 vehicles",
+  { id: "FREE", name: "Free", price: "₱0", period: ` for ${TRIAL_DAYS} days`, vehicles: "Up to 3 vehicles",
     features: ["Your own storefront", "Vehicle listings & availability", "Customer inquiries", "Basic bookings", "Basic contracts"] },
-  { id: "PRO", name: "Pro", price: "₱499", period: "/month", vehicles: "Up to 20 vehicles",
+  { id: "PRO", name: "Pro", price: "₱499", period: "/month", vehicles: "Up to 10 vehicles",
     features: ["Everything in Free", "Unlimited bookings", "Digital contracts & e-signatures", "Customer management", "Calendar", "Analytics", "Automated notifications"] },
-  { id: "BUSINESS", name: "Business", price: "₱999–₱1,499", period: "/month", vehicles: "Unlimited vehicles",
+  { id: "BUSINESS", name: "Business", price: "₱1,500", period: "/month", vehicles: "Unlimited vehicles",
     features: ["Everything in Pro", "Multiple staff accounts", "Advanced analytics", "Fleet management", "GPS integrations (soon)", "Custom contract settings", "Priority support"] },
 ] as const;
 

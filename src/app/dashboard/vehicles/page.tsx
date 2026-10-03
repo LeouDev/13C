@@ -7,7 +7,9 @@ import { VehicleImage } from "@/components/common/vehicle-image";
 import { VehicleRowActions } from "@/components/business/vehicle-row-actions";
 import { buttonVariants } from "@/components/ui/button";
 import { requireBusiness } from "@/lib/auth";
+import { PLAN_VEHICLE_LIMIT } from "@/lib/constants";
 import { formatPHP, labelize } from "@/lib/format";
+import { subscriptionState } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Vehicles" };
@@ -18,16 +20,16 @@ export default async function VehiclesPage() {
   const [{ data: vehicles }, { data: sub }] = await Promise.all([
     supabase.from("vehicles").select("id, slug, make, model, variant, year, status, seats, transmission, city, vehicle_pricing(daily_rate), vehicle_images(storage_path, position)")
       .eq("business_id", business.id).is("deleted_at", null).order("created_at").order("position", { referencedTable: "vehicle_images" }),
-    supabase.from("subscriptions").select("plan").eq("business_id", business.id).single(),
+    supabase.from("subscriptions").select("plan, status, current_period_end").eq("business_id", business.id).single(),
   ]);
-  const limit = { FREE: 3, PRO: 20, BUSINESS: null }[sub?.plan ?? "FREE"];
+  const limit = PLAN_VEHICLE_LIMIT[sub?.plan ?? "FREE"];
   const count = vehicles?.length ?? 0;
-  const atLimit = limit !== null && count >= limit;
+  const atLimit = (limit !== null && count >= limit) || !subscriptionState(sub).active;
 
   return (
     <>
       <PageHeader eyebrow="Fleet" title="Vehicles"
-        description={limit ? `${count} of ${limit} vehicles on the ${labelize(sub?.plan ?? "FREE")} plan.` : `${count} vehicles`}
+        description={!subscriptionState(sub).active ? "Your free trial has ended — upgrade to add vehicles." : limit ? `${count} of ${limit} vehicles on the ${labelize(sub?.plan ?? "FREE")} plan.` : `${count} vehicles`}
         actions={atLimit
           ? <Link href="/dashboard/subscription" className={buttonVariants({ variant: "electric", size: "lg" })}>Upgrade to add more</Link>
           : <Link href="/dashboard/vehicles/new" className={buttonVariants({ size: "lg" })}><Plus /> Add vehicle</Link>} />

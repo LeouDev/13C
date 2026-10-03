@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PLAN_VEHICLE_LIMIT, TRIAL_DAYS } from "@/lib/constants";
 import Link from "next/link";
 import { CreditCard, Info } from "lucide-react";
 import { ListFilters } from "@/components/admin/list-filters";
@@ -14,7 +15,7 @@ export const metadata: Metadata = { title: "Subscriptions" };
 
 type Plan = Enums<"subscription_plan">;
 /** Mirrors public.plan_vehicle_limit(); null = unlimited. */
-const VEHICLE_LIMIT: Record<Plan, number | null> = { FREE: 3, PRO: 20, BUSINESS: null };
+const VEHICLE_LIMIT = PLAN_VEHICLE_LIMIT;
 const PLANS: Plan[] = ["FREE", "PRO", "BUSINESS"];
 
 export default async function AdminSubscriptionsPage({ searchParams }: PageProps<"/admin/subscriptions">) {
@@ -47,8 +48,8 @@ export default async function AdminSubscriptionsPage({ searchParams }: PageProps
         </p>
       </div>
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Free" value={byPlan("FREE")} hint="Up to 3 vehicles" />
-        <StatCard label="Pro" value={byPlan("PRO")} hint="Up to 20 vehicles" />
+        <StatCard label="Free trial" value={byPlan("FREE")} hint={`${TRIAL_DAYS} days · up to 3 vehicles`} />
+        <StatCard label="Pro" value={byPlan("PRO")} hint="₱499/mo · up to 10 vehicles" />
         <StatCard label="Business" value={byPlan("BUSINESS")} hint="Unlimited vehicles" />
         <StatCard label="Over limit" value={all.filter((b) => b.over).length} hint="More vehicles than plan allows" />
       </div>

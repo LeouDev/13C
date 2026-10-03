@@ -5,6 +5,7 @@ import { Logo } from "@/components/brand/logo";
 import { BusinessSwitcher } from "@/components/dashboard/business-switcher";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { DashboardMobileNav } from "@/components/dashboard/mobile-nav";
+import { TrialBanner } from "@/components/dashboard/trial-banner";
 import { NotificationBell } from "@/components/site/notification-bell";
 import { requireBusiness } from "@/lib/auth";
 import { storeDisplayUrl } from "@/lib/constants";
@@ -15,10 +16,11 @@ export const metadata: Metadata = { title: { default: "Dashboard", template: "%s
 export default async function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
   const { user, business, role, memberships } = await requireBusiness();
   const supabase = await createClient();
-  const [requests, convos, notes] = await Promise.all([
+  const [requests, convos, notes, sub] = await Promise.all([
     supabase.from("bookings").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("status", "PENDING_OWNER_APPROVAL"),
     supabase.from("conversations").select("last_message_at, business_last_read_at, last_sender_role").eq("business_id", business.id).eq("last_sender_role", "CUSTOMER").limit(200),
     supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
+    supabase.from("subscriptions").select("plan, status, current_period_end").eq("business_id", business.id).maybeSingle(),
   ]);
   const unread = (convos.data ?? []).filter((c) => !c.business_last_read_at || c.business_last_read_at < c.last_message_at).length;
   const badges = { requests: requests.count ?? 0, unread };
@@ -47,7 +49,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
           </Link>
           <div className="ml-auto sm:ml-0"><NotificationBell userId={user.id} initialUnread={notes.count ?? 0} /></div>
         </header>
-        <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+        <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8"><TrialBanner sub={sub.data} />{children}</main>
       </div>
     </div>
   );
