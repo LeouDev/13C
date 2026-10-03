@@ -7,6 +7,8 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const nextParam = searchParams.get("next") ?? "/";
   const next = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
+  // Supabase reports expired / already-used links as error params.
+  if (searchParams.get("error")) return NextResponse.redirect(`${origin}/login?error=link&next=${encodeURIComponent(next)}`);
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);

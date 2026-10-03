@@ -5,7 +5,7 @@ import { Logo } from "@/components/brand/logo";
 import { NotificationBell } from "@/components/site/notification-bell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { buttonVariants } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { getCurrentUser, getMemberships } from "@/lib/auth";
 import { initials } from "@/lib/format";
@@ -60,12 +60,14 @@ export async function SiteHeader() {
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="truncate">{user.full_name || user.email}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem render={<Link href="/account/bookings" />}><CalendarCheck /> My bookings</DropdownMenuItem>
-                  <DropdownMenuItem render={<Link href="/account/messages" />}><MessageSquare /> Messages</DropdownMenuItem>
-                  <DropdownMenuItem render={<Link href="/account/favorites" />}><Heart /> Saved cars</DropdownMenuItem>
-                  <DropdownMenuItem render={<Link href="/account" />}><User /> Profile & documents</DropdownMenuItem>
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="truncate">{user.full_name || user.email}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem render={<Link href="/account/bookings" />}><CalendarCheck /> My bookings</DropdownMenuItem>
+                    <DropdownMenuItem render={<Link href="/account/messages" />}><MessageSquare /> Messages</DropdownMenuItem>
+                    <DropdownMenuItem render={<Link href="/account/favorites" />}><Heart /> Saved cars</DropdownMenuItem>
+                    <DropdownMenuItem render={<Link href="/account" />}><User /> Profile & documents</DropdownMenuItem>
+                  </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   {memberships.length > 0 ? (
                     <DropdownMenuItem render={<Link href="/dashboard" />}><LayoutDashboard /> Business dashboard</DropdownMenuItem>

@@ -18,6 +18,11 @@ export async function signIn(_: unknown, form: FormData): Promise<ActionResult> 
   if (!parsed.success) return invalid(parsed.error);
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  if (error?.code === "email_not_confirmed") {
+    const next = safeNext(form.get("next"));
+    await supabase.auth.resend({ type: "signup", email: parsed.data.email, options: { emailRedirectTo: `${SITE_URL}/auth/callback?next=${encodeURIComponent(next)}` } });
+    return { ok: false, error: "Please confirm your email first — we just sent you a new confirmation link." };
+  }
   if (error) return fail(error);
   redirect(safeNext(form.get("next")));
 }

@@ -6,7 +6,7 @@ import { useTransition } from "react";
 import { Archive, CalendarDays, ImageIcon, MoreHorizontal, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { archiveVehicle, setVehicleStatus } from "@/app/actions/vehicles";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { VEHICLE_STATUSES } from "@/lib/constants";
 import type { Enums } from "@/types/database";
 
@@ -25,10 +25,12 @@ export function VehicleRowActions({ id, status }: { id: string; status: Enums<"v
         <DropdownMenuItem render={<Link href={`/dashboard/vehicles/${id}?tab=photos`} />}><ImageIcon /> Photos</DropdownMenuItem>
         <DropdownMenuItem render={<Link href={`/dashboard/vehicles/${id}?tab=availability`} />}><CalendarDays /> Availability</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>Set status</DropdownMenuLabel>
-        {VEHICLE_STATUSES.filter((s) => s.value !== status).map((s) => (
-          <DropdownMenuItem key={s.value} onClick={() => run(() => setVehicleStatus(id, s.value))}>{s.label}</DropdownMenuItem>
-        ))}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Set status</DropdownMenuLabel>
+          {VEHICLE_STATUSES.filter((s) => s.value !== status).map((s) => (
+            <DropdownMenuItem key={s.value} onClick={() => run(() => setVehicleStatus(id, s.value))}>{s.label}</DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={() => { if (confirm("Archive this vehicle? It will be removed from your store.")) run(() => archiveVehicle(id)); }}><Archive /> Archive</DropdownMenuItem>
       </DropdownMenuContent>
