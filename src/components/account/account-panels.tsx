@@ -65,11 +65,11 @@ export function DriverDocuments({ userId, docs }: { userId: string; docs: { doc_
   );
 }
 
-export function PasswordForm() {
+export function PasswordForm({ autoFocus }: { autoFocus?: boolean }) {
   const [state, action, pending] = useActionState(updatePassword, null);
   return (
     <form action={action} className="flex flex-col gap-2 sm:flex-row">
-      <Input name="password" type="password" minLength={8} required placeholder="New password (8+ characters)" autoComplete="new-password" aria-label="New password" />
+      <Input name="password" type="password" minLength={8} required placeholder="New password (8+ characters)" autoComplete="new-password" aria-label="New password" autoFocus={autoFocus} />
       <Button type="submit" variant="outline" size="lg" disabled={pending}>{pending && <Loader2 className="animate-spin" />} Update password</Button>
       {state && <p className={cn("text-sm sm:self-center", state.ok ? "text-emerald-700" : "text-destructive")}>{state.ok ? state.message : state.error}</p>}
     </form>
