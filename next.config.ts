@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://example.supabase.co").hostname;
+// Same fallback as SITE_URL in src/lib/constants.ts.
+const site = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"));
 
 // Report-only for now: browsers report what this would block to /api/csp-report, nothing is blocked.
 // Next's inline scripts need 'unsafe-inline' (nonces would make every page dynamic); dev also needs eval.
@@ -23,7 +25,11 @@ const contentSecurityPolicy = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
-    remotePatterns: [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }],
+    remotePatterns: [
+      { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" },
+      // Share cards, served to link previews as JPEG (src/lib/share-card.ts).
+      { protocol: site.protocol === "http:" ? "http" : "https", hostname: site.hostname, port: site.port, pathname: "/api/share-card/**" },
+    ],
     formats: ["image/avif", "image/webp"],
   },
   experimental: {

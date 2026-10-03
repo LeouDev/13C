@@ -14,6 +14,7 @@ import { POLICY_FIELDS, SITE_URL } from "@/lib/constants";
 import { formatDate, labelize, responseTimeLabel, todayManila } from "@/lib/format";
 import { plural } from "@/lib/format";
 import { getStorefront, searchVehicles, storeSections } from "@/lib/queries";
+import { shareCardImage, storeCardInput } from "@/lib/share-card";
 import { mediaUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/[business]">): Pr
     title: { absolute: title },
     description,
     alternates: { canonical: `/${business.slug}` },
-    openGraph: { title, description, url: `/${business.slug}`, type: "website" }, // image: ./opengraph-image.tsx
+    openGraph: { title, description, url: `/${business.slug}`, type: "website", images: [shareCardImage(business.slug, storeCardInput(sf))] },
     robots: isPublic ? undefined : { index: false, follow: false },
   };
 }

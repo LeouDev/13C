@@ -16,6 +16,7 @@ import { SITE_URL } from "@/lib/constants";
 import { formatDate, formatPHP, isoDaysFromNow, labelize, responseTimeLabel } from "@/lib/format";
 import { plural } from "@/lib/format";
 import { getStorefront, getVehicleBySlug } from "@/lib/queries";
+import { carCardInput, shareCardImage } from "@/lib/share-card";
 import { mediaUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 
@@ -37,7 +38,7 @@ export async function generateMetadata({ params }: PageProps<"/[business]/[vehic
     title: { absolute: title },
     description,
     alternates: { canonical: `/${d.business.slug}/${v.slug}` },
-    openGraph: { title, description, url: `/${d.business.slug}/${v.slug}` }, // image: ./opengraph-image.tsx
+    openGraph: { title, description, url: `/${d.business.slug}/${v.slug}`, images: [shareCardImage(`${d.business.slug}/${v.slug}`, carCardInput(d, v))] },
     robots: d.business.status === "VERIFIED" && d.store.is_published && v.status === "ACTIVE" ? undefined : { index: false },
   };
 }
