@@ -13,6 +13,29 @@ export type SignaturePadHandle = { toDataURL: () => string | null; mode: "DRAWN"
 const W = 560;
 const H = 160;
 
+/** The inked area plus a small margin, so the signature shows at a useful size wherever it's displayed. */
+function inkPng(c: HTMLCanvasElement) {
+  const { data, width, height } = c.getContext("2d")!.getImageData(0, 0, c.width, c.height);
+  let top = height, left = width, right = -1, bottom = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (!data[(y * width + x) * 4 + 3]) continue;
+      if (x < left) left = x;
+      if (x > right) right = x;
+      if (y < top) top = y;
+      bottom = y;
+    }
+  }
+  if (right < 0) return c.toDataURL("image/png");
+  const margin = Math.round((c.width / W) * 6);
+  const [x0, y0] = [Math.max(0, left - margin), Math.max(0, top - margin)];
+  const [w, h] = [Math.min(width, right + margin + 1) - x0, Math.min(height, bottom + margin + 1) - y0];
+  const out = document.createElement("canvas");
+  [out.width, out.height] = [w, h];
+  out.getContext("2d")!.drawImage(c, x0, y0, w, h, 0, 0, w, h);
+  return out.toDataURL("image/png");
+}
+
 /**
  * One pad for both signers. Draw (pointer events) or Type (name rendered in a handwriting font);
  * either way the result is a PNG from the same canvas, so the server always receives an image.
@@ -65,7 +88,7 @@ export function SignaturePad({ ref, name, onChange }: { ref?: React.Ref<Signatur
     return () => { live = false; };
   }, [mode, name, clear, ctx, mark]);
 
-  useImperativeHandle(ref, () => ({ toDataURL: () => (inked ? canvas.current!.toDataURL("image/png") : null), mode }), [inked, mode]);
+  useImperativeHandle(ref, () => ({ toDataURL: () => (inked ? inkPng(canvas.current!) : null), mode }), [inked, mode]);
 
   const pos = (e: React.PointerEvent) => {
     const r = canvas.current!.getBoundingClientRect();

@@ -17,7 +17,7 @@ export function MarkViewed({ contractId }: { contractId: string }) {
   return null;
 }
 
-export function SignPanel({ versionId, contentHash, defaultName }: { versionId: string; contentHash: string; defaultName: string }) {
+export function SignPanel({ bookingId, versionId, contentHash, defaultName }: { bookingId: string; versionId: string; contentHash: string; defaultName: string }) {
   const router = useRouter();
   const pad = useRef<SignaturePadHandle>(null);
   const [name, setName] = useState(defaultName);
@@ -43,7 +43,8 @@ export function SignPanel({ versionId, contentHash, defaultName }: { versionId: 
         <Button size="xl" variant="electric" disabled={!ready || pending} onClick={() => start(async () => {
           const image = pad.current?.toDataURL() ?? "";
           const r = await signContract({ versionId, type: pad.current?.mode ?? "TYPED", name, image, contentHash, agreed: true });
-          if (r.ok) { toast.success(r.message); router.refresh(); } else toast.error(r.error);
+          // The signed page shows the success moment over itself (?signed=1), so a refresh can't lose it.
+          if (r.ok) router.replace(`/account/bookings/${bookingId}/contract?signed=1`); else toast.error(r.error);
         })}>
           {pending && <Loader2 className="animate-spin" />} Sign & Submit
         </Button>

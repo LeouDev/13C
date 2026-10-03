@@ -4,6 +4,7 @@ import { BookingOnOtherAccount } from "@/components/booking/other-account";
 import { Download } from "lucide-react";
 import { ContractDocument } from "@/components/contract/contract-document";
 import { SignedAgreement } from "@/components/contract/signed-agreement";
+import { SignedSuccess } from "@/components/contract/signed-success";
 import { MarkViewed, SignPanel } from "@/components/contract/sign-panel";
 import { EmptyState } from "@/components/common/states";
 import { buttonVariants } from "@/components/ui/button";
@@ -13,12 +14,13 @@ import type { ContractSection, ContractSignature } from "@/lib/contracts/pdf";
 
 export const metadata: Metadata = { title: "Rental agreement" };
 
-export default async function ContractPage({ params }: PageProps<"/account/bookings/[id]/contract">) {
+export default async function ContractPage({ params, searchParams }: PageProps<"/account/bookings/[id]/contract">) {
   const { id } = await params;
+  const { signed } = (await searchParams) as { signed?: string };
   const user = await requireUser(`/account/bookings/${id}/contract`);
   const supabase = await createClient();
   const { data: b } = await supabase.from("bookings")
-    .select("id, reference, status, renter_id, business_id, conversation_id, pickup_at, return_at, pickup_location, return_location, total_amount, security_deposit, payment_method, payment_status, businesses(logo_path), contracts(id, current_version, contract_versions(id, version, status, title, sections, content_hash, data, sent_at, signed_at, viewed_at, contract_signatures(signer_role, signer_name, signature_type, signature_data, signed_at, ip_address, content_hash)))")
+    .select("id, reference, status, renter_id, business_id, conversation_id, pickup_at, return_at, pickup_location, return_location, total_amount, security_deposit, payment_method, payment_status, vehicles(year, make, model), businesses(logo_path), contracts(id, current_version, contract_versions(id, version, status, title, sections, content_hash, data, sent_at, signed_at, viewed_at, contract_signatures(signer_role, signer_name, signature_type, signature_data, signed_at, ip_address, content_hash)))")
     .eq("id", id).eq("renter_id", user.id).maybeSingle();
   if (!b) return <BookingOnOtherAccount bookingId={id} email={user.email} />;
   const versions = [...(b.contracts?.contract_versions ?? [])].sort((x, y) => y.version - x.version);
@@ -32,9 +34,20 @@ export default async function ContractPage({ params }: PageProps<"/account/booki
   if (current.status === "SIGNED") {
     const { data: payTo } = await supabase.from("payment_methods").select("account_name, account_number")
       .eq("business_id", b.business_id).eq("method", b.payment_method).eq("is_enabled", true).maybeSingle();
+    const sig = (role: "PROVIDER" | "RENTER") => current.contract_signatures.find((s) => s.signer_role === role);
     return (
-      <SignedAgreement booking={b} providerName={vars.provider_name} providerLogo={b.businesses?.logo_path} renterName={renterName} payTo={payTo}
-        version={{ ...current, sections: current.sections as ContractSection[], signatures: current.contract_signatures as ContractSignature[] }} />
+      <>
+        <SignedAgreement booking={b} providerName={vars.provider_name} providerLogo={b.businesses?.logo_path} renterName={renterName} payTo={payTo}
+          version={{ ...current, sections: current.sections as ContractSection[], signatures: current.contract_signatures as ContractSignature[] }} />
+        {signed && (
+          <SignedSuccess renterName={sig("RENTER")?.signer_name ?? renterName} renterSignature={sig("RENTER")?.signature_data ?? null}
+            info={{
+              bookingId: b.id, versionId: current.id, reference: b.reference, version: current.version, contentHash: current.content_hash,
+              vehicle: [b.vehicles?.year, b.vehicles?.make, b.vehicles?.model].filter(Boolean).join(" "), providerName: vars.provider_name,
+              pickupAt: b.pickup_at, providerSigner: sig("PROVIDER")?.signer_name, providerSignature: sig("PROVIDER")?.signature_data,
+            }} />
+        )}
+      </>
     );
   }
 
@@ -49,7 +62,9 @@ export default async function ContractPage({ params }: PageProps<"/account/booki
       <ContractDocument title={current.title} version={current.version} reference={b.reference} sections={current.sections as ContractSection[]}
         signatures={current.contract_signatures as ContractSignature[]} contentHash={current.content_hash}
         providerName={vars.provider_name} renterName={renterName} providerLogo={b.businesses?.logo_path} />
-      {current.status === "SENT" && <SignPanel versionId={current.id} contentHash={current.content_hash} defaultName={vars.renter_name ?? user.full_name} />}
+      {current.status === "SENT" && (
+        <SignPanel bookingId={b.id} versionId={current.id} contentHash={current.content_hash} defaultName={vars.renter_name ?? user.full_name} />
+      )}
     </div>
   );
 }

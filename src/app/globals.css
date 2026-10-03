@@ -200,7 +200,29 @@
   animation: road 0.4s linear infinite;
 }
 
+/* Signed-agreement success moment (~2.4s): streaks sweep through, the check pops and draws itself, text rises,
+   then each signature writes on. Per-element delays are set inline. */
+@keyframes success-pop { 0% { transform: scale(0.3); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes success-draw { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+@keyframes success-ring { from { box-shadow: 0 0 0 0 rgb(16 185 129 / 0.45); } to { box-shadow: 0 0 0 36px rgb(16 185 129 / 0); } }
+@keyframes success-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes success-write { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+@keyframes success-sweep { from { transform: translateX(160%); opacity: 0; } 20% { opacity: 1; } to { transform: translateX(-260%); opacity: 0; } }
+@keyframes success-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes success-dialog { from { opacity: 0; transform: translateY(24px) scale(0.97); } to { opacity: 1; transform: none; } }
+.animate-success-badge { animation: success-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both, success-ring 1.4s ease-out 0.8s 2; }
+.animate-success-check { stroke-dasharray: 24; animation: success-draw 0.45s ease-out 0.75s both; }
+.animate-success-pop { animation: success-pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-success-rise { animation: success-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-success-write { animation: success-write 0.8s ease-in-out both; }
+.animate-success-sweep { animation: success-sweep 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-success-dialog { animation: success-dialog 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both; }
+.animate-success-fade { animation: success-fade 0.3s ease-out both; }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-rush, .animate-fade-in-x, .animate-streak, .animate-drive, .animate-bob, .road-dashes { animation: none; }
   .animate-streak { display: none; }
+  .animate-success-badge, .animate-success-check, .animate-success-pop, .animate-success-rise, .animate-success-write,
+  .animate-success-dialog, .animate-success-fade { animation: none; }
+  .animate-success-sweep { display: none; }
 }

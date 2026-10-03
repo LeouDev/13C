@@ -93,6 +93,6 @@ export async function signContract(input: z.input<typeof signSchema>): Promise<A
     // The signature is recorded; the PDF is regenerated on first download if this failed.
     console.error("[contracts] PDF generation failed", e);
   }
-  refresh();
+  // No refresh() here: the renter is sent to the signed page (?signed=1), which renders fresh.
   return ok(undefined, "Signed! Your booking is confirmed.");
 }
