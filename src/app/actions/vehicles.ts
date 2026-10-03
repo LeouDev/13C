@@ -5,7 +5,7 @@ import { z } from "zod";
 import { fail, invalid, ok, type ActionResult } from "@/lib/actions";
 import { createClient } from "@/lib/supabase/server";
 import { manilaToISO } from "@/lib/format";
-import { pricingSchema, vehicleSchema } from "@/lib/validation";
+import { fleetSchema, pricingSchema, serviceLogSchema, vehicleSchema } from "@/lib/validation";
 import type { Enums } from "@/types/database";
 
 function refresh() {
@@ -111,4 +111,36 @@ export async function removeBlock(blockId: string): Promise<ActionResult> {
   if (error) return fail(error);
   refresh();
   return ok(undefined, "Dates reopened.");
+}
+
+// ── Fleet records (Business plan; the database also checks the plan and role) ──
+const FLEET_DENIED = "Only owners and managers on the Business plan can edit fleet records.";
+
+export async function saveFleetInfo(businessId: string, vehicleId: string, input: z.input<typeof fleetSchema>): Promise<ActionResult> {
+  const f = fleetSchema.safeParse(input);
+  if (!f.success) return invalid(f.error);
+  const supabase = await createClient();
+  const { error } = await supabase.from("vehicle_fleet").upsert({ vehicle_id: vehicleId, business_id: businessId, ...f.data });
+  if (error) return fail(error, FLEET_DENIED);
+  refresh();
+  return ok(undefined, "Fleet details saved.");
+}
+
+export async function addServiceLog(businessId: string, vehicleId: string, input: z.input<typeof serviceLogSchema>): Promise<ActionResult> {
+  const l = serviceLogSchema.safeParse(input);
+  if (!l.success) return invalid(l.error);
+  const supabase = await createClient();
+  const { error } = await supabase.from("vehicle_service_logs").insert({ vehicle_id: vehicleId, business_id: businessId, ...l.data });
+  if (error) return fail(error, FLEET_DENIED);
+  refresh();
+  return ok(undefined, "Service recorded.");
+}
+
+export async function deleteServiceLog(logId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("vehicle_service_logs").delete().eq("id", logId).select("id");
+  if (error) return fail(error, FLEET_DENIED);
+  if (!data?.length) return { ok: false, error: FLEET_DENIED };
+  refresh();
+  return ok(undefined, "Service entry removed.");
 }

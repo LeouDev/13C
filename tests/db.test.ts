@@ -554,3 +554,59 @@ describe("notification emails", () => {
     expect((await call("Bearer vitest-dispatch-secret")).status).toBe(503);
   });
 });
+
+describe("Business plan features (analytics, fleet, contract terms)", () => {
+  const setPlan = async (p_plan: "PRO" | "BUSINESS") => must(await admin.client.rpc("admin_set_plan", { p_business_id: businessId, p_plan, p_status: "ACTIVE" }));
+  const terms = [{ title: "Travel outside Cebu", body: "Needs the Rental Provider's written approval." }, { title: "Pets", body: "Not allowed." }];
+
+  it("are locked on other plans, in the database and not only the UI", async () => {
+    await setPlan("PRO");
+    await expectError(owner.client.rpc("save_contract_terms", { p_business_id: businessId, p_terms: terms }), "PLAN_BUSINESS_REQUIRED");
+    await expectError(owner.client.rpc("business_analytics_advanced", { p_business_id: businessId, p_days: 30 }), "PLAN_BUSINESS_REQUIRED");
+    await expectError(owner.client.from("vehicle_fleet").insert({ vehicle_id: vehicleId, business_id: businessId, odometer_km: 1 }), /row-level security|42501/);
+  });
+
+  it("fleet records: managers write, the business is taken from the car, outsiders see nothing", async () => {
+    await setPlan("BUSINESS");
+    must(await owner.client.from("vehicle_fleet").upsert({ vehicle_id: vehicleId, business_id: crypto.randomUUID(), odometer_km: 48_500, next_service_km: 50_000, insurance_expires_on: "2027-01-31" }).select("vehicle_id"));
+    const row = must(await owner.client.from("vehicle_fleet").select("business_id, odometer_km").eq("vehicle_id", vehicleId).single());
+    expect(row).toEqual({ business_id: businessId, odometer_km: 48_500 });
+    const log = must(await owner.client.from("vehicle_service_logs").insert({ vehicle_id: vehicleId, business_id: businessId, serviced_on: "2026-09-30", kind: "Oil change", cost: 2500 }).select("id").single());
+    expect(must(await outsider.client.from("vehicle_fleet").select("vehicle_id").eq("vehicle_id", vehicleId))).toHaveLength(0);
+    expect(must(await renter.client.from("vehicle_service_logs").select("id").eq("id", log.id))).toHaveLength(0);
+    await expectError(outsider.client.from("vehicle_service_logs").insert({ vehicle_id: vehicleId, business_id: businessId, serviced_on: "2026-09-30", kind: "Fake" }), /row-level security|42501/);
+    expect(must(await owner.client.from("vehicle_service_logs").delete().eq("id", log.id).select("id"))).toHaveLength(1);
+  });
+
+  it("custom terms are validated and become the last section of new agreements", async () => {
+    await expectError(outsider.client.rpc("save_contract_terms", { p_business_id: businessId, p_terms: terms }), "NOT_AUTHORIZED");
+    await expectError(owner.client.rpc("save_contract_terms", { p_business_id: businessId, p_terms: [{ title: "x", body: "too short title" }] }), "INVALID_INPUT");
+    must(await owner.client.rpc("save_contract_terms", { p_business_id: businessId, p_terms: terms }));
+
+    // The admin tests above suspend the business; make it bookable again.
+    must(await admin.client.rpc("admin_review_business", { p_business_id: businessId, p_decision: "VERIFIED" }));
+    must(await owner.client.rpc("set_storefront_published", { p_business_id: businessId, p_publish: true }));
+    const id = must(await renter2.client.rpc("request_booking", {
+      p_vehicle_id: vehicleId, p_pickup_at: day(250), p_return_at: day(251), p_pickup_location: "Cebu City", p_return_location: "Cebu City", p_payment_method: "GCASH",
+    }));
+    must(await owner.client.rpc("transition_booking", { p_booking_id: id, p_to: "APPROVED" }));
+    const v = must(await owner.client.from("contract_versions").select("sections").eq("booking_id", id).single());
+    const sections = v.sections as { key: string; title: string; body: string }[];
+    const last = sections.at(-1)!;
+    expect(last.key).toBe("provider_terms");
+    expect(last.title).toBe(`${sections.length}. Additional Terms of the Rental Provider`);
+    expect(last.body).toContain("(a) Travel outside Cebu: Needs the Rental Provider's written approval.");
+    expect(last.body).toContain("(b) Pets: Not allowed.");
+    expect(last.body).toContain(`Sections 1 to ${sections.length - 1}, those Sections prevail`);
+    must(await owner.client.rpc("transition_booking", { p_booking_id: id, p_to: "CANCELLED" }));
+  });
+
+  it("advanced analytics report each car, 12 months, customers and outcomes", async () => {
+    const a = must(await owner.client.rpc("business_analytics_advanced", { p_business_id: businessId, p_days: 90 })) as Record<string, unknown>;
+    expect(Object.keys(a).sort()).toEqual(["customers", "monthly", "outcomes", "period_days", "repeat_rate", "top_customers", "vehicles"]);
+    expect((a.monthly as unknown[]).length).toBe(12);
+    expect((a.vehicles as { id: string }[]).map((v) => v.id)).toContain(vehicleId);
+    expect(a.period_days).toBe(90);
+    await expectError(outsider.client.rpc("business_analytics_advanced", { p_business_id: businessId, p_days: 30 }), "NOT_AUTHORIZED");
+  });
+});

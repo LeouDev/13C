@@ -94,6 +94,13 @@ export const getStorefront = cache(async (slug: string) => {
 });
 export type Storefront = NonNullable<Awaited<ReturnType<typeof getStorefront>>>;
 
+/** The business's subscription (once per request). */
+export const getSubscription = cache(async (businessId: string) => {
+  const supabase = await createClient();
+  const { data } = await supabase.from("subscriptions").select("plan, status, current_period_end").eq("business_id", businessId).maybeSingle();
+  return data;
+});
+
 /** Optional storefront sections that render: the owner didn't hide them and they have content. The page and its tabs both use this. */
 export function storeSections({ store, paymentMethods }: Storefront) {
   const has: Record<string, boolean> = {

@@ -13,3 +13,6 @@ export function subscriptionState(sub: Sub, now = Date.now()) {
   const ms = new Date(sub.current_period_end).getTime() - now;
   return { active: ms > 0, trial, started: true, ended: ms <= 0, daysLeft: Math.max(0, Math.ceil(ms / 86400000)), endsAt: sub.current_period_end };
 }
+
+/** Mirrors public.business_plan_active(): Business features need an active Business subscription. */
+export const businessPlanActive = (sub: Sub, now = Date.now()) => sub?.plan === "BUSINESS" && subscriptionState(sub, now).active;

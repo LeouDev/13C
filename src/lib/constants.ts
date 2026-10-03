@@ -76,7 +76,7 @@ export const PLANS = [
   { id: "PRO", name: "Pro", price: "₱499", period: "/month", vehicles: `Up to ${PLAN_VEHICLE_LIMIT.PRO} vehicles`,
     features: ["Everything in Free", "Unlimited bookings", "Digital contracts & e-signatures", "Customer management", "Calendar", "Analytics", "Automated notifications"] },
   { id: "BUSINESS", name: "Business", price: "₱1,500", period: "/month", vehicles: "Unlimited vehicles",
-    features: ["Everything in Pro", "Team accounts (owner, managers, staff)", "Priority support", "GPS integrations (soon)"] },
+    features: ["Everything in Pro", "Team accounts (owner, managers, staff)", "Advanced analytics & CSV export", "Fleet records & due-date alerts", "Custom contract terms", "Priority support", "GPS integrations (soon)"] },
 ] as const;
 
 /** Must match public.is_reserved_slug() — tests/db.test.ts checks every entry. */
@@ -117,3 +117,10 @@ export const PICKUP_CHECKLIST = [
   "Collect payment and deposit as agreed, then record it in 13C",
   "Do the walk-around inspection, then mark the booking as picked up",
 ];
+
+/** What each Business-plan feature includes (upsell copy on the dashboard). */
+export const BUSINESS_FEATURES = {
+  analytics: ["Revenue and utilization for each car", "12-month revenue trend", "Returning renters, average rental length and booking value", "Export your bookings to CSV"],
+  fleet: ["Registration, insurance and service due dates for every car", "Odometer and service history", "One Fleet page that flags anything overdue or due within 30 days"],
+  contract: ["Add your own clauses to every rental agreement", "Up to 10 terms, shown as the agreement's last section"],
+};

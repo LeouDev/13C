@@ -116,3 +116,30 @@ export const renterSchema = z.object({
   license_expiry: z.string().optional().transform((v) => v || null),
 });
 export type RenterInput = z.input<typeof renterSchema>;
+
+// ── Business plan: fleet records and custom contract terms ──
+const optionalDate = z.union([z.literal(""), z.null(), z.undefined(), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a valid date")])
+  .transform((v) => v || null);
+const optionalKm = z.union([z.literal(""), z.null(), z.undefined(), z.coerce.number().int("Whole kilometres only").min(0).max(2_000_000)])
+  .transform((v) => (v === "" || v == null ? null : Number(v)));
+
+export const fleetSchema = z.object({
+  registration_expires_on: optionalDate,
+  insurance_expires_on: optionalDate,
+  odometer_km: optionalKm,
+  next_service_on: optionalDate,
+  next_service_km: optionalKm,
+});
+
+export const serviceLogSchema = z.object({
+  serviced_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick the service date"),
+  kind: z.string().trim().min(2, "What was done? (e.g. Oil change)").max(80),
+  odometer_km: optionalKm,
+  cost: optionalMoney,
+  note: optionalText(1000),
+});
+
+export const contractTermsSchema = z.array(z.object({
+  title: z.string().trim().min(2, "Add a short title").max(80),
+  body: z.string().trim().min(2, "Write the term").max(2000),
+})).max(10, "Up to 10 terms");

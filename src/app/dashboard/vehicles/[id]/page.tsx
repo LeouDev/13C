@@ -4,24 +4,28 @@ import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { cn } from "cn";
 import { AvailabilityManager } from "@/components/business/availability-manager";
+import { FleetEditor } from "@/components/business/fleet-editor";
+import { BusinessUpsell } from "@/components/dashboard/business-upsell";
 import { PhotoManager } from "@/components/business/photo-manager";
 import { VehicleForm } from "@/components/business/vehicle-form";
 import { Pill, VEHICLE_STATUS_TONE } from "@/components/common/badges";
 import { PageHeader } from "@/components/common/states";
-import { requireBusiness } from "@/lib/auth";
+import { hasRole, requireBusiness } from "@/lib/auth";
 import { BLOCKING_STATUSES } from "@/lib/bookings/status";
+import { BUSINESS_FEATURES } from "@/lib/constants";
 import { labelize } from "@/lib/format";
-import { getCategories } from "@/lib/queries";
+import { businessPlanActive } from "@/lib/plans";
+import { getCategories, getSubscription } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Edit vehicle" };
 
-const TABS = [["details", "Details & pricing"], ["photos", "Photos"], ["availability", "Availability"]] as const;
+const TABS = [["details", "Details & pricing"], ["photos", "Photos"], ["availability", "Availability"], ["fleet", "Fleet records"]] as const;
 
 export default async function VehiclePage({ params, searchParams }: PageProps<"/dashboard/vehicles/[id]">) {
   const { id } = await params;
   const { tab = "details", new: isNew } = (await searchParams) as { tab?: string; new?: string };
-  const { business } = await requireBusiness();
+  const { business, role } = await requireBusiness();
   const supabase = await createClient();
   const { data: vehicle } = await supabase.from("vehicles").select("*, vehicle_pricing(*), vehicle_images(id, storage_path, position)")
     .eq("id", id).eq("business_id", business.id).is("deleted_at", null).order("position", { referencedTable: "vehicle_images" }).maybeSingle();
@@ -47,6 +51,8 @@ export default async function VehiclePage({ params, searchParams }: PageProps<"/
         <PhotoManager businessId={business.id} vehicleId={vehicle.id} images={vehicle.vehicle_images} />
       ) : tab === "availability" ? (
         <Availability vehicleId={vehicle.id} />
+      ) : tab === "fleet" ? (
+        <Fleet businessId={business.id} vehicleId={vehicle.id} canManage={hasRole(role, "MANAGER")} />
       ) : (
         <VehicleForm businessId={business.id} businessCity={business.city} categories={await getCategories()} vehicle={vehicle} />
       )}
@@ -65,5 +71,24 @@ async function Availability({ vehicleId }: { vehicleId: string }) {
   return (
     <AvailabilityManager vehicleId={vehicleId} blocks={blocks ?? []}
       bookings={(bookings ?? []).map((b) => ({ start: b.pickup_at, end: b.return_at, kind: BLOCKING_STATUSES.includes(b.status) ? "BOOKED" : "PENDING" }))} />
+  );
+}
+
+async function Fleet({ businessId, vehicleId, canManage }: { businessId: string; vehicleId: string; canManage: boolean }) {
+  const supabase = await createClient();
+  const [sub, { data: fleet }, { data: logs }] = await Promise.all([
+    getSubscription(businessId),
+    supabase.from("vehicle_fleet").select("registration_expires_on, insurance_expires_on, odometer_km, next_service_on, next_service_km").eq("vehicle_id", vehicleId).maybeSingle(),
+    supabase.from("vehicle_service_logs").select("id, serviced_on, kind, odometer_km, cost, note").eq("vehicle_id", vehicleId)
+      .order("serviced_on", { ascending: false }).order("created_at", { ascending: false }).limit(100),
+  ]);
+  const plan = businessPlanActive(sub);
+  // Records kept from an earlier Business subscription stay readable.
+  if (!plan && !fleet && !logs?.length) return <BusinessUpsell title="Fleet records are on the Business plan" points={BUSINESS_FEATURES.fleet} />;
+  return (
+    <>
+      {!plan && <p className="mb-4 rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">Read-only: editing fleet records needs the Business plan.</p>}
+      <FleetEditor businessId={businessId} vehicleId={vehicleId} fleet={fleet} logs={logs ?? []} canEdit={plan && canManage} />
+    </>
   );
 }

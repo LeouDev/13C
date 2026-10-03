@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3, Building2, CalendarDays, Car, ClipboardList, CreditCard, FileSignature, Gem, Inbox,
-  LayoutDashboard, MessageSquare, Settings, Star, Store, Users,
+  LayoutDashboard, MessageSquare, Settings, Star, Store, Users, Wrench,
 } from "lucide-react";
 import { cn } from "cn";
 
@@ -12,6 +12,7 @@ export const DASHBOARD_NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/store", label: "My Store", icon: Store },
   { href: "/dashboard/vehicles", label: "Vehicles", icon: Car },
+  { href: "/dashboard/fleet", label: "Fleet", icon: Wrench },
   { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardList, badge: "requests" },
   { href: "/dashboard/inquiries", label: "Inquiries", icon: Inbox },

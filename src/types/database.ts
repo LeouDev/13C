@@ -472,6 +472,7 @@ export type Database = {
         Row: {
           address: string | null
           city: string
+          contract_terms: Json
           created_at: string
           deleted_at: string | null
           description: string | null
@@ -495,6 +496,7 @@ export type Database = {
         Insert: {
           address?: string | null
           city: string
+          contract_terms?: Json
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -518,6 +520,7 @@ export type Database = {
         Update: {
           address?: string | null
           city?: string
+          contract_terms?: Json
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -1836,6 +1839,54 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_fleet: {
+        Row: {
+          business_id: string
+          insurance_expires_on: string | null
+          next_service_km: number | null
+          next_service_on: string | null
+          odometer_km: number | null
+          registration_expires_on: string | null
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          business_id: string
+          insurance_expires_on?: string | null
+          next_service_km?: number | null
+          next_service_on?: string | null
+          odometer_km?: number | null
+          registration_expires_on?: string | null
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          business_id?: string
+          insurance_expires_on?: string | null
+          next_service_km?: number | null
+          next_service_on?: string | null
+          odometer_km?: number | null
+          registration_expires_on?: string | null
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_fleet_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_fleet_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: true
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_images: {
         Row: {
           business_id: string
@@ -1929,6 +1980,67 @@ export type Database = {
             foreignKeyName: "vehicle_pricing_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: true
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_service_logs: {
+        Row: {
+          business_id: string
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          note: string | null
+          odometer_km: number | null
+          serviced_on: string
+          vehicle_id: string
+        }
+        Insert: {
+          business_id: string
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          note?: string | null
+          odometer_km?: number | null
+          serviced_on: string
+          vehicle_id: string
+        }
+        Update: {
+          business_id?: string
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          note?: string | null
+          odometer_km?: number | null
+          serviced_on?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_service_logs_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_service_logs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_service_logs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
@@ -2132,6 +2244,11 @@ export type Database = {
         Args: { p_business_id: string; p_days?: number }
         Returns: Json
       }
+      business_analytics_advanced: {
+        Args: { p_business_id: string; p_days?: number }
+        Returns: Json
+      }
+      business_plan_active: { Args: { p_business: string }; Returns: boolean }
       business_public_stats: {
         Args: { p_ids: string[] }
         Returns: {
@@ -2142,6 +2259,10 @@ export type Database = {
           review_count: number
           vehicle_count: number
         }[]
+      }
+      can_view_renter_documents: {
+        Args: { p_renter: string }
+        Returns: boolean
       }
       claim_notification_emails: {
         Args: { p_limit?: number }
@@ -2386,6 +2507,10 @@ export type Database = {
       role_rank: {
         Args: { p: Database["public"]["Enums"]["business_role"] }
         Returns: number
+      }
+      save_contract_terms: {
+        Args: { p_business_id: string; p_terms: Json }
+        Returns: undefined
       }
       save_vehicle: {
         Args: {

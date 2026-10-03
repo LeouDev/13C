@@ -2,11 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { fail, ok, type ActionResult } from "@/lib/actions";
+import { fail, invalid, ok, type ActionResult } from "@/lib/actions";
 import { finalizeSignedPdf, requestMeta } from "@/lib/contracts/service";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { MAX_SIGNATURE_CHARS, SIGNATURE_PNG } from "@/lib/signature";
+import { contractTermsSchema } from "@/lib/validation";
 
 function refresh() {
   revalidatePath("/account", "layout");
@@ -95,4 +96,15 @@ export async function signContract(input: z.input<typeof signSchema>): Promise<A
   }
   // No refresh() here: the renter is sent to the signed page (?signed=1), which renders fresh.
   return ok(undefined, "Signed! Your booking is confirmed.");
+}
+
+/** The business's own clauses, added to every new agreement (Business plan; the database checks plan and role). */
+export async function saveContractTerms(businessId: string, terms: z.input<typeof contractTermsSchema>): Promise<ActionResult> {
+  const t = contractTermsSchema.safeParse(terms);
+  if (!t.success) return invalid(t.error);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("save_contract_terms", { p_business_id: businessId, p_terms: t.data });
+  if (error) return fail(error);
+  refresh();
+  return ok(undefined, t.data.length ? "Contract terms saved. New agreements will include them." : "Contract terms removed.");
 }

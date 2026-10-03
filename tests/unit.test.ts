@@ -12,6 +12,8 @@ import { friendlyError } from "@/lib/errors";
 import { browserLabel, formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
 import { storeSections, type Storefront } from "@/lib/queries";
+import { dueKm, dueOn } from "@/lib/fleet";
+import { toCsv } from "@/lib/csv";
 import { groupFingerprint, isValidSignatureImage } from "@/lib/signature";
 import { businessSchema, localPhone, phoneSchema, slugSchema, toPhilippinePhone, vehicleSchema } from "@/lib/validation";
 
@@ -130,6 +132,34 @@ describe("notification → email template", () => {
       const link = t.audience === "Admin" ? "/admin/x" : t.audience === "Business" ? "/dashboard/x" : "/account/x";
       expect(templateFor(nt!, link), key).toBe(key);
     }
+  });
+});
+
+describe("fleet due dates", () => {
+  it("flags overdue, today and within 30 days; leaves the rest neutral", () => {
+    expect(dueOn("2026-10-01", "2026-10-04")).toMatchObject({ tone: "danger", label: "Overdue by 3 days", urgent: true });
+    expect(dueOn("2026-10-04", "2026-10-04")).toMatchObject({ tone: "danger", label: "Due today" });
+    expect(dueOn("2026-10-05", "2026-10-04")).toMatchObject({ tone: "warning", label: "Due in 1 day" });
+    expect(dueOn("2026-11-03", "2026-10-04")).toMatchObject({ tone: "warning", label: "Due in 30 days" });
+    expect(dueOn("2026-11-04", "2026-10-04")).toMatchObject({ tone: "neutral", urgent: false });
+    expect(dueOn(null)).toBeNull();
+  });
+  it("flags service by distance within 1,000 km", () => {
+    expect(dueKm(50_000, 50_400)).toMatchObject({ tone: "danger", label: "Overdue by 400 km" });
+    expect(dueKm(50_000, 49_200)).toMatchObject({ tone: "warning", label: "Due in 800 km" });
+    expect(dueKm(50_000, 40_000)).toMatchObject({ tone: "neutral", urgent: false });
+    expect(dueKm(50_000, null)).toBeNull();
+  });
+});
+
+describe("CSV export", () => {
+  it("quotes, escapes and neutralises spreadsheet formulas", () => {
+    const csv = toCsv([["Name", "Note", "Total"], ['Juan "JD" Cruz', "=HYPERLINK(\"x\")", 1800], ["Maria, Jr.", "-1+2", null]]);
+    expect(csv.startsWith("\uFEFF")).toBe(true);
+    expect(csv).toContain('"Juan ""JD"" Cruz"');
+    expect(csv).toContain(`"'=HYPERLINK(""x"")"`);
+    expect(csv).toContain('"Maria, Jr.",\'-1+2,\r\n');
+    expect(csv.split("\r\n")[1]).toMatch(/,1800$/);
   });
 });
 

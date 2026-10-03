@@ -9,6 +9,7 @@ import { PlanBanner } from "@/components/dashboard/plan-banner";
 import { NotificationBell } from "@/components/site/notification-bell";
 import { requireBusiness } from "@/lib/auth";
 import { storeDisplayUrl } from "@/lib/constants";
+import { getSubscription } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: { default: "Dashboard", template: "%s · 13C Dashboard" }, robots: { index: false } };
@@ -20,7 +21,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
     supabase.from("bookings").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("status", "PENDING_OWNER_APPROVAL"),
     supabase.from("conversations").select("last_message_at, business_last_read_at, last_sender_role").eq("business_id", business.id).eq("last_sender_role", "CUSTOMER").limit(200),
     supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
-    supabase.from("subscriptions").select("plan, status, current_period_end").eq("business_id", business.id).maybeSingle(),
+    getSubscription(business.id).then((data) => ({ data })),
   ]);
   const unread = (convos.data ?? []).filter((c) => !c.business_last_read_at || c.business_last_read_at < c.last_message_at).length;
   const badges = { requests: requests.count ?? 0, unread };

@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ContractTermsEditor } from "@/components/business/contract-terms-editor";
 import { TeamManager } from "@/components/business/team-manager";
 import { PageHeader } from "@/components/common/states";
 import { hasRole, requireBusiness } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
+import { businessPlanActive } from "@/lib/plans";
+import { getSubscription } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -12,9 +15,9 @@ export default async function SettingsPage() {
   const { business, role } = await requireBusiness();
   const supabase = await createClient();
   const isOwner = hasRole(role, "OWNER");
-  const [{ data: members }, { data: sub }, { data: audit }] = await Promise.all([
+  const [{ data: members }, sub, { data: audit }] = await Promise.all([
     supabase.from("business_members").select("user_id, role, profiles(full_name, email)").eq("business_id", business.id).order("created_at"),
-    supabase.from("subscriptions").select("plan").eq("business_id", business.id).single(),
+    getSubscription(business.id),
     isOwner ? supabase.from("audit_logs").select("action, created_at, metadata").eq("business_id", business.id).order("created_at", { ascending: false }).limit(30) : Promise.resolve({ data: [] }),
   ]);
   return (
@@ -30,6 +33,15 @@ export default async function SettingsPage() {
         <section className="rounded-3xl border bg-white p-5 sm:p-6">
           <h2 className="font-semibold text-navy-900">Contract settings</h2>
           <p className="mt-1 text-sm text-muted-foreground">Your fuel, mileage, late-return, cancellation and deposit policies are inserted into every rental agreement automatically. Edit them in <Link href="/dashboard/store#customize" className="font-semibold text-electric hover:underline">My Store → Rental policies</Link>.</p>
+          <h3 className="mt-5 text-sm font-semibold text-navy-900">Additional terms</h3>
+          {businessPlanActive(sub) ? (
+            <>
+              <p className="mt-1 text-sm text-muted-foreground">Your own clauses, added to every new agreement as its last section. If one conflicts with the standard agreement, the standard terms prevail. Agreements already sent keep the terms they had.</p>
+              <ContractTermsEditor businessId={business.id} initial={(business.contract_terms as { title: string; body: string }[]) ?? []} canEdit={hasRole(role, "MANAGER")} />
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-muted-foreground">Add your own clauses to every agreement on the Business plan. <Link href="/dashboard/subscription" className="font-semibold text-electric hover:underline">See plans</Link></p>
+          )}
         </section>
         <section className="rounded-3xl border bg-white p-5 sm:p-6">
           <h2 className="font-semibold text-navy-900">GPS tracking</h2>
