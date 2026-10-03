@@ -44,7 +44,8 @@ export function LogoBadge({ className, spin = true }: { className?: string; spin
       </defs>
       <circle r="420" fill="none" stroke="var(--cream)" strokeWidth="6" />
       <circle r="356" fill="none" stroke="var(--cream)" strokeWidth="2" opacity="0.45" />
-      <g className={spin ? "origin-center animate-[spin_60s_linear_infinite] motion-reduce:animate-none" : undefined}>
+      {/* rotate about the ring's centre (0,0 in user space), not the viewBox centre */}
+      <g className={spin ? "animate-[spin_60s_linear_infinite] motion-reduce:animate-none" : undefined} style={{ transformBox: "view-box", transformOrigin: "0 0" }}>
         <text fill="var(--cream)" fontSize="34" letterSpacing="8" style={{ fontFamily: "var(--font-barlow)", fontWeight: 600 }}>
           <textPath href="#badge-path" textLength={2 * Math.PI * 388 * 0.985} lengthAdjust="spacing">{text}</textPath>
         </text>
