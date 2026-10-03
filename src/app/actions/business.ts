@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { fail, invalid, ok, type ActionResult } from "@/lib/actions";
 import { BUSINESS_COOKIE } from "@/lib/auth";
@@ -15,6 +16,12 @@ async function setActive(businessId: string) {
 export async function switchBusiness(businessId: string) {
   await setActive(z.uuid().parse(businessId));
   revalidatePath("/dashboard", "layout");
+}
+
+/** From a storefront: open the dashboard on that business (requireBusiness ignores it for non-members). */
+export async function openDashboard(businessId: string) {
+  await setActive(z.uuid().parse(businessId));
+  redirect("/dashboard");
 }
 
 export async function registerBusiness(input: BusinessInput): Promise<ActionResult<{ id: string }>> {

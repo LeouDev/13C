@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Globe, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Globe, LayoutDashboard, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { openDashboard } from "@/app/actions/business";
 import { FacebookIcon, InstagramIcon } from "@/components/common/social-icons";
 import { Logo } from "@/components/brand/logo";
 import { VerifiedBadge } from "@/components/common/badges";
 import { BusinessLogo } from "@/components/common/vehicle-image";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getMemberships } from "@/lib/auth";
 import { getStorefront, storeSections } from "@/lib/queries";
 
 export default async function StorefrontLayout({ children, params }: LayoutProps<"/[business]">) {
@@ -14,6 +15,8 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
   if (!sf) notFound();
   const { business, store } = sf;
   const user = await getCurrentUser();
+  // The store's own team gets a way back to the dashboard; customers never see it.
+  const isTeam = !!user && (await getMemberships()).some((m) => m.business.id === business.id);
   const isPublic = business.status === "VERIFIED" && store.is_published;
   const social = store.social_links as Record<string, string | undefined>;
   const show = storeSections(sf);
@@ -38,7 +41,13 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
           </Link>
           <nav className="ml-6 hidden items-center gap-1 text-sm font-medium text-navy-800 lg:flex" aria-label="Store">{tabs}</nav>
           <div className="ml-auto flex items-center gap-2">
-            {user ? (
+            {isTeam ? (
+              <form action={openDashboard.bind(null, business.id)}>
+                <button className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap text-navy-800 hover:bg-canvas">
+                  <LayoutDashboard className="size-4" /> Dashboard
+                </button>
+              </form>
+            ) : user ? (
               <Link href="/account/bookings" className="hidden rounded-full px-3 py-2 text-sm font-medium text-navy-800 hover:bg-canvas sm:block">My bookings</Link>
             ) : (
               <Link href={`/login?next=/${business.slug}`} className="rounded-full px-3 py-2 text-sm font-medium whitespace-nowrap text-navy-800 hover:bg-canvas">Sign in</Link>
