@@ -480,6 +480,12 @@ describe("subscription payments (PayMongo)", () => {
     const row = must(await owner.client.from("subscription_payments").select("status, payment_method").eq("id", id).single());
     expect(row).toEqual({ status: "PAID", payment_method: "gcash" });
     expect(await (await post(event(newSession()))).json()).toMatchObject({ ignored: true });
+    // PayMongo's dashboard test event: someone else's session, and a payload without the payment amount
+    const sample = JSON.stringify({ data: { id: "evt_sample", type: "event", attributes: { type: "checkout_session.payment.paid", livemode: false,
+      data: { id: newSession(), type: "checkout_session", attributes: { payments: [{ id: "pay_sample", attributes: { status: "paid" } }] } } } } });
+    const sampleRes = await post(sample);
+    expect(sampleRes.status).toBe(200);
+    expect(await sampleRes.json()).toMatchObject({ ignored: true });
     expect((await post(event(session, "payment.paid"))).status).toBe(200);
   });
 });

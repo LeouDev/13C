@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { parseWebhookEvent, settleCheckoutSession, verifyWebhookSignature } from "@/lib/billing";
+import { parseWebhookEvent, settleWebhookSession, verifyWebhookSignature } from "@/lib/billing";
 
 /** PayMongo webhook. Subscribe the endpoint to `checkout_session.payment.paid`. */
 export async function POST(request: Request) {
@@ -17,12 +17,10 @@ export async function POST(request: Request) {
   if (event.type !== "checkout_session.payment.paid" || !event.resource?.id) return NextResponse.json({ received: true });
 
   try {
-    await settleCheckoutSession(event.resource);
+    const result = await settleWebhookSession(event.resource);
+    return NextResponse.json({ received: true, ...(result === "ignored" ? { ignored: true } : {}) });
   } catch (e) {
-    // Sessions created outside 13C (e.g. payment links on the same account) aren't ours to settle.
-    if (JSON.stringify(e).includes("UNKNOWN_CHECKOUT")) return NextResponse.json({ received: true, ignored: true });
     console.error("[paymongo] webhook settle failed", e);
     return NextResponse.json({ error: "Not processed" }, { status: 500 }); // PayMongo retries
   }
-  return NextResponse.json({ received: true });
 }

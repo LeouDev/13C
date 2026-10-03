@@ -67,9 +67,9 @@ export async function getCheckoutSession(id: string) {
   return (await paymongo<{ data: CheckoutSession }>(`/v1/checkout_sessions/${encodeURIComponent(id)}`)).data;
 }
 
-/** The successful payment on a checkout session, if there is one. */
+/** The successful payment on a checkout session, if there is one (with its amount in centavos). */
 export function paidPayment(cs: CheckoutSession) {
-  const p = cs.attributes.payments?.find((x) => x.attributes.status === "paid");
+  const p = cs.attributes.payments?.find((x) => x.attributes?.status === "paid" && typeof x.attributes.amount === "number");
   if (!p) return null;
   return { id: p.id, amount: p.attributes.amount, method: cs.attributes.payment_method_used ?? p.attributes.source?.type ?? null, livemode: !!cs.attributes.livemode };
 }
@@ -89,6 +89,18 @@ export function verifyWebhookSignature(header: string | null, rawBody: string, s
 export function parseWebhookEvent(body: unknown) {
   const d = (body as { data?: { type?: string; data?: unknown; attributes?: { type?: string; data?: unknown } } } | null)?.data;
   return { type: d?.attributes?.type ?? d?.type, resource: (d?.attributes?.data ?? d?.data) as CheckoutSession | undefined };
+}
+
+/**
+ * A signed checkout_session.payment.paid event. Sessions 13C didn't create (e.g. PayMongo's test events) are
+ * ignored; for ours, the payload is used when it carries the paid payment, otherwise PayMongo is asked directly.
+ */
+export async function settleWebhookSession(resource: CheckoutSession) {
+  const { data: ours } = await createAdminClient().from("subscription_payments").select("id").eq("checkout_session_id", resource.id).maybeSingle();
+  if (!ours) return "ignored" as const;
+  const periodEnd = await settleCheckoutSession(paidPayment(resource) ? resource : await getCheckoutSession(resource.id));
+  if (!periodEnd) throw new Error(`Checkout ${resource.id} isn't paid yet`); // PayMongo retries
+  return "settled" as const;
 }
 
 /** Settles a paid checkout session (idempotent). Returns the new period end, or null if nothing is paid yet. */

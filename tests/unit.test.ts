@@ -107,6 +107,8 @@ describe("PayMongo webhooks", () => {
     expect(paidPayment(classic.resource!)).toEqual({ id: "pay_1", amount: 49900, method: "gcash", livemode: false });
     expect(paidPayment(v2.resource!)).toEqual({ id: "pay_2", amount: 150000, method: "card", livemode: true });
     expect(paidPayment({ id: "cs_3", attributes: {} })).toBeNull();
+    // A "paid" entry without an amount can't settle anything
+    expect(paidPayment({ id: "cs_4", attributes: { payments: [{ id: "pay_x", attributes: { status: "paid" } as never }] } })).toBeNull();
   });
 });
 
