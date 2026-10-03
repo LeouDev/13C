@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Car, Check, CircleCheck, Download, FileText, IdCard, MapPin, MessageSquare, ShieldCheck } from "lucide-react";
+import { Fragment } from "react";
+import { ArrowRight, BadgeCheck, Car, Check, CircleCheck, Download, FileCheck2, FileText, Fingerprint, IdCard, MapPin, MessageSquare, ShieldCheck } from "lucide-react";
 import { cn } from "cn";
 import { Pill } from "@/components/common/badges";
 import { ContractDocument, SignatureMark } from "@/components/contract/contract-document";
@@ -25,6 +26,68 @@ const PAYMENT_PILL = {
   PAYMENT_ON_PICKUP: <Pill tone="info">At pickup</Pill>,
 };
 const day = (iso: string) => formatDate(iso, { month: "short", day: "numeric" });
+const dayTime = (iso: string) => formatDate(iso, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
+/** The booking page's card for the latest signed version (1d desktop / 2c phone). */
+export function SignedAgreementCard({ bookingId, providerName, version: v, older }: {
+  bookingId: string; providerName: string; older: { id: string; version: number }[];
+  version: { id: string; version: number; signed_at: string | null; content_hash: string;
+    signatures: Pick<ContractSignature, "signer_role" | "signer_name" | "signature_data" | "signed_at">[] };
+}) {
+  const groups = groupFingerprint(v.content_hash).split(" ");
+  const certificate = `/account/bookings/${bookingId}/contract/certificate`;
+  return (
+    <section className="overflow-hidden rounded-3xl bg-white ring-1 ring-black/5">
+      <div className="flex items-center gap-3 px-5 pt-5 pb-3.5 sm:gap-3.5 sm:pb-4">
+        <span className="grid size-10 shrink-0 place-items-center rounded-[14px] bg-emerald-50 text-emerald-700 sm:size-11 sm:rounded-2xl"><FileCheck2 className="size-5 sm:size-[22px]" /></span>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[15px] font-semibold text-navy-900 sm:text-base">Signed rental agreement</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground sm:text-[13px]">
+            Version {v.version}<span className="hidden sm:inline"> · signed by both parties</span>{v.signed_at && ` · ${formatDateTime(v.signed_at)}`}
+          </p>
+        </div>
+        <Pill tone="success" className="hidden sm:inline-flex"><BadgeCheck className="size-3.5" /> Signed</Pill>
+      </div>
+      <div className="mx-5 grid overflow-hidden rounded-2xl border sm:grid-cols-2">
+        {(["PROVIDER", "RENTER"] as const).map((role) => {
+          const s = v.signatures.find((x) => x.signer_role === role);
+          return s && (
+            <div key={role} className="flex items-center gap-2.5 border-b px-4 py-3 last:border-b-0 sm:block sm:border-r sm:border-b-0 sm:py-3.5 sm:last:border-r-0">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase sm:text-[11px]">
+                  {role === "PROVIDER" ? "Rental Provider" : <>Renter<span className="sm:hidden"> · You</span></>}
+                </p>
+                <SignatureMark sig={s} className="mt-0.5 h-8 max-w-full object-contain object-left sm:h-9" />
+                <p className="hidden text-xs text-muted-foreground sm:block">{role === "PROVIDER" ? providerName : "You"} · {dayTime(s.signed_at)}</p>
+              </div>
+              <span className="text-right text-[11px] text-emerald-700 sm:hidden">Signed<br />{dayTime(s.signed_at)}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="grid grid-cols-2 gap-2 px-5 pt-4 pb-2 sm:flex sm:items-center sm:pb-5">
+        <a href={`/api/contracts/${v.id}/pdf`} target="_blank" className={buttonVariants({ className: "h-11 sm:h-8" })}>
+          <Download /> <span className="sm:hidden">PDF (v{v.version})</span><span className="hidden sm:inline">Version {v.version} (PDF)</span>
+        </a>
+        <Link href={certificate} className={buttonVariants({ variant: "outline", className: "h-11 sm:h-8" })}><ShieldCheck /> Certificate</Link>
+        <Link href={`/account/bookings/${bookingId}/contract`} className={buttonVariants({ variant: "ghost", className: "hidden sm:inline-flex" })}>View online</Link>
+        <span className="ml-auto hidden items-center gap-1.5 font-mono text-[11px] text-muted-foreground sm:flex"><Fingerprint className="size-3.5" /> {groups.slice(0, 2).join(" ")}…</span>
+      </div>
+      <div className="flex items-center justify-between px-5 pt-1 pb-[18px] sm:hidden">
+        <Link href={`/account/bookings/${bookingId}/contract`} className="text-sm font-medium text-navy-900">View online</Link>
+        <span className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground"><Fingerprint className="size-3.5" /> {groups[0]}…</span>
+      </div>
+      {older.length > 0 && (
+        <p className="-mt-1 px-5 pb-5 text-xs text-muted-foreground">
+          Earlier signed versions:{" "}
+          {older.map((o, i) => (
+            <Fragment key={o.id}>{i > 0 && ", "}<a href={`/api/contracts/${o.id}/pdf`} target="_blank" className="font-medium text-navy-900 hover:underline">Version {o.version} (PDF)</a></Fragment>
+          ))}
+        </p>
+      )}
+    </section>
+  );
+}
 
 /** The renter's view of a signed agreement (1a desktop / 1b phone). */
 export function SignedAgreement({ booking: b, version: v, providerName, providerLogo, renterName, payTo }: {

@@ -6,7 +6,7 @@ import { CollapsibleSections } from "@/components/contract/collapsible-sections"
 import { formatDate, formatDateTime } from "@/lib/format";
 
 /** A party's signature image (older signatures without one show the name). */
-export function SignatureMark({ sig, className }: { sig: ContractSignature; className?: string }) {
+export function SignatureMark({ sig, className }: { sig: Pick<ContractSignature, "signer_name" | "signature_data">; className?: string }) {
   return sig.signature_data
     // eslint-disable-next-line @next/next/no-img-element
     ? <img src={sig.signature_data} alt={`Signature of ${sig.signer_name}`} className={cn("w-auto", className)} />

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookingOnOtherAccount } from "@/components/booking/other-account";
-import { CheckCircle2, Download, FileSignature, MapPin, MessageSquare, Phone, Wallet } from "lucide-react";
+import { CheckCircle2, FileSignature, MapPin, MessageSquare, Phone, Wallet } from "lucide-react";
 import { DriverDocuments } from "@/components/account/account-panels";
 import { AcceptProposal, PaymentsPanel, ReviewForm, TransitionActions } from "@/components/booking/booking-actions";
 import { BookingProgress, StatusHistory } from "@/components/booking/booking-timeline";
+import { SignedAgreementCard } from "@/components/contract/signed-agreement";
 import { BookingStatusBadge, Stars } from "@/components/common/badges";
 import { BusinessLogo, VehicleImage } from "@/components/common/vehicle-image";
 import { buttonVariants } from "@/components/ui/button";
@@ -21,7 +22,7 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
   const user = await requireUser(`/account/bookings/${id}`);
   const supabase = await createClient();
   const { data: b } = await supabase.from("bookings")
-    .select("*, vehicles(make, model, year, slug, vehicle_images(storage_path, position)), businesses(id, name, slug, phone, email, address, city, logo_path), booking_status_history(to_status, note, created_at), payments(id, amount, method, reference, paid_at), contracts(id, status, current_version, contract_versions(id, version, status, signed_at)), reviews(id, rating, comment)")
+    .select("*, vehicles(make, model, year, slug, vehicle_images(storage_path, position)), businesses(id, name, slug, phone, email, address, city, logo_path), booking_status_history(to_status, note, created_at), payments(id, amount, method, reference, paid_at), contracts(id, status, current_version, contract_versions(id, version, status, signed_at, content_hash, contract_signatures(signer_role, signer_name, signature_data, signed_at))), reviews(id, rating, comment)")
     .eq("id", id).eq("renter_id", user.id).order("created_at", { referencedTable: "booking_status_history" }).maybeSingle();
   if (!b) return <BookingOnOtherAccount bookingId={id} email={user.email} />;
   const [{ data: methods }, { data: myDocs }] = await Promise.all([
@@ -102,16 +103,9 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
             <PaymentsPanel bookingId={b.id} total={Number(b.total_amount)} status={b.payment_status} method={b.payment_method} payments={b.payments} canEdit={false} />
           </section>
 
-          {signedVersions.length > 0 && (
-            <section className="rounded-3xl bg-white p-5 ring-1 ring-black/5">
-              <h2 className="mb-3 font-semibold text-navy-900">Signed rental agreement</h2>
-              <div className="flex flex-wrap gap-2">
-                {signedVersions.map((v) => (
-                  <a key={v.id} href={`/api/contracts/${v.id}/pdf`} target="_blank" className={buttonVariants({ variant: v.id === signedVersions[0]!.id ? "default" : "outline" })}><Download /> Version {v.version} (PDF)</a>
-                ))}
-                <Link href={`/account/bookings/${b.id}/contract`} className={buttonVariants({ variant: "ghost" })}>View online</Link>
-              </div>
-            </section>
+          {signedVersions[0] && (
+            <SignedAgreementCard bookingId={b.id} providerName={b.businesses?.name ?? ""} older={signedVersions.slice(1)}
+              version={{ ...signedVersions[0], signatures: signedVersions[0].contract_signatures }} />
           )}
 
           {b.status === "COMPLETED" && (
