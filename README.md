@@ -60,6 +60,13 @@ src/lib/               supabase clients, auth, state machine, contracts (PDF), f
 tests/                 unit, db (RLS/integrity), e2e-flow (spec §62)
 ```
 
+## Emails
+
+All 45 emails share one branded layout (`src/emails/`): 8 Supabase Auth/security emails and 37 app emails for renters, businesses and admins, each with HTML + plain text. Preview them at **Admin → Emails** (`/admin/emails`).
+
+- **Auth emails** (confirm sign-up, reset password, change email, magic link, invite, re-auth, password/email changed) render to `supabase/templates/*.html` via `npm run emails:build`. Supabase only accepts custom templates once **custom SMTP** is configured: then uncomment the template block in `supabase/config.toml` and run `supabase config push`.
+- **App emails** render with `renderAppEmail(key, data)` → `{ subject, html, text }` for any provider. They map to the in-app notification types and go out once an email provider is connected.
+
 ## Before launch
 
 1. Have the contract template (Admin → Settings), Terms and Privacy Policy reviewed by Philippine legal counsel.

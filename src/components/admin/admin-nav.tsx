@@ -8,7 +8,7 @@ const NAV = [
   ["/admin", "Overview"], ["/admin/businesses", "Businesses"], ["/admin/verification", "Verification"],
   ["/admin/vehicles", "Vehicles"], ["/admin/users", "Users"], ["/admin/bookings", "Bookings"],
   ["/admin/contracts", "Contracts"], ["/admin/reviews", "Reviews"], ["/admin/reports", "Reports"],
-  ["/admin/subscriptions", "Subscriptions"], ["/admin/settings", "Settings"],
+  ["/admin/subscriptions", "Subscriptions"], ["/admin/emails", "Emails"], ["/admin/settings", "Settings"],
 ] as const;
 
 export function AdminNav() {
