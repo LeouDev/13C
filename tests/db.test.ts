@@ -333,6 +333,9 @@ describe("rental completion & reviews", () => {
     const v = must(await renter2.client.from("contract_versions").select("id, content_hash").eq("booking_id", id).single());
     must(await service.rpc("sign_contract", { p_actor_id: renter2.id, p_version_id: v.id, p_signature_type: "TYPED", p_signer_name: "Test Renter", p_signature_data: SIGNATURE, p_content_hash: v.content_hash, p_agreed: true, p_ip: "1.1.1.1", p_user_agent: "t" }));
     await expectError(renter2.client.rpc("create_review", { p_booking_id: id, p_rating: 5, p_vehicle_rating: 5, p_business_rating: 5, p_comment: "early" }), "REVIEW_NOT_ALLOWED");
+    // Not on rent before the pickup day; once it arrives, the rental can run its course.
+    await expectError(owner.client.rpc("transition_booking", { p_booking_id: id, p_to: "ACTIVE" }), "PICKUP_NOT_YET");
+    must(await service.from("bookings").update({ pickup_at: new Date(Date.now() - 3_600_000).toISOString(), return_at: new Date(Date.now() + 86_400_000).toISOString() }).eq("id", id));
     for (const to of ["ACTIVE", "RETURNED", "COMPLETED"] as const) {
       must(await owner.client.rpc("transition_booking", { p_booking_id: id, p_to: to }));
     }

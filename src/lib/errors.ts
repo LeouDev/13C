@@ -18,6 +18,7 @@ const CODES: Record<string, string> = {
   STORE_NEEDS_VEHICLE: "Add at least one active vehicle with pricing before publishing.",
   PLAN_VEHICLE_LIMIT: "You've reached your plan's vehicle limit. Upgrade to add more vehicles.",
   TRIAL_ENDED: "Your free trial or plan has ended. Choose a plan to keep your store live and add vehicles.",
+  PICKUP_NOT_YET: "The car can be marked as picked up from the pickup date. To hand it over earlier, change the booking dates first.",
   PLAN_TOO_SMALL: "You have more vehicles than this plan allows. Archive some vehicles first, or choose Business.",
   INVALID_PLAN: "Choose Pro or Business.",
   PLAN_STAFF_LIMIT: "Team members are available on the Business plan.",

@@ -13,7 +13,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { hasRole, requireBusiness } from "@/lib/auth";
 import { STATUS_META } from "@/lib/bookings/status";
 import type { ContractSection, ContractSignature } from "@/lib/contracts/pdf";
-import { formatDate, formatDateTime, formatPHP, labelize } from "@/lib/format";
+import { formatDate, formatDateTime, formatPHP, isoToManilaDate, labelize } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Booking" };
@@ -55,7 +55,8 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
             {b.status === "CONTRACT_DRAFT" && contract && canManage && <SendContractDialog contractId={contract.id} defaultName={business.representative_name ?? user.full_name} />}
             {canManage && contract && ["CONTRACT_DRAFT", "CONTRACT_SENT", "AWAITING_SIGNATURE", "SIGNED", "CONFIRMED"].includes(b.status) && <RegenerateButton bookingId={b.id} signed={["SIGNED", "CONFIRMED"].includes(b.status)} />}
             {canManage && editable && <TermsEditor booking={b} />}
-            <TransitionActions bookingId={b.id} status={b.status} actor="BUSINESS" />
+            <TransitionActions bookingId={b.id} status={b.status} actor="BUSINESS"
+              pickupFrom={isoToManilaDate(new Date()) < isoToManilaDate(b.pickup_at) ? formatDate(b.pickup_at) : null} />
           </div>
         </div>
       </section>

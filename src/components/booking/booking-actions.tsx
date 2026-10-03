@@ -54,7 +54,8 @@ function NoteDialog({ title, description, confirm, required, destructive, onConf
 }
 
 /** Buttons for every transition the state machine allows this actor (SYSTEM steps are triggered elsewhere). */
-export function TransitionActions({ bookingId, status, actor }: { bookingId: string; status: BookingStatus; actor: Exclude<Actor, "SYSTEM"> }) {
+/** `pickupFrom`: set (e.g. "Oct 31, 2026") while it's before the pickup day, which disables "picked up". */
+export function TransitionActions({ bookingId, status, actor, pickupFrom }: { bookingId: string; status: BookingStatus; actor: Exclude<Actor, "SYSTEM">; pickupFrom?: string | null }) {
   const { pending, run } = useRun();
   const next = nextStatuses(status, actor).filter((s) => !(actor === "RENTER" && s === "APPROVED"));
   if (next.length === 0) return null;
@@ -63,6 +64,14 @@ export function TransitionActions({ bookingId, status, actor }: { bookingId: str
       {next.map((to) => {
         if (to === "REJECTED") return <NoteDialog key={to} title="Decline this request?" description="The renter will be notified with your reason." confirm="Decline" required destructive pending={pending} onConfirm={(n) => run(() => transitionBooking(bookingId, to, n))} />;
         if (to === "CANCELLED") return <NoteDialog key={to} title="Cancel this booking?" description="The other party is notified. Your cancellation policy applies to any payments." confirm="Cancel booking" destructive pending={pending} onConfirm={(n) => run(() => transitionBooking(bookingId, to, n))} />;
+        if (to === "ACTIVE" && pickupFrom) {
+          return (
+            <div key={to} className="grid gap-1">
+              <Button size="lg" disabled>{LABELS[to] ?? labelize(to)}</Button>
+              <span className="text-xs text-muted-foreground">Available from {pickupFrom}</span>
+            </div>
+          );
+        }
         return (
           <Button key={to} size="lg" variant={to === "APPROVED" ? "electric" : "default"} disabled={pending} onClick={() => run(() => transitionBooking(bookingId, to))}>
             {pending && <Loader2 className="animate-spin" />} {LABELS[to] ?? labelize(to)}
