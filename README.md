@@ -1,6 +1,6 @@
 # 13C — Your car rental business, online.
 
-13C gives every car-rental business in Cebu its own branded storefront (`13c.ph/<business>`) plus a marketplace where customers search, message, book, and **e-sign rental agreements** — with the rental business always the Rental Provider and 13C only the technology platform.
+13C gives every car-rental business in Cebu its own branded storefront (`13c.online/<business>`) plus a marketplace where customers search, message, book, and **e-sign rental agreements** — with the rental business always the Rental Provider and 13C only the technology platform.
 
 - **Customers:** search Cebu (Cebu City, Mactan, Lapu-Lapu, Mandaue, Talisay…), compare cars, message businesses, request bookings, review & sign contracts, download signed PDFs.
 - **Businesses:** registration + verification, storefront customization, fleet/photos/pricing/availability, inquiries & realtime chat, bookings with a DB-enforced state machine, auto-generated contracts, payments ledger, customers, reviews, analytics, team roles.
@@ -31,7 +31,7 @@ npm run dev
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | browser + server (RLS applies) |
 | `SUPABASE_SECRET_KEY` | **server only** — contract signing with request IP, signed-PDF storage |
 | `NEXT_PUBLIC_SITE_URL` | auth redirects, canonical URLs, sitemap |
-| `NEXT_PUBLIC_ROOT_DOMAIN` | displayed store URLs (`13c.ph/<slug>`) and future subdomains |
+| `NEXT_PUBLIC_ROOT_DOMAIN` | displayed store URLs (`13c.online/<slug>`) and future subdomains |
 | `STOREFRONT_SUBDOMAINS` | optional, `1` enables `<slug>.<root-domain>` routing in `src/proxy.ts` |
 
 **First admin:** sign up, then in the Supabase SQL editor run
@@ -79,9 +79,9 @@ The provider and the renter each draw or type a signature; both become a PNG in 
 3. Wire the app emails: map each notification type to `renderAppEmail(key, data)` and send it through the provider.
 4. Contract emails: send the "sent for signature" email to `contract_versions.sent_to_email`, and attach the signed PDF (with its certificate page) to the "signed" emails for both parties.
 
-**Domain (13c.ph)**
+**Domain (13c.online)**
 1. Add the domain to the Vercel project.
-2. Set `NEXT_PUBLIC_SITE_URL=https://13c.ph` and `NEXT_PUBLIC_ROOT_DOMAIN=13c.ph`, then redeploy.
+2. Set `NEXT_PUBLIC_SITE_URL=https://13c.online` and `NEXT_PUBLIC_ROOT_DOMAIN=13c.online`, then redeploy.
 3. In `supabase/config.toml`, change `site_url` and the redirect URLs to the new domain, then run `supabase config push`.
 4. Add the email provider's SPF, DKIM and DMARC records for the sending domain.
 5. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).

@@ -18,7 +18,7 @@ const STEPS = [
 ];
 
 const BIZ_FEATURES = [
-  { icon: Store, title: "Your own storefront", body: "A branded website at 13c.ph/your-business." },
+  { icon: Store, title: "Your own storefront", body: "A branded website at 13c.online/your-business." },
   { icon: Car, title: "Fleet management", body: "Photos, pricing, availability and maintenance." },
   { icon: MessageCircle, title: "Online inquiries", body: "Every customer conversation in one inbox." },
   { icon: CalendarRange, title: "Booking management", body: "Approve requests with double-booking protection." },

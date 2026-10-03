@@ -2,11 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED = ["/dashboard", "/admin", "/account", "/register/business"];
-const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "13c.ph";
+const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "13c.online";
 
 /**
  * Storefront host routing (designed, off by default):
- *  - `cebu-xyz.13c.ph` → `/cebu-xyz/...` when STOREFRONT_SUBDOMAINS=1
+ *  - `cebu-xyz.13c.online` → `/cebu-xyz/...` when STOREFRONT_SUBDOMAINS=1
  *  - custom domains → look up business_storefronts.custom_domain (future; needs a cached lookup)
  */
 export function resolveStorefrontHost(host: string | null): string | null {

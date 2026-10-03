@@ -50,7 +50,7 @@ export default async function SubscriptionPage() {
             <ul className="mt-4 grid gap-2 text-sm">{p.features.map((f) => <li key={f} className="flex gap-2"><Check className="size-4 shrink-0 text-emerald-600" />{f}</li>)}</ul>
             <div className="mt-auto pt-6">
               {p.id === plan ? <span className={buttonVariants({ variant: "secondary", className: "w-full" })}>Your plan</span>
-                : <a href={`mailto:sales@13c.ph?subject=${encodeURIComponent(`Upgrade ${business.name} to ${p.name}`)}`} className={buttonVariants({ variant: p.id === "PRO" ? "electric" : "outline", className: "w-full" })}>Request {p.name}</a>}
+                : <a href={`mailto:sales@13c.online?subject=${encodeURIComponent(`Upgrade ${business.name} to ${p.name}`)}`} className={buttonVariants({ variant: p.id === "PRO" ? "electric" : "outline", className: "w-full" })}>Request {p.name}</a>}
             </div>
           </section>
         ))}

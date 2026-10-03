@@ -86,7 +86,7 @@ export const AUTH_EMAILS: Record<string, { kind: "template" | "notification"; wh
       heading: "Your password was changed",
       blocks: [
         { p: "The password for **{{ .Email }}** was just changed." },
-        { note: "If you didn't do this, reset your password immediately and contact support@13c.ph.", tone: "warning" },
+        { note: "If you didn't do this, reset your password immediately and contact support@13c.online.", tone: "warning" },
       ],
       cta: { label: "Go to sign in", url: "{{ .SiteURL }}/login" },
       footer: "auth",
@@ -101,7 +101,7 @@ export const AUTH_EMAILS: Record<string, { kind: "template" | "notification"; wh
       heading: "Your email address was changed",
       blocks: [
         { p: "The email for your 13C account was changed from **{{ .OldEmail }}** to **{{ .Email }}**." },
-        { note: "If you didn't do this, contact support@13c.ph immediately.", tone: "warning" },
+        { note: "If you didn't do this, contact support@13c.online immediately.", tone: "warning" },
       ],
       footer: "auth",
     },

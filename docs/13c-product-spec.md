@@ -8,7 +8,7 @@
 | Product | Who | What they get |
 |---|---|---|
 | **13C Marketplace** | Renters | Search cars across verified Cebu rental businesses, message owners, request bookings, review and e-sign rental agreements, track rentals. |
-| **13C Business SaaS** | Rental businesses | A branded storefront at `13c.ph/<slug>`, fleet + availability management, inquiries, bookings, auto-generated contracts with e-signature, customers, analytics. |
+| **13C Business SaaS** | Rental businesses | A branded storefront at `13c.online/<slug>`, fleet + availability management, inquiries, bookings, auto-generated contracts with e-signature, customers, analytics. |
 
 The rental business is always the **Rental Provider**. 13C is the **Marketplace/SaaS Platform** — it never owns, operates or insures vehicles and does not process payments in the MVP.
 
@@ -19,7 +19,7 @@ Every verified business gets a public storefront that feels like *its own websit
 - Business-branded header (logo, name, accent color) instead of 13C's navigation.
 - Large cover hero, rating, verification badge, fleet size, response time, city.
 - Sections: Fleet, About, Pickup & Delivery, Rental Policies, Reviews, FAQ, Contact.
-- Vehicle pages live **inside** the storefront: `13c.ph/<business>/<vehicle>`.
+- Vehicle pages live **inside** the storefront: `13c.online/<business>/<vehicle>`.
 - 13C branding is limited to a subtle "Powered by 13C" footer.
 - Customization is bounded: logo, cover, accent color, copy, FAQ, policies, locations, featured vehicles, section visibility. The layout stays 13C-quality.
 

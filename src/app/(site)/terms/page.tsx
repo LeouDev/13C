@@ -81,7 +81,7 @@ export default function TermsPage() {
         <ul>
           <li>You must be at least 18 years old and able to enter into binding contracts under Philippine law.</li>
           <li>Give accurate, current and complete information, and keep it up to date.</li>
-          <li>Keep your password confidential. You are responsible for activity on your account. Tell us immediately at <a href="mailto:support@13c.ph">support@13c.ph</a> if you suspect unauthorized use.</li>
+          <li>Keep your password confidential. You are responsible for activity on your account. Tell us immediately at <a href="mailto:support@13c.online">support@13c.online</a> if you suspect unauthorized use.</li>
           <li>Accounts are personal. Do not share them or create accounts for other people without their authority.</li>
         </ul>
       </LegalSection>
@@ -262,8 +262,8 @@ export default function TermsPage() {
 
       <LegalSection {...sec("contact")}>
         <ul>
-          <li>Support and questions about these Terms: <a href="mailto:support@13c.ph">support@13c.ph</a></li>
-          <li>Privacy and data protection: <a href="mailto:privacy@13c.ph">privacy@13c.ph</a></li>
+          <li>Support and questions about these Terms: <a href="mailto:support@13c.online">support@13c.online</a></li>
+          <li>Privacy and data protection: <a href="mailto:privacy@13c.online">privacy@13c.online</a></li>
         </ul>
       </LegalSection>
     </LegalDoc>

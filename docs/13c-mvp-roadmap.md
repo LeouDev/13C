@@ -75,7 +75,7 @@ Not yet verified by a human click-through in a browser while signed in (requires
 ## Post-MVP (designed, not built)
 - ⏭️ PayMongo / GCash / Maya payments (ledger + webhook)
 - ⏭️ Subscription billing + invoices (plan limits already enforced)
-- ⏭️ Storefront subdomains `<slug>.13c.ph` (proxy flag) and custom domains (lookup + Vercel Domains API)
+- ⏭️ Storefront subdomains `<slug>.13c.online` (proxy flag) and custom domains (lookup + Vercel Domains API)
 - ⏭️ GPS provider integrations (tables exist)
 - ⏭️ Maps (pickup geocoding), multi-city expansion beyond Cebu
 - ⏭️ Marketplace commission (5–10%) — explicitly not in MVP

@@ -103,7 +103,7 @@ Business slugs cannot collide with app routes — a reserved-word list is enforc
 
 `src/proxy.ts` resolves the storefront slug from the host before routing:
 
-- `cebu-xyz.13c.ph` → rewrite to `/cebu-xyz/...` (subdomain = `business_storefronts.subdomain`), enabled with `STOREFRONT_SUBDOMAINS=1`.
+- `cebu-xyz.13c.online` → rewrite to `/cebu-xyz/...` (subdomain = `business_storefronts.subdomain`), enabled with `STOREFRONT_SUBDOMAINS=1`.
 - `www.cebu-xyz-rentals.com` → lookup `business_storefronts.custom_domain` → rewrite. Requires Vercel domain API + cache; stub left in `resolveStorefrontHost()`.
 
 ## Realtime
