@@ -13,7 +13,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { POLICY_FIELDS, SITE_URL } from "@/lib/constants";
 import { formatDate, labelize, responseTimeLabel, todayManila } from "@/lib/format";
 import { plural } from "@/lib/format";
-import { getStorefront, searchVehicles } from "@/lib/queries";
+import { getStorefront, searchVehicles, storeSections } from "@/lib/queries";
 import { mediaUrl } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
 
@@ -49,7 +49,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
   ]);
   const featured = new Set(store.featured_vehicle_ids);
   const fleet = [...vehicles].sort((a, b) => Number(featured.has(b.id)) - Number(featured.has(a.id)));
-  const hidden = new Set(store.hidden_sections);
+  const show = storeSections(sf);
   const policies = POLICY_FIELDS.filter((p) => (store.policies as Record<string, string>)[p.key]?.trim());
   const faqs = (store.faqs as { q: string; a: string }[]) ?? [];
   const cover = mediaUrl(store.cover_path);
@@ -106,32 +106,30 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
       </section>
 
       {/* Fleet */}
-      {!hidden.has("fleet") && (
-        <section id="fleet" className="container-page scroll-mt-20 pt-12">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="eyebrow text-[var(--store-accent)]">Our fleet</p>
-              <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-navy-900 sm:text-3xl">{dated ? `Available ${formatDate(sp.from!, { month: "short", day: "numeric" })} – ${formatDate(sp.to!, { month: "short", day: "numeric" })}` : "Choose your car"}</h2>
-            </div>
-            <form id="availability" className="flex scroll-mt-24 flex-wrap items-end gap-2 rounded-2xl bg-white p-2 ring-1 ring-black/5">
-              <label className="grid gap-0.5 px-2 text-[11px] font-semibold text-muted-foreground uppercase">Pickup<input type="date" name="from" min={todayManila()} defaultValue={sp.from} required className="text-sm font-semibold text-navy-900 normal-case outline-none" /></label>
-              <label className="grid gap-0.5 px-2 text-[11px] font-semibold text-muted-foreground uppercase">Return<input type="date" name="to" min={todayManila(1)} defaultValue={sp.to} required className="text-sm font-semibold text-navy-900 normal-case outline-none" /></label>
-              <button className="h-10 rounded-xl px-4 text-sm font-semibold text-white" style={{ background: "var(--store-accent)" }}>Check</button>
-              {dated && <Link href={`/${business.slug}#fleet`} className="px-2 text-xs font-medium text-muted-foreground hover:underline">Clear</Link>}
-            </form>
+      <section id="fleet" className="container-page scroll-mt-20 pt-12">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="eyebrow text-[var(--store-accent)]">Our fleet</p>
+            <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-navy-900 sm:text-3xl">{dated ? `Available ${formatDate(sp.from!, { month: "short", day: "numeric" })} – ${formatDate(sp.to!, { month: "short", day: "numeric" })}` : "Choose your car"}</h2>
           </div>
-          {fleet.length ? (
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {fleet.map((v, i) => <VehicleCard key={v.id} v={v} hideBusiness priority={i < 3} query={dated ? `from=${sp.from}&to=${sp.to}` : undefined} />)}
-            </div>
-          ) : (
-            <EmptyState className="mt-6" icon={Car} title={dated ? "No cars free on those dates" : "No vehicles listed yet"} description={dated ? "Try different dates or message us — we may be able to help." : undefined} />
-          )}
-        </section>
-      )}
+          <form id="availability" className="flex scroll-mt-24 flex-wrap items-end gap-2 rounded-2xl bg-white p-2 ring-1 ring-black/5">
+            <label className="grid gap-0.5 px-2 text-[11px] font-semibold text-muted-foreground uppercase">Pickup<input type="date" name="from" min={todayManila()} defaultValue={sp.from} required className="text-sm font-semibold text-navy-900 normal-case outline-none" /></label>
+            <label className="grid gap-0.5 px-2 text-[11px] font-semibold text-muted-foreground uppercase">Return<input type="date" name="to" min={todayManila(1)} defaultValue={sp.to} required className="text-sm font-semibold text-navy-900 normal-case outline-none" /></label>
+            <button className="h-10 rounded-xl px-4 text-sm font-semibold text-white" style={{ background: "var(--store-accent)" }}>Check</button>
+            {dated && <Link href={`/${business.slug}#fleet`} className="px-2 text-xs font-medium text-muted-foreground hover:underline">Clear</Link>}
+          </form>
+        </div>
+        {fleet.length ? (
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {fleet.map((v, i) => <VehicleCard key={v.id} v={v} hideBusiness priority={i < 3} query={dated ? `from=${sp.from}&to=${sp.to}` : undefined} />)}
+          </div>
+        ) : (
+          <EmptyState className="mt-6" icon={Car} title={dated ? "No cars free on those dates" : "No vehicles listed yet"} description={dated ? "Try different dates or message us — we may be able to help." : undefined} />
+        )}
+      </section>
 
       <div className="container-page mt-14 grid gap-6 lg:grid-cols-2">
-        {!hidden.has("about") && store.about && (
+        {show.has("about") && (
           <section id="about" className="scroll-mt-20 rounded-3xl bg-white p-6 sm:p-8 lg:col-span-2">
             <p className="eyebrow text-[var(--store-accent)]">About us</p>
             <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-navy-900">Meet {business.name}</h2>
@@ -139,7 +137,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
           </section>
         )}
 
-        {!hidden.has("locations") && (store.pickup_locations.length > 0 || store.delivery_areas.length > 0) && (
+        {show.has("locations") && (
           <section className="rounded-3xl bg-white p-6 sm:p-8">
             <p className="eyebrow text-[var(--store-accent)]">Pickup & delivery</p>
             <h2 className="mt-1 text-xl font-extrabold tracking-tight text-navy-900">Where to get your car</h2>
@@ -155,7 +153,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
           </section>
         )}
 
-        {!hidden.has("policies") && (policies.length > 0 || paymentMethods.length > 0) && (
+        {show.has("policies") && (
           <section id="policies" className="scroll-mt-20 rounded-3xl bg-white p-6 sm:p-8">
             <p className="eyebrow text-[var(--store-accent)]">Rental policies</p>
             <h2 className="mt-1 text-xl font-extrabold tracking-tight text-navy-900">Good to know</h2>
@@ -171,7 +169,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
         )}
       </div>
 
-      {!hidden.has("reviews") && (
+      {show.has("reviews") && (
         <section id="reviews" className="container-page mt-14 scroll-mt-20">
           <div className="flex items-end justify-between">
             <div>
@@ -195,7 +193,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
         </section>
       )}
 
-      {!hidden.has("faq") && faqs.length > 0 && (
+      {show.has("faq") && (
         <section className="container-page mt-14">
           <p className="eyebrow text-[var(--store-accent)]">FAQ</p>
           <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-navy-900">Frequently asked questions</h2>

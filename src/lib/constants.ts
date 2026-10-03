@@ -91,7 +91,6 @@ export const RESERVED_SLUGS = [
 export const ACCENT_PRESETS = ["#2F6BFF", "#0EA5E9", "#14B8A6", "#16A34A", "#E0312B", "#F26A1B", "#D97706", "#7C3AED", "#DB2777", "#121F3B"];
 
 export const STORE_SECTIONS = [
-  { id: "fleet", label: "Our Fleet" },
   { id: "about", label: "About Us" },
   { id: "locations", label: "Pickup & Delivery" },
   { id: "policies", label: "Rental Policies" },

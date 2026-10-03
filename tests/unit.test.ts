@@ -11,6 +11,7 @@ import { renderContractPdf, toWinAnsi, type ContractPdfInput } from "@/lib/contr
 import { friendlyError } from "@/lib/errors";
 import { formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
+import { storeSections, type Storefront } from "@/lib/queries";
 import { groupFingerprint, isValidSignatureImage } from "@/lib/signature";
 import { businessSchema, localPhone, phoneSchema, slugSchema, toPhilippinePhone, vehicleSchema } from "@/lib/validation";
 
@@ -129,6 +130,18 @@ describe("notification → email template", () => {
       const link = t.audience === "Admin" ? "/admin/x" : t.audience === "Business" ? "/dashboard/x" : "/account/x";
       expect(templateFor(nt!, link), key).toBe(key);
     }
+  });
+});
+
+describe("storefront sections (page + tabs)", () => {
+  const sf = (store: Partial<Storefront["store"]>, paymentMethods: string[] = []) =>
+    ({ store: { about: null, pickup_locations: [], delivery_areas: [], policies: {}, faqs: [], hidden_sections: [], ...store }, paymentMethods }) as unknown as Storefront;
+
+  it("lists only sections that have content and aren't hidden", () => {
+    expect(storeSections(sf({}))).toEqual(new Set(["reviews"]));
+    expect(storeSections(sf({ about: "  ", policies: { fuel: " " } }))).toEqual(new Set(["reviews"]));
+    expect(storeSections(sf({ about: "Since 2019", policies: { fuel: "Full to full" }, hidden_sections: ["reviews"] }))).toEqual(new Set(["about", "policies"]));
+    expect(storeSections(sf({ faqs: [{ q: "Pets?", a: "No" }], pickup_locations: ["IT Park"] }, ["CASH"]))).toEqual(new Set(["locations", "policies", "reviews", "faq"]));
   });
 });
 

@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { locationBySlug } from "@/lib/constants";
+import { locationBySlug, POLICY_FIELDS } from "@/lib/constants";
 import { manilaToISO } from "@/lib/format";
 import type { Database, Enums } from "@/types/database";
 
@@ -93,6 +93,18 @@ export const getStorefront = cache(async (slug: string) => {
   return { business, store, stats: stats.get(business.id), paymentMethods: methods.data ?? [] };
 });
 export type Storefront = NonNullable<Awaited<ReturnType<typeof getStorefront>>>;
+
+/** Optional storefront sections that render: the owner didn't hide them and they have content. The page and its tabs both use this. */
+export function storeSections({ store, paymentMethods }: Storefront) {
+  const has: Record<string, boolean> = {
+    about: !!store.about?.trim(),
+    locations: store.pickup_locations.length > 0 || store.delivery_areas.length > 0,
+    policies: paymentMethods.length > 0 || POLICY_FIELDS.some((p) => (store.policies as Record<string, string>)[p.key]?.trim()),
+    reviews: true,
+    faq: ((store.faqs as unknown[]) ?? []).length > 0,
+  };
+  return new Set(Object.keys(has).filter((k) => has[k] && !store.hidden_sections.includes(k)));
+}
 
 export const getVehicleBySlug = cache(async (businessId: string, slug: string) => {
   const supabase = await createClient();

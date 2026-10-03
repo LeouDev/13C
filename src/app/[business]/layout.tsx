@@ -6,7 +6,7 @@ import { Logo } from "@/components/brand/logo";
 import { VerifiedBadge } from "@/components/common/badges";
 import { BusinessLogo } from "@/components/common/vehicle-image";
 import { getCurrentUser } from "@/lib/auth";
-import { getStorefront } from "@/lib/queries";
+import { getStorefront, storeSections } from "@/lib/queries";
 
 export default async function StorefrontLayout({ children, params }: LayoutProps<"/[business]">) {
   const { business: slug } = await params;
@@ -16,6 +16,9 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
   const user = await getCurrentUser();
   const isPublic = business.status === "VERIFIED" && store.is_published;
   const social = store.social_links as Record<string, string | undefined>;
+  const show = storeSections(sf);
+  const tabs = [["fleet", "Fleet"], ["about", "About"], ["policies", "Policies"], ["reviews", "Reviews"], ["contact", "Contact"]]
+    .filter(([id]) => id === "fleet" || id === "contact" || show.has(id));
 
   return (
     <div className="flex min-h-svh flex-col bg-[#f6f7f9]" style={{ ["--store-accent" as string]: store.accent_color }}>
@@ -33,7 +36,7 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
             {business.status === "VERIFIED" && <VerifiedBadge compact className="hidden sm:inline-flex" />}
           </Link>
           <nav className="ml-6 hidden items-center gap-1 text-sm font-medium text-navy-800 lg:flex" aria-label="Store">
-            {[["fleet", "Fleet"], ["about", "About"], ["policies", "Policies"], ["reviews", "Reviews"], ["contact", "Contact"]].map(([id, label]) => (
+            {tabs.map(([id, label]) => (
               <Link key={id} href={`/${business.slug}#${id}`} className="rounded-full px-3 py-1.5 hover:bg-canvas">{label}</Link>
             ))}
           </nav>
