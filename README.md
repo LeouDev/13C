@@ -101,19 +101,19 @@ Owners see their payment history under **Subscription**. Admins see recent payme
 
 ## Pending — do these when the email provider and domain are ready
 
-**Email provider / SMTP**
-1. Configure custom SMTP in Supabase Auth and keep email confirmation on.
-2. Uncomment the template block in `supabase/config.toml`, then run `supabase config push --project-ref nsmwwezprpqqsqsgpkya`.
-3. Wire the app emails: map each notification type to `renderAppEmail(key, data)` and send it through the provider.
-4. Contract emails: send the "sent for signature" email to `contract_versions.sent_to_email`, and attach the signed PDF (with its certificate page) to the "signed" emails for both parties.
+**Email:** done. Resend (Vercel integration, free plan, 100 emails/day) sends from `support@air-rally.com`:
+- Supabase Auth uses Resend through custom SMTP, with the branded templates pushed from `config.toml`.
+- App emails go through the notifications outbox; see **Emails** above.
+- Upgrade Resend when volume passes about 100 a day.
 
 **Domain (13c.online)**
 1. Add the domain to the Vercel project.
-2. Set `NEXT_PUBLIC_SITE_URL=https://13c.online` and `NEXT_PUBLIC_ROOT_DOMAIN=13c.online`, then redeploy.
-3. In PayMongo, change the webhook URL to `https://13c.online/api/webhooks/paymongo`.
-4. In `supabase/config.toml`, change `site_url` and the redirect URLs to the new domain, then run `supabase config push`.
-5. Add the email provider's SPF, DKIM and DMARC records for the sending domain.
-6. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
+2. Set `NEXT_PUBLIC_SITE_URL=https://www.13c.online` (the apex redirects to `www`) and `NEXT_PUBLIC_ROOT_DOMAIN=13c.online`, then redeploy.
+3. In PayMongo, change the webhook URL to `https://www.13c.online/api/webhooks/paymongo`. Use the `www` address, because webhooks don't follow the redirect from the apex.
+4. Update the Vault secret `email_dispatch_url` to `https://www.13c.online/api/email/dispatch`.
+5. Optional, to send as `@13c.online`: add the domain in Resend and its DNS records, then change `EMAIL_FROM` in `src/lib/mailer.ts` and the Supabase SMTP sender.
+6. In `supabase/config.toml`, change `site_url` and the redirect URLs to the new domain, then run `supabase config push`.
+7. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
 
 **Needs your OK:** the contract PDFs print "PHP" instead of "₱". Showing ₱ needs the `@pdf-lib/fontkit` dependency and an embedded font.
 
