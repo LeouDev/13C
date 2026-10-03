@@ -1,7 +1,10 @@
 /** Fast unit tests for pure logic (no network). */
 import { describe, expect, it } from "vitest";
 import { canTransition, nextStatuses, STATUS_META, TRANSITIONS } from "@/lib/bookings/status";
+import { createHmac } from "node:crypto";
 import { PDFDocument } from "pdf-lib";
+import { paidPayment, parseWebhookEvent, verifyWebhookSignature } from "@/lib/billing";
+import { PLAN_PRICE_CENTAVOS, PLANS } from "@/lib/constants";
 import { renderContractPdf, toWinAnsi, type ContractPdfInput } from "@/lib/contracts/pdf";
 import { friendlyError } from "@/lib/errors";
 import { formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
@@ -65,6 +68,43 @@ describe("subscription state", () => {
   it("paid plans stay active until cancelled", () => {
     expect(subscriptionState({ plan: "PRO", status: "ACTIVE", current_period_end: null }, now).active).toBe(true);
     expect(subscriptionState({ plan: "BUSINESS", status: "CANCELLED", current_period_end: null }, now).active).toBe(false);
+  });
+});
+
+describe("paid plan periods", () => {
+  it("paid plans run until the end of the paid month", () => {
+    const now = new Date("2026-10-03T00:00:00Z").getTime();
+    expect(subscriptionState({ plan: "PRO", status: "ACTIVE", current_period_end: "2026-11-03T00:00:00Z" }, now)).toMatchObject({ active: true, trial: false, daysLeft: 31 });
+    expect(subscriptionState({ plan: "BUSINESS", status: "ACTIVE", current_period_end: "2026-10-01T00:00:00Z" }, now)).toMatchObject({ active: false, ended: true, trial: false });
+  });
+  it("advertised prices match the charged amounts", () => {
+    for (const p of PLANS) expect(formatPHP(PLAN_PRICE_CENTAVOS[p.id] / 100)).toBe(p.price);
+  });
+});
+
+describe("PayMongo webhooks", () => {
+  const secret = "whsk_test_unit";
+  const body = JSON.stringify({ data: { id: "evt_1", type: "event", attributes: { type: "checkout_session.payment.paid", livemode: false,
+    data: { id: "cs_1", attributes: { payment_method_used: "gcash", payments: [{ id: "pay_1", attributes: { amount: 49900, status: "paid" } }] } } } } });
+  const sign = (t: string, b = body, key = secret) => createHmac("sha256", key).update(`${t}.${b}`).digest("hex");
+
+  it("accepts the test or live signature and rejects anything altered", () => {
+    expect(verifyWebhookSignature(`t=1700000000,te=${sign("1700000000")},li=`, body, secret)).toBe(true);
+    expect(verifyWebhookSignature(`t=1700000000,te=,li=${sign("1700000000")}`, body, secret)).toBe(true);
+    expect(verifyWebhookSignature(`t=1700000000,te=${sign("1700000000")},li=`, `${body} `, secret)).toBe(false);
+    expect(verifyWebhookSignature(`t=1700000001,te=${sign("1700000000")},li=`, body, secret)).toBe(false);
+    expect(verifyWebhookSignature(`t=1700000000,te=${sign("1700000000", body, "other")},li=`, body, secret)).toBe(false);
+    expect(verifyWebhookSignature(null, body, secret)).toBe(false);
+  });
+
+  it("reads both documented payload shapes and picks the paid payment", () => {
+    const classic = parseWebhookEvent(JSON.parse(body));
+    const v2 = parseWebhookEvent({ event_type: "send.webhook", data: { type: "checkout_session.payment.paid", livemode: true, data: { id: "cs_2", attributes: { livemode: true,
+      payments: [{ id: "pay_failed", attributes: { amount: 150000, status: "failed" } }, { id: "pay_2", attributes: { amount: 150000, status: "paid", source: { type: "card" } } }] } } } });
+    expect([classic.type, classic.resource?.id, v2.type, v2.resource?.id]).toEqual(["checkout_session.payment.paid", "cs_1", "checkout_session.payment.paid", "cs_2"]);
+    expect(paidPayment(classic.resource!)).toEqual({ id: "pay_1", amount: 49900, method: "gcash", livemode: false });
+    expect(paidPayment(v2.resource!)).toEqual({ id: "pay_2", amount: 150000, method: "card", livemode: true });
+    expect(paidPayment({ id: "cs_3", attributes: {} })).toBeNull();
   });
 });
 

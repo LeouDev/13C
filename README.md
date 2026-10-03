@@ -33,6 +33,9 @@ npm run dev
 | `NEXT_PUBLIC_SITE_URL` | auth redirects, canonical URLs, sitemap |
 | `NEXT_PUBLIC_ROOT_DOMAIN` | displayed store URLs (`13c.online/<slug>`) and future subdomains |
 | `STOREFRONT_SUBDOMAINS` | optional, `1` enables `<slug>.<root-domain>` routing in `src/proxy.ts` |
+| `PAYMONGO_SECRET_KEY` | **server only**: creates and reads checkout sessions (`sk_test_…` = test mode) |
+| `PAYMONGO_WEBHOOK_SECRET` | **server only**: verifies the `Paymongo-Signature` header on `/api/webhooks/paymongo` |
+| `PAYMONGO_PAYMENT_METHODS` | optional, default `gcash,paymaya,card,qrph` (each must be enabled on the PayMongo account) |
 
 **First admin:** sign up, then in the Supabase SQL editor run
 `update public.profiles set is_admin = true where email = 'you@example.com';`
@@ -62,7 +65,7 @@ tests/                 unit, db (RLS/integrity), e2e-flow (spec §62)
 
 ## Emails
 
-All 44 emails share one branded layout (`src/emails/`): 8 Supabase Auth/security emails and 36 app emails (15 renter, 18 business, 3 admin) for renters, businesses and admins, each with HTML + plain text. Preview them at **Admin → Emails** (`/admin/emails`).
+All 47 emails share one branded layout (`src/emails/`): 8 Supabase Auth/security emails and 39 app emails (15 renter, 21 business, 3 admin) for renters, businesses and admins, each with HTML + plain text. Preview them at **Admin → Emails** (`/admin/emails`).
 
 - **Auth emails** (confirm sign-up, reset password, change email, magic link, invite, re-auth, password/email changed) render to `supabase/templates/*.html` via `npm run emails:build`. Supabase only accepts custom templates once **custom SMTP** is configured: then uncomment the template block in `supabase/config.toml` and run `supabase config push`.
 - **App emails** render with `renderAppEmail(key, data)` → `{ subject, html, text }` for any provider. They map to the in-app notification types and go out once an email provider is connected.
@@ -70,6 +73,21 @@ All 44 emails share one branded layout (`src/emails/`): 8 Supabase Auth/security
 ## Contract signing
 
 The provider and the renter each draw or type a signature; both become a PNG in the browser (typed names use a handwriting font). The database accepts only `data:image/png;base64,…` up to 400 KB. Signing and "opened" events run on the server with the secret key, so the IP address and browser come from the request, not the client. Every signed PDF ends with a **signature certificate** page listing: the SHA-256 fingerprint; provider name, email, time, IP and browser; who it was sent to and when; when and from where the renter opened it; and the renter's name, email, time, IP and browser. All times are in PHT.
+
+## Subscription payments (PayMongo)
+
+Owners pay for Pro or Business on PayMongo's hosted checkout (GCash, Maya, cards and QR Ph). Each payment buys one month. Plans are prepaid and don't renew automatically:
+
+- Paying during the trial, or for the current plan, adds the month after the current period ends.
+- Switching between paid plans starts right away. Unused days carry over at the new plan's price.
+- When a period ends, the store is hidden until the owner pays again. Reminders go out 3 days before the end and when the plan lapses.
+- A paid plan an admin sets has no end date until it's changed.
+
+The amount always comes from the plan in the database, never from the browser. Payments are settled by `apply_subscription_payment`. It can run more than once safely, from both of these places:
+- the webhook at `POST /api/webhooks/paymongo`, which is signature-verified and subscribed to `checkout_session.payment.paid`;
+- the success page, which re-reads the checkout session in case the webhook is slow or misconfigured.
+
+Owners see their payment history under **Subscription**. Admins see recent payments under **Admin → Subscriptions**.
 
 ## Pending — do these when the email provider and domain are ready
 
@@ -82,9 +100,10 @@ The provider and the renter each draw or type a signature; both become a PNG in 
 **Domain (13c.online)**
 1. Add the domain to the Vercel project.
 2. Set `NEXT_PUBLIC_SITE_URL=https://13c.online` and `NEXT_PUBLIC_ROOT_DOMAIN=13c.online`, then redeploy.
-3. In `supabase/config.toml`, change `site_url` and the redirect URLs to the new domain, then run `supabase config push`.
-4. Add the email provider's SPF, DKIM and DMARC records for the sending domain.
-5. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
+3. In PayMongo, change the webhook URL to `https://13c.online/api/webhooks/paymongo`.
+4. In `supabase/config.toml`, change `site_url` and the redirect URLs to the new domain, then run `supabase config push`.
+5. Add the email provider's SPF, DKIM and DMARC records for the sending domain.
+6. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
 
 **Needs your OK:** the contract PDFs print "PHP" instead of "₱". Showing ₱ needs the `@pdf-lib/fontkit` dependency and an embedded font.
 

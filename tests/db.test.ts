@@ -5,7 +5,9 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import { TRANSITIONS } from "@/lib/bookings/status";
-import { PLAN_VEHICLE_LIMIT, RESERVED_SLUGS, TRIAL_DAYS } from "@/lib/constants";
+import { createHmac } from "node:crypto";
+import { POST as paymongoWebhook } from "@/app/api/webhooks/paymongo/route";
+import { PLAN_PRICE_CENTAVOS, PLAN_VEHICLE_LIMIT, RESERVED_SLUGS, TRIAL_DAYS } from "@/lib/constants";
 import { anon, completeRenterProfile, day, makeUser, must, service, SIGNATURE, type TestUser } from "./helpers";
 
 let owner: TestUser, admin: TestUser, renter: TestUser, renter2: TestUser, outsider: TestUser;
@@ -350,6 +352,103 @@ describe("free trial", () => {
     expect(must(await renter2.client.from("businesses").select("id").eq("id", businessId))).toHaveLength(1);
     must(await admin.client.rpc("admin_set_plan", { p_business_id: businessId, p_plan: "PRO", p_status: "ACTIVE" }));
     expect(must(await anon().from("businesses").select("id").eq("id", businessId))).toHaveLength(1);
+  });
+});
+
+describe("subscription payments (PayMongo)", () => {
+  const newSession = () => `cs_vitest_${crypto.randomUUID().replaceAll("-", "")}`;
+  const checkout = async (plan: "PRO" | "BUSINESS") => {
+    const id = must(await service.rpc("create_subscription_checkout", { p_actor_id: owner.id, p_business_id: businessId, p_plan: plan }));
+    const session = newSession();
+    must(await service.from("subscription_payments").update({ checkout_session_id: session }).eq("id", id));
+    return { id, session };
+  };
+  const pay = (session: string, amount: number, paymentId = `pay_vitest_${crypto.randomUUID().slice(0, 8)}`) =>
+    service.rpc("apply_subscription_payment", { p_checkout_session_id: session, p_payment_id: paymentId, p_amount: amount, p_method: "gcash", p_livemode: false });
+  const sub = async () => must(await service.from("subscriptions").select("plan, status, current_period_end").eq("business_id", businessId).single());
+  const end = async () => new Date((await sub()).current_period_end!).getTime();
+  const plusMonth = (t: number) => { const d = new Date(t); d.setUTCMonth(d.getUTCMonth() + 1); return d.getTime(); };
+  const near = (a: number, b: number, ms = 60_000) => expect(Math.abs(a - b), `${new Date(a).toISOString()} vs ${new Date(b).toISOString()}`).toBeLessThan(ms);
+
+  it("prices in the database match the app", async () => {
+    for (const plan of ["FREE", "PRO", "BUSINESS"] as const) {
+      expect(must(await service.rpc("plan_price_centavos", { p: plan }))).toBe(PLAN_PRICE_CENTAVOS[plan]);
+    }
+  });
+
+  it("only the server starts checkouts, for owners of verified businesses, at the plan's price", async () => {
+    await expectError(owner.client.rpc("create_subscription_checkout", { p_actor_id: owner.id, p_business_id: businessId, p_plan: "PRO" }), /permission denied|42501/);
+    await expectError(service.rpc("create_subscription_checkout", { p_actor_id: outsider.id, p_business_id: businessId, p_plan: "PRO" }), "NOT_AUTHORIZED");
+    await expectError(service.rpc("create_subscription_checkout", { p_actor_id: owner.id, p_business_id: businessId, p_plan: "FREE" }), "INVALID_PLAN");
+    const { id } = await checkout("BUSINESS");
+    const row = must(await owner.client.from("subscription_payments").select("amount_centavos, status, created_by").eq("id", id).single());
+    expect(row).toEqual({ amount_centavos: 150000, status: "PENDING", created_by: owner.id });
+    expect(must(await outsider.client.from("subscription_payments").select("id").eq("id", id))).toHaveLength(0);
+    await expectError(owner.client.from("subscription_payments").update({ status: "PAID" }).eq("id", id), /permission denied/);
+    await expectError(owner.client.from("subscription_payments").insert({ business_id: businessId, plan: "PRO", amount_centavos: 1 }), /permission denied/);
+    await expectError(owner.client.rpc("apply_subscription_payment", { p_checkout_session_id: "x", p_payment_id: "x", p_amount: 1, p_method: "x", p_livemode: false }), /permission denied|42501/);
+  });
+
+  it("paying during the trial adds a month after it ends, exactly once", async () => {
+    const trialEnd = Date.now() + 5 * 86400000;
+    must(await service.from("subscriptions").update({ plan: "FREE", status: "TRIALING", current_period_end: new Date(trialEnd).toISOString() }).eq("business_id", businessId));
+    const { id, session } = await checkout("PRO");
+    await expectError(pay(session, 100), "AMOUNT_MISMATCH");
+    await expectError(pay(newSession(), 49900), "UNKNOWN_CHECKOUT");
+    // Webhook and the success page racing on the same payment
+    const results = await Promise.all([pay(session, 49900, "pay_vitest_race"), pay(session, 49900, "pay_vitest_race")]);
+    expect(results.map((r) => r.error)).toEqual([null, null]);
+    expect(results[0]!.data).toBe(results[1]!.data);
+    near(await end(), plusMonth(trialEnd), 5_000);
+    expect(await sub()).toMatchObject({ plan: "PRO", status: "ACTIVE" });
+    const row = must(await owner.client.from("subscription_payments").select("status, payment_id, period_start").eq("id", id).single());
+    expect(row.status).toBe("PAID");
+    near(new Date(row.period_start!).getTime(), trialEnd, 5_000);
+    const notes = must(await owner.client.from("notifications").select("type").eq("business_id", businessId).eq("type", "subscription_paid"));
+    expect(notes).toHaveLength(1);
+  });
+
+  it("renewing stacks; switching plans converts unused time at the price ratio", async () => {
+    const before = await end();
+    await pay((await checkout("PRO")).session, 49900);
+    near(await end(), plusMonth(before), 5_000);
+    const proEnd = await end();
+    await pay((await checkout("BUSINESS")).session, 150000);
+    near(await end(), plusMonth(Date.now() + (proEnd - Date.now()) * (49900 / 150000)));
+    expect((await sub()).plan).toBe("BUSINESS");
+  });
+
+  it("a lapsed plan hides the store and sends one reminder; paying again restores it from now", async () => {
+    must(await service.from("subscriptions").update({ current_period_end: new Date(Date.now() - 60_000).toISOString() }).eq("business_id", businessId));
+    expect(must(await anon().from("businesses").select("id").eq("id", businessId))).toHaveLength(0);
+    must(await service.rpc("send_trial_reminders"));
+    must(await service.rpc("send_trial_reminders"));
+    expect(must(await owner.client.from("notifications").select("id").eq("business_id", businessId).eq("type", "subscription_ended"))).toHaveLength(1);
+    await pay((await checkout("PRO")).session, 49900);
+    near(await end(), plusMonth(Date.now()));
+    expect(must(await anon().from("businesses").select("id").eq("id", businessId))).toHaveLength(1);
+  });
+
+  it("webhook: signature required, settles once, ignores other sessions and events", async () => {
+    process.env.PAYMONGO_WEBHOOK_SECRET = "whsk_vitest_secret";
+    const { id, session } = await checkout("PRO");
+    const event = (cs: string, type = "checkout_session.payment.paid") => JSON.stringify({ data: { id: "evt_vitest", type: "event", attributes: { type, livemode: false,
+      data: { id: cs, type: "checkout_session", attributes: { livemode: false, payment_method_used: "gcash", payments: [{ id: `pay_${cs}`, attributes: { amount: 49900, status: "paid" } }] } } } } });
+    const post = (body: string, secret = "whsk_vitest_secret") => {
+      const t = String(Math.floor(Date.now() / 1000));
+      const sig = createHmac("sha256", secret).update(`${t}.${body}`).digest("hex");
+      return paymongoWebhook(new Request("http://localhost/api/webhooks/paymongo", { method: "POST", body, headers: { "paymongo-signature": `t=${t},te=${sig},li=` } }));
+    };
+    expect((await paymongoWebhook(new Request("http://localhost/api/webhooks/paymongo", { method: "POST", body: event(session) }))).status).toBe(401);
+    expect((await post(event(session), "whsk_wrong")).status).toBe(401);
+    const before = await end();
+    expect((await post(event(session))).status).toBe(200);
+    expect((await post(event(session))).status).toBe(200); // PayMongo retry
+    near(await end(), plusMonth(before), 5_000);
+    const row = must(await owner.client.from("subscription_payments").select("status, payment_method").eq("id", id).single());
+    expect(row).toEqual({ status: "PAID", payment_method: "gcash" });
+    expect(await (await post(event(newSession()))).json()).toMatchObject({ ignored: true });
+    expect((await post(event(session, "payment.paid"))).status).toBe(200);
   });
 });
 

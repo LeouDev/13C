@@ -38,7 +38,7 @@ export function responseTimeLabel(minutes: number | null | undefined) {
 
 /** "PAYMENT_ON_PICKUP" → "Payment on pickup" */
 export const labelize = (s: string) =>
-  ({ GCASH: "GCash", MAYA: "Maya", SUV: "SUV", MPV: "MPV", suv: "SUV", mpv: "MPV" })[s] ?? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase().replaceAll("_", " ");
+  ({ GCASH: "GCash", MAYA: "Maya", SUV: "SUV", MPV: "MPV", suv: "SUV", mpv: "MPV", gcash: "GCash", paymaya: "Maya", qrph: "QR Ph", grab_pay: "GrabPay" } as Record<string, string>)[s] ?? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase().replaceAll("_", " ");
 
 export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 

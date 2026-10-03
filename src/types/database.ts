@@ -1635,6 +1635,75 @@ export type Database = {
           },
         ]
       }
+      subscription_payments: {
+        Row: {
+          amount_centavos: number
+          amount_paid_centavos: number | null
+          business_id: string
+          checkout_session_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          livemode: boolean | null
+          paid_at: string | null
+          payment_id: string | null
+          payment_method: string | null
+          period_end: string | null
+          period_start: string | null
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          status: string
+        }
+        Insert: {
+          amount_centavos: number
+          amount_paid_centavos?: number | null
+          business_id: string
+          checkout_session_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          livemode?: boolean | null
+          paid_at?: string | null
+          payment_id?: string | null
+          payment_method?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          status?: string
+        }
+        Update: {
+          amount_centavos?: number
+          amount_paid_centavos?: number | null
+          business_id?: string
+          checkout_session_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          livemode?: boolean | null
+          paid_at?: string | null
+          payment_id?: string | null
+          payment_method?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_payments_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
           business_id: string
@@ -2027,6 +2096,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      apply_subscription_payment: {
+        Args: {
+          p_amount: number
+          p_checkout_session_id: string
+          p_livemode: boolean
+          p_method: string
+          p_payment_id: string
+        }
+        Returns: string
+      }
       archive_vehicle: { Args: { p_vehicle_id: string }; Returns: undefined }
       assert_renter_ready: { Args: { p_user: string }; Returns: undefined }
       attach_contract_pdf: {
@@ -2060,6 +2139,14 @@ export type Database = {
           p_comment: string
           p_rating: number
           p_vehicle_rating: number
+        }
+        Returns: string
+      }
+      create_subscription_checkout: {
+        Args: {
+          p_actor_id: string
+          p_business_id: string
+          p_plan: Database["public"]["Enums"]["subscription_plan"]
         }
         Returns: string
       }
@@ -2155,6 +2242,10 @@ export type Database = {
           p_user: string
         }
         Returns: undefined
+      }
+      plan_price_centavos: {
+        Args: { p: Database["public"]["Enums"]["subscription_plan"] }
+        Returns: number
       }
       plan_vehicle_limit: {
         Args: { p: Database["public"]["Enums"]["subscription_plan"] }

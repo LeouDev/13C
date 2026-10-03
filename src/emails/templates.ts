@@ -26,6 +26,8 @@ export type EmailData = {
   comment?: string;
   trialEnds?: string;
   daysLeft?: number;
+  periodEnd?: string;
+  amount?: string;
   plan?: string;
   role?: string;
   version?: number;
@@ -603,6 +605,55 @@ export const EMAILS = {
         { details: PLANS.filter((p) => p.id !== "FREE").map((p) => [`${p.name} · ${p.vehicles}`, `${p.price}${p.period}`]) },
       ],
       cta: { label: "Upgrade to go live", url: "/dashboard/subscription" },
+    }),
+  },
+  subscription_paid: {
+    audience: "Business",
+    trigger: "A subscription payment through PayMongo succeeds",
+    notificationType: "subscription_paid",
+    sample: { ...SAMPLE, plan: "Pro", amount: "₱499.00", paymentMethod: "GCash", periodEnd: "Nov 28, 2026" },
+    build: (d) => ({
+      subject: `Payment received: ${d.plan} until ${d.periodEnd}`,
+      preheader: `${d.amount} via ${d.paymentMethod}. Your store stays live.`,
+      heading: "Thanks, your payment went through",
+      blocks: [
+        { p: `${hi(d)} we received **${d.amount}** for **${d.businessName}**'s **${d.plan}** plan.` },
+        { details: [["Plan", d.plan], ["Paid until", d.periodEnd], ["Amount", d.amount], ["Paid with", d.paymentMethod]] },
+        { note: "Plans don't renew automatically. We'll remind you 3 days before this period ends. PayMongo emails your official receipt.", tone: "info" },
+      ],
+      cta: { label: "View subscription", url: "/dashboard/subscription" },
+    }),
+  },
+  subscription_ending: {
+    audience: "Business",
+    trigger: "3 days before a paid month ends",
+    notificationType: "subscription_ending",
+    sample: { ...SAMPLE, plan: "Pro", periodEnd: "Nov 28, 2026", daysLeft: 3 },
+    build: (d) => ({
+      subject: `Your ${d.plan} plan ends ${d.periodEnd}`,
+      preheader: "Pay for another month to keep your store live.",
+      heading: `${d.daysLeft ?? 3} days left on ${d.plan}`,
+      blocks: [
+        { p: `${hi(d)} **${d.businessName}**'s **${d.plan}** plan is paid until **${d.periodEnd}**. Plans don't renew automatically, so pay for another month to keep your store live.` },
+        { p: "Paying now adds a month after the current period. You won't lose any days." },
+      ],
+      cta: { label: "Pay for another month", url: "/dashboard/subscription" },
+    }),
+  },
+  subscription_ended: {
+    audience: "Business",
+    trigger: "A paid month ends without renewal",
+    notificationType: "subscription_ended",
+    sample: { ...SAMPLE, plan: "Pro" },
+    build: (d) => ({
+      subject: `Your ${d.plan} plan has ended`,
+      preheader: "Your store is hidden until you pay for another month.",
+      heading: `Your ${d.plan} plan has ended`,
+      blocks: [
+        { p: `${hi(d)} **${d.businessName}**'s store is now hidden from customers and you can't add vehicles. Your dashboard, existing bookings and contracts still work.` },
+        { details: PLANS.filter((p) => p.id !== "FREE").map((p) => [`${p.name} · ${p.vehicles}`, `${p.price}${p.period}`]) },
+      ],
+      cta: { label: "Reactivate", url: "/dashboard/subscription" },
     }),
   },
   plan_changed: {

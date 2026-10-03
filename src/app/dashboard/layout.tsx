@@ -5,7 +5,7 @@ import { Logo } from "@/components/brand/logo";
 import { BusinessSwitcher } from "@/components/dashboard/business-switcher";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { DashboardMobileNav } from "@/components/dashboard/mobile-nav";
-import { TrialBanner } from "@/components/dashboard/trial-banner";
+import { PlanBanner } from "@/components/dashboard/plan-banner";
 import { NotificationBell } from "@/components/site/notification-bell";
 import { requireBusiness } from "@/lib/auth";
 import { storeDisplayUrl } from "@/lib/constants";
@@ -49,7 +49,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
           </Link>
           <div className="ml-auto sm:ml-0"><NotificationBell userId={user.id} initialUnread={notes.count ?? 0} /></div>
         </header>
-        <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8"><TrialBanner sub={sub.data} />{children}</main>
+        <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8"><PlanBanner sub={sub.data} />{children}</main>
       </div>
     </div>
   );

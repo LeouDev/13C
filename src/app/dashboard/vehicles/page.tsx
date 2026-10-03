@@ -29,7 +29,7 @@ export default async function VehiclesPage() {
   return (
     <>
       <PageHeader eyebrow="Fleet" title="Vehicles"
-        description={!subscriptionState(sub).active ? "Your free trial has ended — upgrade to add vehicles." : limit ? `${count} of ${limit} vehicles on the ${labelize(sub?.plan ?? "FREE")} plan.` : `${count} vehicles`}
+        description={!subscriptionState(sub).active ? "Your plan has ended. Choose or renew a plan to add vehicles." : limit ? `${count} of ${limit} vehicles on the ${labelize(sub?.plan ?? "FREE")} plan.` : `${count} vehicles`}
         actions={atLimit
           ? <Link href="/dashboard/subscription" className={buttonVariants({ variant: "electric", size: "lg" })}>Upgrade to add more</Link>
           : <Link href="/dashboard/vehicles/new" className={buttonVariants({ size: "lg" })}><Plus /> Add vehicle</Link>} />

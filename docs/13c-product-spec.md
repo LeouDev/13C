@@ -102,7 +102,7 @@ INQUIRY → NEGOTIATING → BOOKING_REQUESTED → PENDING_OWNER_APPROVAL → APP
 | Analytics, notifications | basic | ✓ | advanced |
 | GPS integrations, custom contracts, priority support | — | — | future |
 
-The free trial starts when 13C verifies the business and lasts 25 days; when it ends without a paid plan the store is hidden from customers and no vehicles can be added (existing bookings and contracts continue). Vehicle and staff limits are enforced in the database. Plans are assigned by admins until billing (PayMongo) ships. Marketplace commission (5–10%) is explicitly **not** in the MVP.
+The free trial starts when 13C verifies the business and lasts 25 days; when it ends without a paid plan the store is hidden from customers and no vehicles can be added (existing bookings and contracts continue). Vehicle and staff limits are enforced in the database. Owners pay for Pro or Business monthly through PayMongo (GCash, Maya, cards, QR Ph). Each payment adds a month, with no auto-renewal. Admins can also grant plans. Marketplace commission (5–10%) is explicitly **not** in the MVP.
 
 ## Privacy (PH Data Privacy Act)
 

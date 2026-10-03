@@ -162,7 +162,10 @@ export default function TermsPage() {
       <LegalSection {...sec("subscriptions")}>
         <p>
           Rental Businesses may use a Free plan or a paid plan (Pro or Business) with the features and vehicle limits described on our{" "}
-          <Link href="/for-business#pricing">pricing page</Link>. Until online billing is available, paid plans are invoiced and activated manually. Fees are
+          <Link href="/for-business#pricing">pricing page</Link>. Paid plans are prepaid one month at a time through our payment processor, PayMongo,
+          and don&apos;t renew automatically. Paying for your current plan (or during your trial) adds a month after the current period ends. Switching between
+          paid plans starts right away, and unused days carry over at the new plan&apos;s price. If a plan
+          isn&apos;t renewed, your store is hidden from customers until you pay again. Fees are
           exclusive of applicable taxes unless stated otherwise. We will give at least thirty (30) days&apos; notice of any price change. If a plan is downgraded
           or not renewed, existing listings remain, but you cannot add vehicles beyond the new plan&apos;s limit.
         </p>

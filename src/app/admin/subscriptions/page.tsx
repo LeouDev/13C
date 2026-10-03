@@ -7,7 +7,8 @@ import { PlanControl } from "@/components/admin/plan-control";
 import { BUSINESS_STATUS_TONE, Pill } from "@/components/common/badges";
 import { EmptyState, PageHeader, StatCard } from "@/components/common/states";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDate, labelize } from "@/lib/format";
+import { paymongoMode } from "@/lib/billing";
+import { formatDate, formatPHP, labelize } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import type { Enums } from "@/types/database";
 
@@ -26,7 +27,12 @@ export default async function AdminSubscriptionsPage({ searchParams }: PageProps
     .select("id, name, city, status, subscriptions(plan, status, current_period_end, updated_at), vehicles(id, deleted_at)")
     .is("deleted_at", null).order("name").limit(500);
   if (q?.trim()) query = query.ilike("name", `%${q.trim()}%`);
-  const { data } = await query;
+  const [{ data }, { data: payments }] = await Promise.all([
+    query,
+    supabase.from("subscription_payments").select("id, plan, amount_paid_centavos, payment_method, payment_id, livemode, paid_at, period_end, businesses(name)")
+      .eq("status", "PAID").order("paid_at", { ascending: false }).limit(20),
+  ]);
+  const mode = paymongoMode();
 
   const all = (data ?? []).map((b) => {
     const p = b.subscriptions?.plan ?? "FREE";
@@ -43,8 +49,9 @@ export default async function AdminSubscriptionsPage({ searchParams }: PageProps
       <div className="mb-5 flex gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
         <Info className="mt-0.5 size-4 shrink-0" />
         <p>
-          <strong>Billing is manual until the PayMongo integration ships.</strong> Collect payment outside 13C, then change the plan here.
-          Limits apply when vehicles are added: downgrading never removes existing vehicles, but a business over its limit can&apos;t add more.
+          <strong>Owners pay online through PayMongo{mode ? ` (${mode} mode)` : " (not configured)"}.</strong> Each payment adds one month, with no auto-renewal.
+          A paid plan you set here has no end date until you change it. Limits apply when vehicles are added: downgrading never removes existing vehicles,
+          but a business over its limit can&apos;t add more.
         </p>
       </div>
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -91,6 +98,29 @@ export default async function AdminSubscriptionsPage({ searchParams }: PageProps
             </TableBody>
           </Table>
         </div>
+      )}
+      {!!payments?.length && (
+        <section className="mt-8">
+          <h2 className="mb-3 font-display text-lg font-bold text-navy-900">Recent payments</h2>
+          <div className="w-0 min-w-full overflow-hidden rounded-2xl border bg-white">
+            <Table>
+              <TableHeader>
+                <TableRow><TableHead>Paid</TableHead><TableHead>Business</TableHead><TableHead>Plan</TableHead><TableHead>Amount</TableHead><TableHead>PayMongo payment</TableHead></TableRow>
+              </TableHeader>
+              <TableBody>
+                {payments.map((x) => (
+                  <TableRow key={x.id}>
+                    <TableCell className="text-sm">{formatDate(x.paid_at!)}</TableCell>
+                    <TableCell className="text-sm font-medium">{x.businesses?.name}</TableCell>
+                    <TableCell className="text-sm">{labelize(x.plan)} <span className="text-xs text-muted-foreground">until {formatDate(x.period_end!)}</span></TableCell>
+                    <TableCell className="text-sm">{formatPHP((x.amount_paid_centavos ?? 0) / 100, true)} <span className="text-xs text-muted-foreground">{x.payment_method ? labelize(x.payment_method) : ""}</span></TableCell>
+                    <TableCell className="font-mono text-xs">{x.payment_id}{!x.livemode && <Pill tone="warning" className="ml-2">Test</Pill>}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </section>
       )}
     </>
   );

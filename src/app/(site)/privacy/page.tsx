@@ -147,7 +147,8 @@ export default function PrivacyPage() {
         <h3>Service providers (processors)</h3>
         <p>
           We use trusted providers that process data on our behalf under written agreements, including <strong>Supabase</strong> (database,
-          authentication and private file storage), cloud hosting and content-delivery providers, and email delivery services. Some providers
+          authentication and private file storage), <strong>PayMongo</strong> (subscription payments by rental businesses; we never see or store full
+          card or e-wallet details), cloud hosting and content-delivery providers, and email delivery services. Some providers
           may store or process data outside the Philippines; where they do, we require safeguards that provide a comparable level of protection,
           as the Data Privacy Act requires.
         </p>
