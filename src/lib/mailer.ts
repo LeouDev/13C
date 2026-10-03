@@ -1,8 +1,7 @@
 import "server-only";
 
 /** Sender for every 13C email (replies land in the support inbox). */
-// ponytail: back to air-rally.com until 13c.online is verified in the Resend team that owns RESEND_API_KEY.
-export const EMAIL_FROM = "13C <support@air-rally.com>";
+export const EMAIL_FROM = "13C <support@13c.online>";
 
 export const emailEnabled = () => !!process.env.RESEND_API_KEY;
 
