@@ -96,7 +96,7 @@ INQUIRY → NEGOTIATING → BOOKING_REQUESTED → PENDING_OWNER_APPROVAL → APP
 
 | | FREE ₱0 · 25-day trial | PRO ₱499/mo | BUSINESS ₱1,500/mo |
 |---|---|---|---|
-| Vehicles | 3 | 10 | Unlimited |
+| Vehicles | 10 (trial) | 10 | Unlimited |
 | Team members | Owner only | Owner only | Multiple staff |
 | Storefront, inquiries, bookings, contracts | ✓ | ✓ | ✓ |
 | Analytics, notifications | basic | ✓ | advanced |

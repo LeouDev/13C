@@ -158,7 +158,7 @@ export default async function HomePage() {
               ))}
               <li className="flex items-center gap-3 rounded-2xl bg-white p-4 text-navy-900 sm:col-span-2">
                 <BarChart3 className="size-5 text-electric" />
-                <p className="text-sm"><span className="font-semibold">Free for 25 days</span> — up to 3 vehicles, no credit card.</p>
+                <p className="text-sm"><span className="font-semibold">Free for 25 days</span> — up to 10 vehicles, no credit card.</p>
               </li>
             </ul>
           </div>

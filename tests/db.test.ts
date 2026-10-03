@@ -114,9 +114,9 @@ describe("business lifecycle", () => {
     expect(found.map((r) => r.id)).toContain(vehicleId);
   });
 
-  it("enforces the FREE plan vehicle limit (3)", async () => {
+  it("enforces the free-trial vehicle limit", async () => {
     const base = { make: "Honda", model: "City", year: 2022, category_slug: "sedan", transmission: "MANUAL", fuel_type: "GASOLINE", seats: 5, city: "Cebu City", status: "INACTIVE" };
-    for (let i = 0; i < 2; i++) {
+    for (let i = 1; i < PLAN_VEHICLE_LIMIT.FREE!; i++) {
       must(await owner.client.rpc("save_vehicle", { p_business_id: businessId, p_vehicle_id: null as never, p_vehicle: base, p_pricing: { daily_rate: 1200 } }));
     }
     await expectError(owner.client.rpc("save_vehicle", { p_business_id: businessId, p_vehicle_id: null as never, p_vehicle: base, p_pricing: { daily_rate: 1200 } }), "PLAN_VEHICLE_LIMIT");
