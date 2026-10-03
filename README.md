@@ -101,7 +101,7 @@ Owners see their payment history under **Subscription**. Admins see recent payme
 
 ## Pending — do these when the email provider and domain are ready
 
-**Email:** done. Resend (Vercel integration, free plan, 100 emails/day) sends from `support@13c.online`. The domain is verified in Resend (region Tokyo), and `air-rally.com` stays verified as a fallback:
+**Email:** done. Resend (free plan, 100 emails/day) sends from `support@13c.online`. The domain is verified in Resend (region Tokyo), using one key, `13C` (sending access, 13c.online only), for both `RESEND_API_KEY` in Vercel and the Supabase SMTP password:
 - Supabase Auth uses Resend through custom SMTP, with the branded templates pushed from `config.toml`.
 - App emails go through the notifications outbox; see **Emails** above.
 - Upgrade Resend when volume passes about 100 a day.
@@ -115,8 +115,7 @@ Owners see their payment history under **Subscription**. Admins see recent payme
 - Cloudflare Email Routing forwards `support@`, `privacy@` and `owner@13c.online` to the owner's inbox.
 - To do:
   1. In PayMongo, change the webhook URL to `https://www.13c.online/api/webhooks/paymongo`. Use the `www` address, because webhooks don't follow the redirect from the apex.
-  2. In Supabase (Authentication → SMTP Settings), set the sender email to `support@13c.online`. App emails, the site and the legal pages already use `support@` and `privacy@13c.online`.
-  3. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
+  2. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
 
 **Also before launch**
 1. Have the contract template (Admin → Settings), Terms and Privacy Policy reviewed by Philippine legal counsel.
