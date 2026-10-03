@@ -44,7 +44,7 @@ export function TeamManager({ businessId, members, canManage, planAllows }: {
           </NativeSelect>
           <Button type="submit" disabled={pending}>{pending && <Loader2 className="animate-spin" />} Add</Button>
         </form>
-      ) : <p className="rounded-2xl bg-canvas p-3 text-sm">Multiple staff accounts are available on the Business plan.</p>)}
+      ) : <p className="rounded-2xl bg-canvas p-3 text-sm">Team accounts (managers and staff) are available on the Business plan.</p>)}
     </div>
   );
 }

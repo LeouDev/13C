@@ -76,7 +76,7 @@ export const PLANS = [
   { id: "PRO", name: "Pro", price: "₱499", period: "/month", vehicles: `Up to ${PLAN_VEHICLE_LIMIT.PRO} vehicles`,
     features: ["Everything in Free", "Unlimited bookings", "Digital contracts & e-signatures", "Customer management", "Calendar", "Analytics", "Automated notifications"] },
   { id: "BUSINESS", name: "Business", price: "₱1,500", period: "/month", vehicles: "Unlimited vehicles",
-    features: ["Everything in Pro", "Multiple staff accounts", "Advanced analytics", "Fleet management", "GPS integrations (soon)", "Custom contract settings", "Priority support"] },
+    features: ["Everything in Pro", "Team accounts (owner, managers, staff)", "Priority support", "GPS integrations (soon)"] },
 ] as const;
 
 /** Must match public.is_reserved_slug() — tests/db.test.ts checks every entry. */
