@@ -2,9 +2,11 @@ import { cn } from "cn";
 import { Label } from "@/components/ui/label";
 
 export function Field({
-  label, htmlFor, error, hint, required, className, children,
+  label, htmlFor, error, hint, required, labelAside, className, children,
 }: {
   label: string;
+  /** shown at the right end of the label row, e.g. a "Forgot your password?" link */
+  labelAside?: React.ReactNode;
   htmlFor?: string;
   error?: string;
   hint?: React.ReactNode;
@@ -14,10 +16,13 @@ export function Field({
 }) {
   return (
     <div className={cn("grid gap-1.5", className)}>
-      <Label htmlFor={htmlFor} className="text-[13px] font-medium text-navy-900">
-        {label}
-        {required && <span className="text-brand-red" aria-hidden> *</span>}
-      </Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={htmlFor} className="text-[13px] font-medium text-navy-900">
+          {label}
+          {required && <span className="text-brand-red" aria-hidden> *</span>}
+        </Label>
+        {labelAside}
+      </div>
       {children}
       {error ? (
         <p className="text-xs font-medium text-destructive" role="alert">{error}</p>

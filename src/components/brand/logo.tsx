@@ -7,11 +7,13 @@ type Props = {
   tone?: "dark" | "light";
   /** include the speed lines (hero / footer) */
   speed?: boolean;
+  /** animate once on mount: speed lines rush in, the wordmark slides in */
+  rush?: boolean;
   title?: string;
 };
 
 /** The 13C wordmark: italic 1-3-C, red dot and the key-blade swash. */
-export function Logo({ className, tone = "dark", speed = false, title = "13C" }: Props) {
+export function Logo({ className, tone = "dark", speed = false, rush = false, title = "13C" }: Props) {
   const ink = tone === "dark" ? "var(--navy-900)" : "var(--cream)";
   return (
     <svg
@@ -22,14 +24,18 @@ export function Logo({ className, tone = "dark", speed = false, title = "13C" }:
     >
       {speed && (
         <g>
-          {SPEED_LINES.map((s) => (
-            <rect key={s.y} x={s.x} y={s.y} width={s.w} height={s.h} rx={s.h / 2} fill={s.accent ? "var(--brand-red)" : ink} />
+          {SPEED_LINES.map((s, i) => (
+            <rect key={s.y} x={s.x} y={s.y} width={s.w} height={s.h} rx={s.h / 2} fill={s.accent ? "var(--brand-red)" : ink}
+              className={rush ? "animate-rush" : undefined}
+              style={rush ? { transformBox: "fill-box", transformOrigin: "right center", animationDelay: `${0.25 + i * 0.06}s` } : undefined} />
           ))}
         </g>
       )}
-      <path d={WORDMARK} fill={ink} />
-      <circle {...DOT} fill="var(--brand-red)" />
-      <path d={SWASH} fill="var(--brand-red)" />
+      <g className={rush ? "animate-fade-in-x" : undefined}>
+        <path d={WORDMARK} fill={ink} />
+        <circle {...DOT} fill="var(--brand-red)" />
+        <path d={SWASH} fill="var(--brand-red)" />
+      </g>
     </svg>
   );
 }

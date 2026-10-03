@@ -163,6 +163,20 @@
 }
 .animate-rush { animation: rush 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+@keyframes fade-in-x {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-fade-in-x { animation: fade-in-x 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Brand-panel streaks: each one sets --dur and a negative --delay so the panel starts full. */
+@keyframes streak {
+  from { left: 100%; }
+  to { left: -45%; }
+}
+.animate-streak { animation: streak var(--dur) linear var(--delay) infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-rush { animation: none; }
+  .animate-rush, .animate-fade-in-x, .animate-streak { animation: none; }
+  .animate-streak { display: none; }
 }
