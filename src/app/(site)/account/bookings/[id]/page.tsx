@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { BookingOnOtherAccount } from "@/components/booking/other-account";
 import { CheckCircle2, Download, FileSignature, MapPin, MessageSquare, Phone, Wallet } from "lucide-react";
 import { AcceptProposal, PaymentsPanel, ReviewForm, TransitionActions } from "@/components/booking/booking-actions";
 import { BookingProgress, StatusHistory } from "@/components/booking/booking-timeline";
@@ -22,7 +22,7 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
   const { data: b } = await supabase.from("bookings")
     .select("*, vehicles(make, model, year, slug, vehicle_images(storage_path, position)), businesses(id, name, slug, phone, email, address, city, logo_path), booking_status_history(to_status, note, created_at), payments(id, amount, method, reference, paid_at), contracts(id, status, current_version, contract_versions(id, version, status, signed_at)), reviews(id, rating, comment)")
     .eq("id", id).eq("renter_id", user.id).order("created_at", { referencedTable: "booking_status_history" }).maybeSingle();
-  if (!b) notFound();
+  if (!b) return <BookingOnOtherAccount bookingId={id} email={user.email} />;
   const { data: methods } = await supabase.from("payment_methods").select("method, account_name, account_number, instructions").eq("business_id", b.business_id).eq("is_enabled", true);
   const payInfo = methods?.find((m) => m.method === b.payment_method);
   const img = [...(b.vehicles?.vehicle_images ?? [])].sort((x, y) => x.position - y.position)[0];

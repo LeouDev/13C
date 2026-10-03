@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { BookingOnOtherAccount } from "@/components/booking/other-account";
 import { CheckCircle2, Download } from "lucide-react";
 import { ContractDocument } from "@/components/contract/contract-document";
 import { MarkViewed, SignPanel } from "@/components/contract/sign-panel";
@@ -19,7 +19,7 @@ export default async function ContractPage({ params }: PageProps<"/account/booki
   const { data: b } = await supabase.from("bookings")
     .select("id, reference, status, renter_id, businesses(logo_path), contracts(id, current_version, contract_versions(id, version, status, title, sections, content_hash, data, signed_at, viewed_at, contract_signatures(signer_role, signer_name, signature_type, signature_data, signed_at, ip_address, content_hash)))")
     .eq("id", id).eq("renter_id", user.id).maybeSingle();
-  if (!b) notFound();
+  if (!b) return <BookingOnOtherAccount bookingId={id} email={user.email} />;
   const versions = [...(b.contracts?.contract_versions ?? [])].sort((x, y) => y.version - x.version);
   const current = versions.find((v) => v.version === b.contracts?.current_version) ?? versions.find((v) => v.status === "SIGNED");
   if (!current) {

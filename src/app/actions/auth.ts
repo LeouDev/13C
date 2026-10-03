@@ -56,10 +56,12 @@ export async function signUp(_: unknown, form: FormData): Promise<ActionResult<{
   return ok({ needsConfirmation: true }, "Check your email to confirm your account.");
 }
 
-export async function signOut() {
+/** Signs out; with a `next` path (e.g. a booking opened on the wrong account) it goes to sign-in for that page. */
+export async function signOut(form?: FormData) {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/");
+  const next = String(form?.get("next") ?? "");
+  redirect(next.startsWith("/") && !next.startsWith("//") ? `/login?next=${encodeURIComponent(next)}` : "/");
 }
 
 export async function requestPasswordReset(_: unknown, form: FormData): Promise<ActionResult> {
