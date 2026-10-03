@@ -176,7 +176,31 @@
 }
 .animate-streak { animation: streak var(--dur) linear var(--delay) infinite; }
 
+/* Brand-panel car: drives in, idles on a moving road, speeds off, loops. */
+@keyframes drive {
+  0% { transform: translateX(-140%); }
+  28%, 72% { transform: translateX(0); }
+  100% { transform: translateX(260%); }
+}
+.animate-drive { animation: drive 7s cubic-bezier(0.22, 1, 0.36, 1) infinite; will-change: transform; }
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+.animate-bob { animation: bob 0.5s ease-in-out infinite; }
+@keyframes road {
+  from { background-position: 0 0; }
+  to { background-position: -64px 0; }
+}
+.road-dashes {
+  height: 4px;
+  border-radius: 2px;
+  background-image: repeating-linear-gradient(90deg, color-mix(in srgb, var(--cream) 35%, transparent) 0 36px, transparent 36px 64px);
+  background-size: 64px 4px;
+  animation: road 0.4s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-rush, .animate-fade-in-x, .animate-streak { animation: none; }
+  .animate-rush, .animate-fade-in-x, .animate-streak, .animate-drive, .animate-bob, .road-dashes { animation: none; }
   .animate-streak { display: none; }
 }
