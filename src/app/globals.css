@@ -219,8 +219,16 @@
 .animate-success-dialog { animation: success-dialog 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both; }
 .animate-success-fade { animation: success-fade 0.3s ease-out both; }
 
+/* /for-business hero notifications: rise in, then float. --fb-delay is set per card. */
+@keyframes fb-in { from { opacity: 0; transform: translateY(16px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes fb-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.animate-fb-toast {
+  animation: fb-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--fb-delay, 0s) both,
+    fb-float 5s ease-in-out calc(var(--fb-delay, 0s) + 0.7s) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-rush, .animate-fade-in-x, .animate-streak, .animate-drive, .animate-bob, .road-dashes { animation: none; }
+  .animate-rush, .animate-fade-in-x, .animate-streak, .animate-drive, .animate-bob, .road-dashes, .animate-fb-toast { animation: none; }
   .animate-streak { display: none; }
   .animate-success-badge, .animate-success-check, .animate-success-pop, .animate-success-rise, .animate-success-write,
   .animate-success-dialog, .animate-success-fade { animation: none; }
