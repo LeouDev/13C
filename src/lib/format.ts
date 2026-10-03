@@ -38,7 +38,9 @@ export function responseTimeLabel(minutes: number | null | undefined) {
 
 /** "PAYMENT_ON_PICKUP" → "Payment on pickup" */
 export const labelize = (s: string) =>
-  ({ GCASH: "GCash", MAYA: "Maya", SUV: "SUV", MPV: "MPV" })[s] ?? s.charAt(0) + s.slice(1).toLowerCase().replaceAll("_", " ");
+  ({ GCASH: "GCash", MAYA: "Maya", SUV: "SUV", MPV: "MPV", suv: "SUV", mpv: "MPV" })[s] ?? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase().replaceAll("_", " ");
+
+export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 /** Manila wall-clock date + time (from <input type=date/time>) → ISO instant. */
 export function manilaToISO(date: string, time = "10:00") {
@@ -60,3 +62,6 @@ export function todayManila(offsetDays = 0) {
 
 export const initials = (name: string | null | undefined) =>
   (name ?? "?").split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]!.toUpperCase()).join("") || "?";
+
+/** ISO timestamp `days` from now (server render helper). */
+export const isoDaysFromNow = (days: number) => new Date(Date.now() + days * 86400000).toISOString();

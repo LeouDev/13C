@@ -1,0 +1,90 @@
+/** Fast unit tests for pure logic (no network). */
+import { describe, expect, it } from "vitest";
+import { canTransition, nextStatuses, STATUS_META, TRANSITIONS } from "@/lib/bookings/status";
+import { renderContractPdf, toWinAnsi } from "@/lib/contracts/pdf";
+import { friendlyError } from "@/lib/errors";
+import { formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
+import { businessSchema, slugSchema, vehicleSchema } from "@/lib/validation";
+
+describe("booking state machine (UI mirror)", () => {
+  it("only businesses approve/reject requests; renters accept proposals", () => {
+    expect(canTransition("PENDING_OWNER_APPROVAL", "APPROVED", "BUSINESS")).toBe(true);
+    expect(canTransition("PENDING_OWNER_APPROVAL", "APPROVED", "RENTER")).toBe(false);
+    expect(canTransition("BOOKING_REQUESTED", "APPROVED", "RENTER")).toBe(true);
+    expect(nextStatuses("ACTIVE", "RENTER")).toEqual([]);
+    expect(nextStatuses("ACTIVE", "BUSINESS")).toEqual(["RETURNED"]);
+  });
+  it("signing and sending are system-only", () => {
+    for (const actor of ["RENTER", "BUSINESS"] as const) {
+      expect(canTransition("CONTRACT_DRAFT", "CONTRACT_SENT", actor)).toBe(false);
+      expect(canTransition("AWAITING_SIGNATURE", "SIGNED", actor)).toBe(false);
+    }
+  });
+  it("terminal states have no exits and every status has UI copy", () => {
+    for (const s of ["COMPLETED", "CANCELLED", "REJECTED", "EXPIRED"] as const) expect(TRANSITIONS.some(([f]) => f === s)).toBe(false);
+    for (const [, to] of TRANSITIONS) expect(STATUS_META[to].label).toBeTruthy();
+  });
+});
+
+describe("friendly errors", () => {
+  it("maps RPC codes and constraint names, never leaks raw SQL", () => {
+    expect(friendlyError({ message: "VEHICLE_UNAVAILABLE" })).toMatch(/already booked/);
+    expect(friendlyError({ message: 'conflicting key value violates exclusion constraint "bookings_no_overlap"', code: "23P01" })).toMatch(/already booked/);
+    expect(friendlyError({ message: 'duplicate key value violates unique constraint "businesses_slug_key"', code: "23505" })).toMatch(/store link is already taken/);
+    expect(friendlyError({ message: "new row violates row-level security policy", code: "42501" })).toMatch(/permission/);
+    expect(friendlyError({ message: "syntax error at or near select", code: "42601" })).toBe("Something went wrong. Please try again.");
+  });
+});
+
+describe("formatting (Asia/Manila)", () => {
+  it("round-trips Manila wall-clock dates", () => {
+    const iso = manilaToISO("2026-10-10", "00:30");
+    expect(iso).toBe("2026-10-09T16:30:00.000Z");
+    expect(isoToManilaDate(iso)).toBe("2026-10-10");
+  });
+  it("formats pesos and labels", () => {
+    expect(formatPHP(1500)).toBe("₱1,500");
+    expect(labelize("GCASH")).toBe("GCash");
+    expect(labelize("sedan")).toBe("Sedan");
+    expect(labelize("PAYMENT_ON_PICKUP")).toBe("Payment on pickup");
+    expect(plural(1, "vehicle")).toBe("1 vehicle");
+    expect(plural(12, "vehicle")).toBe("12 vehicles");
+  });
+});
+
+describe("validation", () => {
+  it("rejects reserved and malformed store links", () => {
+    expect(slugSchema.safeParse("cebu-xyz-rental").success).toBe(true);
+    expect(slugSchema.safeParse("admin").success).toBe(false);
+    expect(slugSchema.safeParse("-bad").success).toBe(false);
+    expect(slugSchema.safeParse("Cebu XYZ").success).toBe(false);
+  });
+  it("requires self-drive or with-driver", () => {
+    const base = { make: "Toyota", model: "Vios", year: 2023, category_slug: "sedan", transmission: "AUTOMATIC", fuel_type: "GASOLINE", seats: 5, status: "ACTIVE", city: "Cebu City", min_rental_days: 1, delivery_available: false };
+    expect(vehicleSchema.safeParse({ ...base, self_drive: false, with_driver: false }).success).toBe(false);
+    expect(vehicleSchema.safeParse({ ...base, self_drive: true, with_driver: false }).success).toBe(true);
+  });
+  it("business registration needs legal details", () => {
+    const r = businessSchema.safeParse({ name: "X Rental", slug: "x-rental", city: "Cebu City", address: "1 St", phone: "0917", email: "nope" });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("contract PDF", () => {
+  it("normalises text to WinAnsi", () => {
+    expect(toWinAnsi("₱1,500 – “ok” → 😀")).toBe('PHP 1,500 - "ok" -> ??');
+  });
+  it("renders a signed agreement with both signatures", async () => {
+    const bytes = await renderContractPdf({
+      title: "VEHICLE RENTAL AGREEMENT", version: 2, reference: "13C-TEST01", status: "SIGNED", contentHash: "a".repeat(64),
+      providerName: "Cebu XYZ Car Rental", renterName: "Juan Dela Cruz",
+      sections: Array.from({ length: 19 }, (_, i) => ({ key: `s${i}`, title: `${i + 1}. Section`, body: "Lorem ipsum ₱1,500 ".repeat(40) })),
+      signatures: [
+        { signer_role: "PROVIDER", signer_name: "Maria Santos", signature_type: "TYPED", signature_data: null, signed_at: new Date().toISOString(), ip_address: "1.2.3.4", content_hash: "a" },
+        { signer_role: "RENTER", signer_name: "Juan Dela Cruz", signature_type: "TYPED", signature_data: null, signed_at: new Date().toISOString(), ip_address: null, content_hash: "a" },
+      ],
+    });
+    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
+    expect(bytes.length).toBeGreaterThan(5000);
+  });
+});

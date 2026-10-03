@@ -2310,6 +2310,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      send_rental_reminders: { Args: never; Returns: number }
       set_storefront_published: {
         Args: { p_business_id: string; p_publish: boolean }
         Returns: undefined

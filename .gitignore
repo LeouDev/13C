@@ -44,3 +44,5 @@ next-env.d.ts
 supabase/.temp
 # test artifacts
 /coverage
+
+!.env.example

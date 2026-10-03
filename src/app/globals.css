@@ -118,6 +118,11 @@
   h1, h2, h3 {
     text-wrap: balance;
   }
+  /* Implicit single-column grids must not grow to their content's intrinsic width
+     (date inputs, long words) — the classic mobile overflow. Utilities still override. */
+  [class~="grid"]:not([class*="grid-cols-"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
   html {
     @apply font-sans;
   }

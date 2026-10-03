@@ -1,0 +1,49 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { TeamManager } from "@/components/business/team-manager";
+import { PageHeader } from "@/components/common/states";
+import { hasRole, requireBusiness } from "@/lib/auth";
+import { formatDateTime } from "@/lib/format";
+import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Settings" };
+
+export default async function SettingsPage() {
+  const { business, role } = await requireBusiness();
+  const supabase = await createClient();
+  const isOwner = hasRole(role, "OWNER");
+  const [{ data: members }, { data: sub }, { data: audit }] = await Promise.all([
+    supabase.from("business_members").select("user_id, role, profiles(full_name, email)").eq("business_id", business.id).order("created_at"),
+    supabase.from("subscriptions").select("plan").eq("business_id", business.id).single(),
+    isOwner ? supabase.from("audit_logs").select("action, created_at, metadata").eq("business_id", business.id).order("created_at", { ascending: false }).limit(30) : Promise.resolve({ data: [] }),
+  ]);
+  return (
+    <>
+      <PageHeader eyebrow="Settings" title="Settings" />
+      <div className="grid gap-6">
+        <section className="rounded-3xl border bg-white p-5 sm:p-6">
+          <h2 className="font-semibold text-navy-900">Team</h2>
+          <p className="mb-4 text-sm text-muted-foreground">Staff handle bookings, messages, calendar and payments. Managers also edit vehicles, store and contracts. Only owners manage team, payments and publishing.</p>
+          <TeamManager businessId={business.id} canManage={isOwner} planAllows={sub?.plan === "BUSINESS"}
+            members={(members ?? []).map((m) => ({ user_id: m.user_id, role: m.role, name: m.profiles?.full_name ?? "", email: m.profiles?.email ?? null }))} />
+        </section>
+        <section className="rounded-3xl border bg-white p-5 sm:p-6">
+          <h2 className="font-semibold text-navy-900">Contract settings</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Your fuel, mileage, late-return, cancellation and deposit policies are inserted into every rental agreement automatically. Edit them in <Link href="/dashboard/store#customize" className="font-semibold text-electric hover:underline">My Store → Rental policies</Link>.</p>
+        </section>
+        <section className="rounded-3xl border bg-white p-5 sm:p-6">
+          <h2 className="font-semibold text-navy-900">GPS tracking</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Coming soon: connect your existing GPS provider to see live location, trip history and rental-expiry alerts. No new hardware required.</p>
+        </section>
+        {isOwner && (
+          <section className="rounded-3xl border bg-white p-5 sm:p-6">
+            <h2 className="mb-3 font-semibold text-navy-900">Activity log</h2>
+            <ul className="grid gap-2 text-sm">
+              {(audit ?? []).map((a, i) => <li key={i} className="flex justify-between gap-3"><span className="font-mono text-xs">{a.action}</span><span className="text-xs text-muted-foreground">{formatDateTime(a.created_at)}</span></li>)}
+            </ul>
+          </section>
+        )}
+      </div>
+    </>
+  );
+}

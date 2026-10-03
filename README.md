@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 13C — Your car rental business, online.
 
-## Getting Started
+13C gives every car-rental business in Cebu its own branded storefront (`13c.ph/<business>`) plus a marketplace where customers search, message, book, and **e-sign rental agreements** — with the rental business always the Rental Provider and 13C only the technology platform.
 
-First, run the development server:
+- **Customers:** search Cebu (Cebu City, Mactan, Lapu-Lapu, Mandaue, Talisay…), compare cars, message businesses, request bookings, review & sign contracts, download signed PDFs.
+- **Businesses:** registration + verification, storefront customization, fleet/photos/pricing/availability, inquiries & realtime chat, bookings with a DB-enforced state machine, auto-generated contracts, payments ledger, customers, reviews, analytics, team roles.
+- **Admins:** verification queue, businesses, users (KYC, suspension, DPA anonymization), bookings, contracts, reviews, reports, plans, contract-template editor, categories, settings.
+
+Docs: [product spec](docs/13c-product-spec.md) · [architecture](docs/13c-architecture.md) · [database schema](docs/13c-database-schema.md) · [MVP roadmap](docs/13c-mvp-roadmap.md)
+
+## Stack
+
+Next.js 16 (App Router, React 19, TypeScript) · Tailwind CSS v4 · shadcn/ui (Base UI) · Supabase (Postgres 17, Auth, Storage, Realtime, pg_cron) · pdf-lib · zod · Vitest.
+
+## Setup
 
 ```bash
+npm install
+cp .env.example .env.local   # fill in values (see below)
+supabase link --project-ref <your-project-ref>
+npm run db:push              # applies supabase/migrations/*
+npm run db:types             # regenerates src/types/database.ts
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Where it's used |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | browser + server |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | browser + server (RLS applies) |
+| `SUPABASE_SECRET_KEY` | **server only** — contract signing with request IP, signed-PDF storage |
+| `NEXT_PUBLIC_SITE_URL` | auth redirects, canonical URLs, sitemap |
+| `NEXT_PUBLIC_ROOT_DOMAIN` | displayed store URLs (`13c.ph/<slug>`) and future subdomains |
+| `STOREFRONT_SUBDOMAINS` | optional, `1` enables `<slug>.<root-domain>` routing in `src/proxy.ts` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**First admin:** sign up, then in the Supabase SQL editor run
+`update public.profiles set is_admin = true where email = 'you@example.com';`
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Command | Does |
+|---|---|
+| `npm run dev` / `build` / `start` | Next.js |
+| `npm run typecheck` | route typegen + `tsc` |
+| `npm run lint` | ESLint (incl. React Compiler rules) |
+| `npm test` | unit tests + database integration tests + the 35-step MVP end-to-end flow (against the linked project, with throwaway `@13c.test` users that are cleaned up afterwards) |
+| `npm run db:push` / `db:types` / `db:cleanup-tests` | Supabase helpers |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Where things live
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+supabase/migrations/   schema, constraints, triggers, RPCs, RLS, storage, seed
+src/proxy.ts           session refresh, route guards, storefront host routing
+src/app/(site)/        13C-branded pages (home, explore, auth, account, legal)
+src/app/[business]/    storefront-branded pages (store, vehicle, booking request)
+src/app/dashboard/     business dashboard          src/app/admin/  platform admin
+src/app/actions/       server actions (validated with zod, friendly errors)
+src/lib/               supabase clients, auth, state machine, contracts (PDF), formatting
+tests/                 unit, db (RLS/integrity), e2e-flow (spec §62)
+```
 
-## Deploy on Vercel
+## Before launch
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Have the contract template (Admin → Settings), Terms and Privacy Policy reviewed by Philippine legal counsel.
+2. Configure custom SMTP in Supabase Auth (the built-in sender only reaches project members) and keep email confirmation on.
+3. Set the production Site URL / redirect URLs in Supabase Auth and `NEXT_PUBLIC_SITE_URL`.
+4. Deploy (e.g. Vercel) with the env vars above; the secret key must never be exposed to the browser.

@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "2mb" },
   },
+  async redirects() {
+    return [{ source: "/favicon.ico", destination: "/icon.svg", permanent: true }];
+  },
   async headers() {
     return [
       {

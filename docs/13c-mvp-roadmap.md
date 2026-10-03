@@ -52,9 +52,22 @@ Status legend: ✅ done · 🚧 in progress · ⏭️ deferred (designed for, no
 - ✅ Mobile-first layouts, image optimization, lazy loading
 - ✅ Privacy policy, terms, consent, deletion request + admin anonymization
 
+## Verification status
+
+| Check | Result |
+|---|---|
+| Unit tests (`tests/unit.test.ts`) — state machine, error mapping, Manila time, validation, PDF rendering | ✅ 11/11 |
+| DB integration (`tests/db.test.ts`) — RLS isolation, double-booking exclusion, plan limits, TS↔DB state machine parity, contract immutability, server-only signing, private PDFs, reviews | ✅ 28/28 |
+| **MVP workflow (`tests/e2e-flow.test.ts`) — all 35 steps of spec §62** | ✅ 5/5 stages |
+| Authenticated page smoke test (owner, customer, admin; 50 routes) | ✅ no runtime errors |
+| Public pages at 375 px — no horizontal overflow | ✅ |
+| Supabase security advisors | ✅ no RLS gaps (only intended "definer RPC is callable" notices) |
+
+Not yet verified by a human click-through in a browser while signed in (requires a real account): dashboard and signing UI interactions. See README for creating the first admin.
+
 ## Before production launch (owner actions)
 1. **Legal review** of the contract template, Terms and Privacy Policy by Philippine counsel.
-2. **Custom SMTP** in Supabase Auth (built-in email only reaches project members and is rate-limited); then turn on email confirmations.
+2. **Custom SMTP** in Supabase Auth (built-in email only reaches project members and is rate-limited). Email confirmation is already on — keep it on.
 3. Set `NEXT_PUBLIC_SITE_URL` and Supabase Auth Site URL / redirect URLs to the production domain.
 4. Register with the National Privacy Commission if thresholds apply; appoint a DPO.
 5. Create the first admin: `update profiles set is_admin = true where email = '…';`

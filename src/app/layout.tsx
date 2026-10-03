@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   description:
     "Discover trusted local rental businesses in Cebu, compare vehicles, and book directly. Self-drive and with-driver cars in Cebu City, Mactan, Lapu-Lapu, Mandaue and Talisay.",
   applicationName: "13C",
-  openGraph: { siteName: "13C", type: "website", locale: "en_PH" },
+  openGraph: { siteName: "13C", type: "website", locale: "en_PH", images: ["/brand/13c-badge.webp"] },
   twitter: { card: "summary_large_image" },
 };
 
