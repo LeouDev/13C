@@ -65,6 +65,8 @@ export const VEHICLE_STATUSES: { value: Enums<"vehicle_status">; label: string }
 /** Mirrors public.trial_days() and public.plan_vehicle_limit() — tests/db.test.ts keeps them in sync. */
 export const TRIAL_DAYS = 25;
 export const PLAN_VEHICLE_LIMIT: Record<Enums<"subscription_plan">, number | null> = { FREE: 10, PRO: 10, BUSINESS: null };
+/** Registered business that bills 13C plans; it's the merchant name on PayMongo checkout pages and receipts. */
+export const BILLED_BY = "AIR/RALLY BOOKING SERVICES";
 /** Monthly price in centavos. Must match public.plan_price_centavos() — tests/db.test.ts checks. */
 export const PLAN_PRICE_CENTAVOS: Record<Enums<"subscription_plan">, number> = { FREE: 0, PRO: 49900, BUSINESS: 150000 };
 

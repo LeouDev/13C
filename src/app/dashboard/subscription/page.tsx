@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { hasRole, requireBusiness } from "@/lib/auth";
 import { getCheckoutSession, paymongoMode, settleCheckoutSession } from "@/lib/billing";
-import { PLAN_PRICE_CENTAVOS, PLAN_VEHICLE_LIMIT, PLANS, TRIAL_DAYS } from "@/lib/constants";
+import { BILLED_BY, PLAN_PRICE_CENTAVOS, PLAN_VEHICLE_LIMIT, PLANS, TRIAL_DAYS } from "@/lib/constants";
 import { formatDate, formatPHP, labelize } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
@@ -121,6 +121,8 @@ export default async function SubscriptionPage({ searchParams }: PageProps<"/das
           );
         })}
       </div>
+
+      {canPay && <p className="mt-3 text-xs text-muted-foreground">Payments are processed by PayMongo and billed by {BILLED_BY}, the registered business behind 13C. That&apos;s the name on your checkout page and receipt.</p>}
 
       {!!payments?.length && (
         <section className="mt-8">

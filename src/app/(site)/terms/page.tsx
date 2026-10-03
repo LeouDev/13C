@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalDoc, LegalSection } from "@/components/legal/legal-doc";
+import { BILLED_BY } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -163,7 +164,8 @@ export default function TermsPage() {
         <p>
           Rental Businesses may use a Free plan or a paid plan (Pro or Business) with the features and vehicle limits described on our{" "}
           <Link href="/for-business#pricing">pricing page</Link>. Paid plans are prepaid one month at a time through our payment processor, PayMongo,
-          and don&apos;t renew automatically. Paying for your current plan (or during your trial) adds a month after the current period ends. Switching between
+          and don&apos;t renew automatically. Plan fees are billed and collected by {BILLED_BY}, the registered business that operates 13C, so that
+          name appears on your PayMongo checkout page and receipts. Paying for your current plan (or during your trial) adds a month after the current period ends. Switching between
           paid plans starts right away, and unused days carry over at the new plan&apos;s price. If a plan
           isn&apos;t renewed, your store is hidden from customers until you pay again. Fees are
           exclusive of applicable taxes unless stated otherwise. We will give at least thirty (30) days&apos; notice of any price change. If a plan is downgraded
