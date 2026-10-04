@@ -122,7 +122,7 @@ export async function suggestFaqs(supabase: SupabaseClient<Database>, businessId
   const have = questions.filter((q) => q.trim()).map((q) => `- ${q.trim()}`).join("\n");
   const text = await complete(`Facts:\n${facts}
 
-Write 5 questions renters often ask a car-rental business, each with this business's answer in 1 to 3 short sentences. Answer only from the facts, and skip questions the facts can't answer.${have ? `\nThe store already has these questions, so don't repeat them:\n${have}` : ""}
+Write 5 questions renters often ask a car-rental business, each with this business's answer in 1 to 3 short sentences. Answer only from the facts, and skip questions the facts can't answer. Don't quote rates or fees: they change, and each car's page shows them.${have ? `\nThe store already has these questions, so don't repeat them:\n${have}` : ""}
 Format each one exactly like this, with a blank line between them:
 Q: the question
 A: the answer`, 900);
