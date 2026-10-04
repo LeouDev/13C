@@ -671,3 +671,14 @@ describe("Business plan features (analytics, fleet, contract terms)", () => {
     must(await owner.client.rpc("remove_business_member", { p_business_id: businessId, p_user_id: outsider.id }));
   });
 });
+
+describe("For Business assistant", () => {
+  it("counts messages per visitor per day, and only the server can count them", async () => {
+    const key = `test-${crypto.randomUUID()}`;
+    const allow = async () => must(await service.rpc("assistant_allow", { p_key: key, p_limit: 2 }));
+    expect([await allow(), await allow(), await allow()]).toEqual([true, true, false]);
+    expect((await anon().rpc("assistant_allow", { p_key: key, p_limit: 1000 })).error).not.toBeNull();
+    expect((await anon().from("assistant_usage").select("key")).data).toEqual([]);
+    must(await service.from("assistant_usage").delete().eq("key", key).select("key"));
+  });
+});

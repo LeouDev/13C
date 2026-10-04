@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      assistant_usage: {
+        Row: {
+          count: number
+          day: string
+          key: string
+        }
+        Insert: {
+          count?: number
+          day?: string
+          key: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          key?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -2264,6 +2282,10 @@ export type Database = {
       }
       archive_vehicle: { Args: { p_vehicle_id: string }; Returns: undefined }
       assert_renter_ready: { Args: { p_user: string }; Returns: undefined }
+      assistant_allow: {
+        Args: { p_key: string; p_limit: number }
+        Returns: boolean
+      }
       attach_contract_pdf: {
         Args: { p_path: string; p_sha256: string; p_version_id: string }
         Returns: undefined

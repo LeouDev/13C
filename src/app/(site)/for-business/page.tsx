@@ -6,6 +6,7 @@ import {
   FileText, Globe, Images, Lock, MapPin, MessageCircle, Rocket, Search, Store, TrendingUp, Users, Wallet, type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
+import { AssistantWidget } from "@/components/site/assistant-widget";
 import { DriveCar } from "@/components/site/drive-car";
 import { SpeedStreaks } from "@/components/site/speed-streaks";
 import { buttonVariants } from "@/components/ui/button";
@@ -237,6 +238,7 @@ export default function ForBusinessPage() {
           </div>
         </div>
       </section>
+      <AssistantWidget />
     </>
   );
 }

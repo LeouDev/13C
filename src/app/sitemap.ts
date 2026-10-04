@@ -14,6 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE_URL, lastModified: now, changeFrequency: "daily", priority: 1 },
     { url: `${SITE_URL}/explore`, lastModified: now, changeFrequency: "hourly", priority: 0.9 },
     { url: `${SITE_URL}/for-business`, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE_URL}/for-business/sample-contract`, changeFrequency: "monthly", priority: 0.4 },
     ...[ALL_CEBU, ...LOCATIONS].map((l) => ({ url: `${SITE_URL}/explore/${l.slug}`, lastModified: now, changeFrequency: "daily" as const, priority: 0.8 })),
     ...(businesses ?? []).flatMap((b) => [
       { url: `${SITE_URL}/${b.slug}`, lastModified: new Date(b.updated_at), changeFrequency: "daily" as const, priority: 0.8 },
