@@ -4,7 +4,8 @@ const supabaseHost = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://ex
 // Same fallback as SITE_URL in src/lib/constants.ts.
 const site = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"));
 
-// Report-only for now: browsers report what this would block to /api/csp-report, nothing is blocked.
+// Enforced (since 2026-10-04, after a clean report-only run): browsers block anything outside these sources
+// and report it to /api/csp-report.
 // Next's inline scripts need 'unsafe-inline' (nonces would make every page dynamic); dev also needs eval.
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -49,7 +50,7 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-          { key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicy },
+          { key: "Content-Security-Policy", value: contentSecurityPolicy },
           { key: "Reporting-Endpoints", value: 'csp="/api/csp-report"' },
         ],
       },
