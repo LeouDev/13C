@@ -121,7 +121,7 @@ Owners see their payment history under **Subscription**. Admins see recent payme
   3. Optional: storefront subdomains (`STOREFRONT_SUBDOMAINS=1` plus a wildcard domain).
 
 **Also before launch**
-1. Have the contract template (Admin → Settings), Terms and Privacy Policy reviewed by Philippine legal counsel.
-2. Upgrade Vercel to Pro, because Hobby is for non-commercial use.
-3. Turn on leaked-password protection in Supabase Auth.
+1. Done (Oct 4, 2026): a lawyer reviewed the contract template (Admin → Settings), Terms and Privacy Policy. Have future template changes reviewed before publishing them.
+2. When the first business pays: upgrade Vercel to Pro, because Hobby is for non-commercial use.
+3. With Supabase Pro: turn on leaked-password protection in Supabase Auth.
 4. Keep the secret key server-only. It is only ever read in server code.
