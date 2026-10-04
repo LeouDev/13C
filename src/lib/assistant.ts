@@ -24,7 +24,7 @@ What it is
 
 Getting started
 - Sign up, then register the business: name, store address (13c.online/your-name), city, contact details and representative. Add a logo, cover photo and tagline.
-- Submit verification documents: DTI, SEC or CDA registration; Mayor's or business permit; BIR certificate (2303); the representative's government ID; optionally fleet insurance and a photo of the office or garage. At least one document is required. The 13C team usually reviews within 1–2 business days and may ask for changes. Verified stores get a "Verified Business" badge.
+- Submit verification documents. Any ONE document of any kind is enough to submit; no particular document is required, not even a government ID. The choices: DTI, SEC or CDA registration; Mayor's or business permit; BIR certificate (2303); the representative's government ID; fleet insurance; a photo of the office or garage; or another document. The 13C team usually reviews within 1–2 business days and may ask for changes. Verified stores get a "Verified Business" badge.
 - Add cars and payment methods, then publish. A store is public once it's verified and published. Most stores go live the same week.
 - The ${TRIAL_DAYS}-day free trial starts when the business is verified. No credit card needed.
 
@@ -81,7 +81,7 @@ const FAQ: { words: RegExp; answer: string }[] = [
   },
   {
     words: /verif|document|permit|dti|sec\b|bir|requirement/i,
-    answer: "Upload your DTI, SEC or CDA registration, Mayor's or business permit, BIR 2303 and your representative's government ID (at least one document is required). Reviews usually take 1–2 business days.",
+    answer: "Upload any one of these to apply: DTI, SEC or CDA registration, Mayor's or business permit, BIR 2303, or your representative's government ID. One document is enough. Reviews usually take 1–2 business days.",
   },
   {
     words: /commission|percent|porsyento|cut\b/i,
