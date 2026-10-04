@@ -1,5 +1,3 @@
-import { Scale } from "lucide-react";
-
 /** Shared layout for the Privacy Policy and Terms of Service. */
 export function LegalDoc({
   title, updated, intro, toc, children,
@@ -15,14 +13,6 @@ export function LegalDoc({
       <p className="eyebrow text-electric">Legal</p>
       <h1 className="mt-2 font-display text-3xl font-bold tracking-tight text-navy-900 sm:text-4xl">{title}</h1>
       <p className="mt-2 text-sm text-muted-foreground">Last updated {updated}</p>
-
-      <aside className="mt-6 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="note">
-        <Scale className="mt-0.5 size-4 shrink-0" aria-hidden />
-        <p>
-          <strong>Pre-launch draft.</strong> This document must be reviewed by qualified Philippine legal counsel before 13C launches.
-          It describes how the platform works today and is not legal advice.
-        </p>
-      </aside>
 
       <div className="mt-8 text-[15px] leading-7 text-slate-700">{intro}</div>
 
