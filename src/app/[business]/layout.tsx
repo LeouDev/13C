@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { Globe, LayoutDashboard, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { ArrowLeft, Globe, LayoutDashboard, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { openDashboard } from "@/app/actions/business";
 import { FacebookIcon, InstagramIcon } from "@/components/common/social-icons";
 import { Logo } from "@/components/brand/logo";
@@ -18,6 +19,7 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
   // The store's own team gets a way back to the dashboard; customers never see it.
   const isTeam = !!user && (await getMemberships()).some((m) => m.business.id === business.id);
   const isPublic = business.status === "VERIFIED" && store.is_published;
+  const back = isTeam ? null : cameFrom13C(await headers());
   const social = store.social_links as Record<string, string | undefined>;
   const show = storeSections(sf);
   const tabs = [["fleet", "Fleet"], ["about", "About"], ["policies", "Policies"], ["reviews", "Reviews"], ["contact", "Contact"]]
@@ -30,6 +32,15 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
         <div className="bg-amber-400 px-4 py-2 text-center text-xs font-semibold text-amber-950">
           Preview — this store isn&apos;t public yet. Only your team can see it.{" "}
           <Link href="/dashboard/store" className="underline">Go to My Store</Link>
+        </div>
+      )}
+      {back && (
+        <div className="bg-navy-900 text-xs text-white">
+          <div className="container-page flex h-9 items-center">
+            <Link href={back} aria-label="Back to 13C" className="flex items-center gap-1.5 font-medium hover:underline">
+              <ArrowLeft className="size-3.5" /> Back to <Logo tone="light" className="h-4" />
+            </Link>
+          </div>
         </div>
       )}
       <header className="sticky top-0 z-40 border-b border-black/5 bg-white/90 backdrop-blur-xl">
@@ -95,6 +106,20 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
       </footer>
     </div>
   );
+}
+
+/**
+ * The 13C page a renter came from (home, search or their account), so they get a way back.
+ * People who open the store from the business's own link see only the store, like its own website.
+ */
+function cameFrom13C(h: Headers) {
+  try {
+    const from = new URL(h.get("referer") ?? "");
+    if (from.host !== h.get("host")) return null;
+    return from.pathname === "/" || /^\/(explore|account|notifications)(\/|$)/.test(from.pathname) ? from.pathname + from.search : null;
+  } catch {
+    return null;
+  }
 }
 
 function HoursList({ hours }: { hours: { day: string; open: string; close: string; closed: boolean }[] }) {
