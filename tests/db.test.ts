@@ -234,6 +234,22 @@ describe("bookings", () => {
     must(await owner.client.from("businesses").update({ turnaround_hours: 0 }).eq("id", businessId).select("id"));
   });
 
+  it("a sample store shows its cars only on its own page, and can't be booked or messaged", async () => {
+    must(await service.from("businesses").update({ is_demo: true }).eq("id", businessId).select("id"));
+    try {
+      expect(must(await anon().rpc("search_vehicles", {})).some((v) => v.business_id === businessId)).toBe(false);
+      expect(must(await anon().rpc("search_vehicles", { p_business_id: businessId })).length).toBeGreaterThan(0);
+      await expectError(renter.client.rpc("request_booking", {
+        p_vehicle_id: vehicleId, p_pickup_at: day(50), p_return_at: day(51), p_pickup_location: "Cebu City", p_return_location: "Cebu City", p_payment_method: "GCASH",
+      }), "DEMO_STORE");
+      await expectError(outsider.client.rpc("start_conversation", { p_business_id: businessId, p_vehicle_id: vehicleId, p_body: "Hi" }), "DEMO_STORE");
+      // Only the server can mark a store as a sample.
+      await expectError(owner.client.from("businesses").update({ is_demo: false } as never).eq("id", businessId), /permission denied/);
+    } finally {
+      must(await service.from("businesses").update({ is_demo: false }).eq("id", businessId).select("id"));
+    }
+  });
+
   it("calendar blocks cannot overlap confirmed-path bookings", async () => {
     await expectError(owner.client.from("vehicle_blocked_dates").insert({ vehicle_id: vehicleId, starts_at: day(10), ends_at: day(12), reason: "MAINTENANCE" } as never), "BOOKING_CONFLICT");
     must(await owner.client.from("vehicle_blocked_dates").insert({ vehicle_id: vehicleId, starts_at: day(20), ends_at: day(22), reason: "MAINTENANCE" } as never));
