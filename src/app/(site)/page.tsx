@@ -7,10 +7,26 @@ import { BusinessCard } from "@/components/marketplace/business-card";
 import { SearchBar } from "@/components/marketplace/search-bar";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { buttonVariants } from "@/components/ui/button";
-import { LOCATIONS, PLAN_VEHICLE_LIMIT, TRIAL_DAYS } from "@/lib/constants";
+import { LOCATIONS, PLAN_VEHICLE_LIMIT, SITE_URL, TRIAL_DAYS } from "@/lib/constants";
 import { getCategories, getFeaturedBusinesses, searchVehicles } from "@/lib/queries";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
+
+/** Tells search engines what 13C is: the site's name, its logo, and that it's a car-rental marketplace in Cebu. */
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite", "@id": `${SITE_URL}/#website`, url: SITE_URL, name: "13C", alternateName: ["13C Cebu", "13C Car Rental"],
+      inLanguage: "en-PH", publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+    {
+      "@type": "Organization", "@id": `${SITE_URL}/#organization`, url: SITE_URL, name: "13C", logo: `${SITE_URL}/brand/13c-badge.webp`,
+      description: "13C helps people find and book cars from local rental businesses in Cebu, Philippines, and gives those businesses their own booking website.",
+      email: "support@13c.online", areaServed: { "@type": "AdministrativeArea", name: "Cebu, Philippines" },
+    },
+  ],
+};
 
 const STEPS = [
   { icon: Search, title: "Find a car", body: "Search verified local businesses by place, dates and type." },
@@ -38,6 +54,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c") }} />
       {/* Hero */}
       <section className="relative overflow-hidden bg-navy-900 text-white">
         <div className="speed-lines absolute inset-0" />
