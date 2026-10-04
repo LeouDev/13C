@@ -32,7 +32,10 @@ export async function POST(request: Request) {
   const ai = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/ai/v1/chat/completions`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model: MODEL, messages: [{ role: "system", content: ASSISTANT_INSTRUCTIONS }, ...messages], max_completion_tokens: 500, stream: true }),
+    body: JSON.stringify({
+      model: MODEL, messages: [{ role: "system", content: ASSISTANT_INSTRUCTIONS }, ...messages], max_completion_tokens: 500, stream: true,
+      chat_template_kwargs: { enable_thinking: false }, // thinking is on by default and can use up the token limit before any answer
+    }),
     signal: AbortSignal.timeout(30_000),
   }).catch((error) => { console.error("[assistant]", error); return null; });
   if (!ai?.ok || !ai.body) {
@@ -43,7 +46,10 @@ export async function POST(request: Request) {
   // Wait for the first words, so a failure (daily allowance used up, outage) becomes the ready-made answer.
   const text = answerText(ai.body);
   const first = await text.next().catch(() => ({ done: true as const, value: undefined }));
-  if (first.done) return fallback(question, 503);
+  if (first.done) {
+    console.error("[assistant] no answer text in the AI's reply");
+    return fallback(question, 503);
+  }
   const encoder = new TextEncoder();
   return new Response(new ReadableStream<Uint8Array>({
     start: (c) => c.enqueue(encoder.encode(first.value)),
