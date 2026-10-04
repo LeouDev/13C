@@ -529,6 +529,7 @@ export type Database = {
           description: string | null
           email: string | null
           id: string
+          is_demo: boolean
           logo_path: string | null
           name: string
           owner_id: string
@@ -554,6 +555,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           logo_path?: string | null
           name: string
           owner_id: string
@@ -579,6 +581,7 @@ export type Database = {
           description?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           logo_path?: string | null
           name?: string
           owner_id?: string

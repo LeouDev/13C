@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: PageProps<"/[business]">): Pr
     description,
     alternates: { canonical: `/${business.slug}` },
     openGraph: { title, description, url: `/${business.slug}`, type: "website", images: [shareCardImage(business.slug, storeCardInput(sf))] },
-    robots: isPublic ? undefined : { index: false, follow: false },
+    robots: isPublic && !business.is_demo ? undefined : { index: false, follow: false },
   };
 }
 
@@ -93,7 +93,7 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
               {response && <span className="flex items-center gap-1.5"><Clock className="size-4" /> Usually responds {response}</span>}
             </div>
             <div className="mt-6 flex flex-wrap gap-2">
-              <MessageButton businessId={business.id} businessName={business.name} signedIn={!!user} returnTo={`/${business.slug}`} variant="light" />
+              {!business.is_demo && <MessageButton businessId={business.id} businessName={business.name} signedIn={!!user} returnTo={`/${business.slug}`} variant="light" />}
               <Link href="#fleet" className="inline-flex h-12 items-center gap-2 rounded-full px-6 text-[15px] font-semibold text-white shadow-lg transition hover:brightness-110" style={{ background: "var(--store-accent)" }}>
                 <Car className="size-4" /> Browse Fleet
               </Link>

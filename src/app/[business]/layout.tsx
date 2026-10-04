@@ -8,6 +8,7 @@ import { Logo } from "@/components/brand/logo";
 import { VerifiedBadge } from "@/components/common/badges";
 import { BusinessLogo } from "@/components/common/vehicle-image";
 import { getCurrentUser, getMemberships } from "@/lib/auth";
+import { TRIAL_DAYS } from "@/lib/constants";
 import { getStorefront, storeSections } from "@/lib/queries";
 
 export default async function StorefrontLayout({ children, params }: LayoutProps<"/[business]">) {
@@ -32,6 +33,12 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
         <div className="bg-amber-400 px-4 py-2 text-center text-xs font-semibold text-amber-950">
           Preview — this store isn&apos;t public yet. Only your team can see it.{" "}
           <Link href="/dashboard/store" className="underline">Go to My Store</Link>
+        </div>
+      )}
+      {business.is_demo && (
+        <div className="bg-electric px-4 py-2.5 text-center text-xs leading-relaxed font-medium text-white sm:text-sm">
+          <strong>Sample store.</strong> This is how a rental business&apos;s own website looks on 13C. It isn&apos;t a real business, and booking is turned off.{" "}
+          <Link href="/for-business" className="font-semibold whitespace-nowrap underline underline-offset-2">Get yours free for {TRIAL_DAYS} days →</Link>
         </div>
       )}
       {back && (

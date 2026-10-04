@@ -273,6 +273,9 @@ function Hero() {
             </Link>
             <Link href="#pricing" className={buttonVariants({ variant: "light", className: "h-[52px] rounded-full px-7 text-base font-semibold lg:h-14" })}>See pricing</Link>
           </div>
+          <Link href="/demo" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-white/80 underline-offset-4 hover:text-white hover:underline">
+            See a sample store <ArrowRight className="size-4" />
+          </Link>
           <div className="mt-[34px] hidden gap-7 lg:flex">
             {[[`${TRIAL_DAYS} days`, "free trial, no card"], ["100%", "of your rental income"], ["Same week", "most stores go live"]].map(([v, l], i) => (
               <div key={l} className="flex gap-7">

@@ -66,6 +66,7 @@ export async function getFeaturedBusinesses(limit = 6) {
     .select("id, name, slug, city, logo_path, description, business_storefronts!inner(tagline, cover_path, accent_color, is_published)")
     .eq("status", "VERIFIED")
     .eq("business_storefronts.is_published", true)
+    .eq("is_demo", false)
     .is("deleted_at", null)
     .order("verified_at", { ascending: false })
     .limit(limit);

@@ -35,6 +35,7 @@ const CODES: Record<string, string> = {
   DELIVERY_NOT_OFFERED: "This vehicle isn't available for delivery.",
   MIN_RENTAL_DAYS: "This vehicle has a minimum rental period.",
   VEHICLE_NOT_BOOKABLE: "This vehicle isn't available for booking right now.",
+  DEMO_STORE: "This is a sample store, so booking and messaging are turned off.",
   OWN_BUSINESS: "You can't book or message your own business.",
   PICKUP_IN_PAST: "Pickup must be at least an hour from now.",
   PAYMENT_METHOD_NOT_ACCEPTED: "This business doesn't accept that payment method.",

@@ -8,7 +8,7 @@ export const revalidate = 3600;
 /** Public pages only: home, explore, city pages, published storefronts and their active vehicles. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = createClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false } });
-  const { data: businesses } = await supabase.from("businesses").select("slug, updated_at, vehicles(slug, updated_at, status, deleted_at)").limit(5000);
+  const { data: businesses } = await supabase.from("businesses").select("slug, updated_at, vehicles(slug, updated_at, status, deleted_at)").eq("is_demo", false).limit(5000);
   const now = new Date();
   return [
     { url: SITE_URL, lastModified: now, changeFrequency: "daily", priority: 1 },

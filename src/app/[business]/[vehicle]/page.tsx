@@ -12,7 +12,7 @@ import { MessageButton } from "@/components/storefront/message-button";
 import { VehicleGallery } from "@/components/storefront/vehicle-gallery";
 import { ViewTracker } from "@/components/storefront/view-tracker";
 import { getCurrentUser } from "@/lib/auth";
-import { SITE_URL } from "@/lib/constants";
+import { SITE_URL, TRIAL_DAYS } from "@/lib/constants";
 import { formatDate, formatPHP, isoDaysFromNow, labelize, responseTimeLabel } from "@/lib/format";
 import { plural } from "@/lib/format";
 import { getStorefront, getVehicleBySlug } from "@/lib/queries";
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PageProps<"/[business]/[vehic
     description,
     alternates: { canonical: `/${d.business.slug}/${v.slug}` },
     openGraph: { title, description, url: `/${d.business.slug}/${v.slug}`, images: [shareCardImage(`${d.business.slug}/${v.slug}`, carCardInput(d, v))] },
-    robots: d.business.status === "VERIFIED" && d.store.is_published && v.status === "ACTIVE" ? undefined : { index: false },
+    robots: d.business.status === "VERIFIED" && d.store.is_published && v.status === "ACTIVE" && !d.business.is_demo ? undefined : { index: false },
   };
 }
 
@@ -59,7 +59,7 @@ export default async function VehiclePage({ params, searchParams }: PageProps<"/
     user ? supabase.from("favorites").select("vehicle_id").eq("user_id", user.id).eq("vehicle_id", v.id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   const name = `${v.make} ${v.model}`;
-  const bookable = v.status === "ACTIVE" && business.status === "VERIFIED" && store.is_published;
+  const bookable = v.status === "ACTIVE" && business.status === "VERIFIED" && store.is_published && !business.is_demo;
   const tiles = [
     { icon: Fuel, label: "Fuel", value: labelize(v.fuel_type) },
     { icon: CalendarDays, label: "Year", value: v.year },
@@ -177,6 +177,12 @@ export default async function VehiclePage({ params, searchParams }: PageProps<"/
               {bookable && p ? (
                 <BookingWidget vehicleId={v.id} bookHref={`/${business.slug}/${v.slug}/book`} dailyRate={Number(p.daily_rate)}
                   selfDrive={v.self_drive} withDriver={v.with_driver} delivery={v.delivery_available} initialFrom={sp.from} initialTo={sp.to} />
+              ) : business.is_demo ? (
+                <div className="rounded-3xl bg-white p-5 text-sm ring-1 ring-black/5">
+                  <p className="font-semibold text-navy-900">Booking is turned off in this sample store</p>
+                  <p className="mt-1 text-muted-foreground">On your own store, renters pick their dates here, see the price and send you a booking request.</p>
+                  <Link href="/for-business" className="mt-4 inline-flex h-11 items-center rounded-full px-5 font-semibold text-white" style={{ background: "var(--store-accent)" }}>Get a store like this — {TRIAL_DAYS} days free</Link>
+                </div>
               ) : (
                 <div className="rounded-3xl bg-white p-5 text-sm text-muted-foreground ring-1 ring-black/5">This vehicle isn&apos;t accepting bookings right now. Message the business for options.</div>
               )}
@@ -194,8 +200,8 @@ export default async function VehiclePage({ params, searchParams }: PageProps<"/
                 <span>{plural(Number(stats?.vehicle_count ?? 0), "vehicle")}</span>
                 {responseTimeLabel(stats?.response_minutes) && <span>Responds {responseTimeLabel(stats?.response_minutes)}</span>}
               </div>
-              <MessageButton businessId={business.id} businessName={business.name} vehicleId={v.id} vehicleName={name} signedIn={!!user}
-                returnTo={`/${business.slug}/${v.slug}`} label="Message Owner" className="mt-4 w-full" />
+              {!business.is_demo && <MessageButton businessId={business.id} businessName={business.name} vehicleId={v.id} vehicleName={name} signedIn={!!user}
+                returnTo={`/${business.slug}/${v.slug}`} label="Message Owner" className="mt-4 w-full" />}
             </div>
             <div className="px-2"><ReportButton entityType="VEHICLE" entityId={v.id} signedIn={!!user} /></div>
           </aside>
