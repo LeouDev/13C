@@ -17,28 +17,28 @@ const RULES = `You write text for a car-rental business's own store page on 13C,
 
 Rules:
 - Use only the facts given. Never invent anything else: no years in business, awards, customer numbers, insurance, guarantees, discounts, prices, fees or times that aren't in the facts.
-- Write as the business ("we"). Don't mention 13C unless it's about the renter's 13C account.
-- Write in English, unless the owner's draft is in another language; then use that language.
+- Write as the business ("we", "us", "our"), never "the business". Don't mention 13C unless it's about the renter's 13C account.
+- Always write in English, the language of the store and the rental agreement. If the owner's draft is in Tagalog, Cebuano or Taglish, translate it.
 - Plain text only: no markdown, headings, bold, emoji, hashtags or quotation marks around the text. Reply with only the text asked for, without any introduction or notes.
 - Write amounts like ₱1,500.`;
 
-// What each policy covers, minus what the rental agreement already says around it (contract_vars in the rpc migration).
+// What each policy covers, minus what the rental agreement's other sections already say (the template and contract_vars).
 const POLICY_HINTS: Record<PolicyKey, string> = {
   requirements: "what renters must have or meet to rent, such as a valid driver's license, a government ID and a minimum age.",
   fuel: "the fuel level at pickup and return, and the charge when the car comes back with less fuel.",
-  mileage: "short notes about mileage, such as where unlimited driving applies. The agreement already states each car's daily allowance and excess-km fee, so don't repeat those.",
+  mileage: "general notes on mileage, such as how distance is measured (odometer readings at pickup and return). The agreement already states each car's own allowance and excess-km fee, so don't repeat those.",
   late_return: "the grace period and the charges for returning the car late.",
   cancellation: "what is refunded or charged when the renter cancels, depending on how long before pickup, and for no-shows.",
-  deposit: "when and how the security deposit is returned. The agreement already states the amount and what may be deducted.",
+  deposit: "when and how the security deposit is returned. The agreement already says it's paid on or before pickup, states the amount and lists what may be deducted, so don't repeat or change those.",
   prohibited: "extra rules for using the car, such as no smoking, no pets or no eating inside. The agreement already forbids unlicensed drivers, drunk driving, racing, off-road use, leaving Cebu island without consent and sub-leasing, so don't repeat those.",
-  other: "any other terms, such as traffic violations, accidents or cleaning fees.",
+  other: "other practical terms, such as cleaning fees, lost keys or extending the rental. The agreement already covers the car's condition, damage, accidents, traffic violations, insurance and disputes, so don't write about those.",
 };
 
 function task(field: StoreTextField) {
   if (field === "tagline") return "Write a tagline for the store: one line under 70 characters that says what the business offers and where. Don't include the business name.";
-  if (field === "about") return 'Write the store\'s "About us" text: 2 short paragraphs, 60 to 120 words in total. Say who the business is, what it rents (kinds of cars, self-drive or with a driver) and where (pickup and delivery areas), and that renters can book online here. Don\'t list every car or price.';
+  if (field === "about") return 'Write the store\'s "About us" text: 2 short paragraphs, 60 to 120 words in total. Introduce the business, what it rents (name a few of the car models, and say self-drive or with a driver) and where (pickup and delivery areas). End with one short sentence inviting renters to book online. Don\'t explain the booking steps or list every car or price.';
   const label = POLICY_FIELDS.find((p) => p.key === field)!.label;
-  return `Write the store's "${label}" policy: ${POLICY_HINTS[field]} Use 1 to 3 short, clear sentences. It shows on the store and becomes part of every rental agreement. Use amounts from the facts where they fit. If it needs an amount, time or age that isn't in the facts, write ___ in its place for the owner to fill in.`;
+  return `Write the store's "${label}" policy: ${POLICY_HINTS[field]} Use 1 to 3 short, clear sentences. It shows on the store and goes into the rental agreement for every car, so don't name specific cars or mention the agreement. If it needs an amount, time or age that isn't in the facts, write ___ in its place for the owner to fill in.`;
 }
 
 /** What the AI may say about the business. Leaves out the field being written, so its saved text doesn't compete with the owner's draft. */
@@ -47,7 +47,7 @@ async function storeFacts(supabase: SupabaseClient<Database>, businessId: string
     supabase.from("businesses").select("name, city, province, description, turnaround_hours").eq("id", businessId).single(),
     supabase.from("business_storefronts").select("tagline, about, policies, faqs, pickup_locations, delivery_areas, business_hours").eq("business_id", businessId).single(),
     supabase.from("vehicles")
-      .select("make, model, variant, year, category_slug, seats, transmission, fuel_type, self_drive, with_driver, delivery_available, min_rental_days, vehicle_pricing(daily_rate, weekly_rate, monthly_rate, security_deposit, mileage_limit_km, excess_km_fee, delivery_fee, driver_fee_per_day)")
+      .select("make, model, variant, year, vehicle_categories(label), seats, transmission, fuel_type, self_drive, with_driver, delivery_available, min_rental_days, vehicle_pricing(daily_rate, weekly_rate, monthly_rate, security_deposit, mileage_limit_km, excess_km_fee, delivery_fee, driver_fee_per_day)")
       .eq("business_id", businessId).is("deleted_at", null).order("created_at").limit(30),
     supabase.from("payment_methods").select("method").eq("business_id", businessId).eq("is_enabled", true),
   ]);
@@ -56,7 +56,7 @@ async function storeFacts(supabase: SupabaseClient<Database>, businessId: string
   const car = (c: NonNullable<typeof cars>[number]) => {
     const p = c.vehicle_pricing;
     return "- " + [
-      `${c.year} ${c.make} ${c.model}${c.variant ? ` ${c.variant}` : ""} (${c.category_slug}, ${c.seats} seats, ${c.transmission.toLowerCase()}, ${c.fuel_type.toLowerCase()})`,
+      `${c.year} ${c.make} ${c.model}${c.variant ? ` ${c.variant}` : ""} (${c.vehicle_categories?.label ?? "car"}, ${c.seats} seats, ${c.transmission.toLowerCase()}, ${c.fuel_type.toLowerCase()})`,
       p && [`${formatPHP(p.daily_rate)}/day`, p.weekly_rate && `${formatPHP(p.weekly_rate)}/week`, p.monthly_rate && `${formatPHP(p.monthly_rate)}/month`].filter(Boolean).join(", "),
       p && (p.security_deposit ? `security deposit ${formatPHP(p.security_deposit)}` : "no security deposit"),
       p && (p.mileage_limit_km ? `${p.mileage_limit_km} km/day included${p.excess_km_fee ? `, then ${formatPHP(p.excess_km_fee)}/km` : ""}` : "unlimited mileage"),
@@ -80,7 +80,10 @@ async function storeFacts(supabase: SupabaseClient<Database>, businessId: string
     s.pickup_locations.length > 0 && `Pickup locations: ${s.pickup_locations.join("; ")}`,
     s.delivery_areas.length > 0 && `Delivery areas: ${s.delivery_areas.join("; ")}`,
     hours && `Business hours: ${hours}`,
-    methods?.length && `Payment methods: ${methods.map((m) => PAYMENT_METHODS.find((x) => x.value === m.method)?.label ?? m.method).join(", ")}`,
+    methods?.length && `Payment methods: ${methods.map((m) => {
+      const label = PAYMENT_METHODS.find((x) => x.value === m.method)?.label ?? m.method;
+      return m.method === "GCASH" || m.method === "MAYA" ? label : label.toLowerCase(); // brand names keep their capitals
+    }).join(", ")}`,
     b.turnaround_hours > 0 && `Time kept free between rentals for cleaning and checks: ${b.turnaround_hours} hours`,
     written.length > 0 && `Rental policies:\n${written.join("\n")}`,
     faqs.length > 0 && `FAQs on the store:\n${faqs.join("\n")}`,
