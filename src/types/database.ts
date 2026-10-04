@@ -541,6 +541,7 @@ export type Database = {
           slug: string
           status: Database["public"]["Enums"]["business_status"]
           status_note: string | null
+          turnaround_hours: number
           updated_at: string
           verified_at: string | null
         }
@@ -565,6 +566,7 @@ export type Database = {
           slug: string
           status?: Database["public"]["Enums"]["business_status"]
           status_note?: string | null
+          turnaround_hours?: number
           updated_at?: string
           verified_at?: string | null
         }
@@ -589,6 +591,7 @@ export type Database = {
           slug?: string
           status?: Database["public"]["Enums"]["business_status"]
           status_note?: string | null
+          turnaround_hours?: number
           updated_at?: string
           verified_at?: string | null
         }
@@ -2385,6 +2388,10 @@ export type Database = {
         }
         Returns: string
       }
+      decline_conflicting_requests: {
+        Args: { p_booking_id: string }
+        Returns: number
+      }
       expire_stale_bookings: { Args: never; Returns: number }
       fmt_date: { Args: { p: string }; Returns: string }
       fmt_money: { Args: { p: number }; Returns: string }
@@ -2570,6 +2577,7 @@ export type Database = {
         Args: { p_text: string; p_vars: Json }
         Returns: string
       }
+      rental_gap: { Args: { p_business_id: string }; Returns: string }
       request_account_deletion: { Args: never; Returns: undefined }
       request_booking: {
         Args: {

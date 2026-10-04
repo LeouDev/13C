@@ -132,6 +132,18 @@ export async function patchStorefront(businessId: string, input: Partial<Storefr
   return ok();
 }
 
+/** Hours needed between one rental's return and the next pickup. The database applies it to every booking. */
+export async function saveRentalGap(businessId: string, hours: number): Promise<ActionResult> {
+  const parsed = z.number().int().min(0).max(48).safeParse(hours);
+  if (!parsed.success) return invalid(parsed.error);
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("businesses").update({ turnaround_hours: parsed.data }).eq("id", businessId).select("id");
+  if (error) return fail(error);
+  if (!data?.length) return { ok: false, error: "Only owners and managers can change this." };
+  revalidatePath("/dashboard", "layout");
+  return ok(undefined, parsed.data ? `Saved. Rentals now need ${parsed.data} hour${parsed.data === 1 ? "" : "s"} in between.` : "Saved. Rentals can now be back to back.");
+}
+
 export async function setStorePublished(businessId: string, publish: boolean): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_storefront_published", { p_business_id: businessId, p_publish: publish });

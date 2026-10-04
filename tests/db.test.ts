@@ -189,7 +189,7 @@ describe("bookings", () => {
     await expectError(renter.client.from("bookings").update({ status: "APPROVED" } as never).eq("id", bookingId), /permission denied/);
   });
 
-  it("approval generates a contract draft; the second overlapping approval is refused", async () => {
+  it("approval generates a contract draft and declines the other requests for those dates", async () => {
     const status = must(await owner.client.rpc("transition_booking", { p_booking_id: bookingId, p_to: "APPROVED" }));
     expect(status).toBe("CONTRACT_DRAFT");
     const c = must(await owner.client.from("contracts").select("status, current_version, contract_versions(version, status, sections)").eq("booking_id", bookingId).single());
@@ -201,11 +201,37 @@ describe("bookings", () => {
     expect(sections[0]!.body).not.toMatch(/\{\{/);
     expect(sections[3]!.body).toContain("₱1,500.00");
 
-    await expectError(owner.client.rpc("transition_booking", { p_booking_id: booking2Id, p_to: "APPROVED" }), /bookings_no_overlap|VEHICLE_UNAVAILABLE/);
+    // The other renter's overlapping request was declined automatically, and they were told why.
+    const other = must(await owner.client.from("bookings").select("status, cancel_reason").eq("id", booking2Id).single());
+    expect(other).toEqual({ status: "REJECTED", cancel_reason: expect.stringContaining("just booked by another renter") });
+    const told = must(await renter2.client.from("notifications").select("body").eq("user_id", renter2.id).eq("type", "booking_rejected"));
+    expect(told[0]?.body).toContain("just booked by another renter");
+    await expectError(owner.client.rpc("transition_booking", { p_booking_id: booking2Id, p_to: "APPROVED" }), "INVALID_TRANSITION");
     const again = await renter.client.rpc("request_booking", {
       p_vehicle_id: vehicleId, p_pickup_at: day(10, 15), p_return_at: day(11, 15), p_pickup_location: "Cebu City", p_return_location: "Cebu City", p_payment_method: "CASH",
     });
     expect(JSON.stringify(again.error)).toMatch(/VEHICLE_UNAVAILABLE|DUPLICATE_REQUEST/);
+  });
+
+  it("keeps the business's gap between rentals, and declines requests inside it on approval", async () => {
+    must(await owner.client.from("businesses").update({ turnaround_hours: 2 }).eq("id", businessId).select("id"));
+    const args = { p_vehicle_id: vehicleId, p_pickup_location: "Cebu City", p_return_location: "Cebu City", p_payment_method: "GCASH" as const };
+    // Two pending requests, the second starting 1 hour after the first ends.
+    const first = must(await renter.client.rpc("request_booking", { ...args, p_pickup_at: day(40), p_return_at: day(41) }));
+    const tooClose = must(await renter2.client.rpc("request_booking", { ...args, p_pickup_at: day(41, 11), p_return_at: day(42) }));
+    must(await owner.client.rpc("transition_booking", { p_booking_id: first, p_to: "APPROVED" }));
+    expect(must(await owner.client.from("bookings").select("status").eq("id", tooClose).single()).status).toBe("REJECTED");
+
+    // Inside the gap is refused, exactly 2 hours after is fine, and renters' calendars show the gap as booked.
+    await expectError(renter2.client.rpc("request_booking", { ...args, p_pickup_at: day(41, 11), p_return_at: day(42) }), "VEHICLE_UNAVAILABLE");
+    const after = must(await renter2.client.rpc("request_booking", { ...args, p_pickup_at: day(41, 12), p_return_at: day(42) }));
+    const ranges = must(await anon().rpc("vehicle_unavailable_ranges", { p_vehicle_id: vehicleId, p_from: day(39), p_to: day(43) }));
+    expect(ranges.map((r) => [r.kind, Date.parse(r.starts_at), Date.parse(r.ends_at)])).toContainEqual(["BOOKED", Date.parse(day(40, 8)), Date.parse(day(41, 12))]);
+    must(await owner.client.rpc("transition_booking", { p_booking_id: after, p_to: "APPROVED" }));
+
+    // Free the calendar for later tests.
+    for (const id of [first, after]) must(await owner.client.rpc("transition_booking", { p_booking_id: id, p_to: "CANCELLED", p_note: "Test cleanup" }));
+    must(await owner.client.from("businesses").update({ turnaround_hours: 0 }).eq("id", businessId).select("id"));
   });
 
   it("calendar blocks cannot overlap confirmed-path bookings", async () => {

@@ -39,7 +39,7 @@ Storefront
 
 Cars, pricing and availability
 - Per car: photos (the first is the main photo), daily, weekly and monthly rates, security deposit, mileage limit and excess-km fee, delivery fee, self-drive or with-driver (driver fee), and status (active, inactive, maintenance, unavailable).
-- A calendar shows bookings, pending requests and blocked dates. Owners can block dates or mark maintenance. Overlapping bookings are rejected automatically, so there are no double bookings.
+- A calendar shows bookings, pending requests and blocked dates. Owners can block dates or mark maintenance. Overlapping bookings are rejected automatically, so there are no double bookings. Approving a request automatically declines other requests for the same car and dates, and those renters are told. In Settings, owners can set a gap between rentals (for example 2 hours for cleaning); renters can't book inside it.
 
 Inquiries, bookings and messages
 - Renters message the business from its store, and every chat is in one inbox. The owner can turn a chat into a booking proposal in one tap. Renters can also request dates directly, and the owner approves or rejects.

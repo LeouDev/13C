@@ -60,24 +60,29 @@ export function TransitionActions({ bookingId, status, actor, pickupFrom }: { bo
   const next = nextStatuses(status, actor).filter((s) => !(actor === "RENTER" && s === "APPROVED"));
   if (next.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-2">
-      {next.map((to) => {
-        if (to === "REJECTED") return <NoteDialog key={to} title="Decline this request?" description="The renter will be notified with your reason." confirm="Decline" required destructive pending={pending} onConfirm={(n) => run(() => transitionBooking(bookingId, to, n))} />;
-        if (to === "CANCELLED") return <NoteDialog key={to} title="Cancel this booking?" description="The other party is notified. Your cancellation policy applies to any payments." confirm="Cancel booking" destructive pending={pending} onConfirm={(n) => run(() => transitionBooking(bookingId, to, n))} />;
-        if (to === "ACTIVE" && pickupFrom) {
+    <div className="grid gap-2">
+      <div className="flex flex-wrap gap-2">
+        {next.map((to) => {
+          if (to === "REJECTED") return <NoteDialog key={to} title="Decline this request?" description="The renter will be notified with your reason." confirm="Decline" required destructive pending={pending} onConfirm={(n) => run(() => transitionBooking(bookingId, to, n))} />;
+          if (to === "CANCELLED") return <NoteDialog key={to} title="Cancel this booking?" description="The other party is notified. Your cancellation policy applies to any payments." confirm="Cancel booking" destructive pending={pending} onConfirm={(n) => run(() => transitionBooking(bookingId, to, n))} />;
+          if (to === "ACTIVE" && pickupFrom) {
+            return (
+              <div key={to} className="grid gap-1">
+                <Button size="lg" disabled>{LABELS[to] ?? labelize(to)}</Button>
+                <span className="text-xs text-muted-foreground">Available from {pickupFrom}</span>
+              </div>
+            );
+          }
           return (
-            <div key={to} className="grid gap-1">
-              <Button size="lg" disabled>{LABELS[to] ?? labelize(to)}</Button>
-              <span className="text-xs text-muted-foreground">Available from {pickupFrom}</span>
-            </div>
+            <Button key={to} size="lg" variant={to === "APPROVED" ? "electric" : "default"} disabled={pending} onClick={() => run(() => transitionBooking(bookingId, to))}>
+              {pending && <Loader2 className="animate-spin" />} {LABELS[to] ?? labelize(to)}
+            </Button>
           );
-        }
-        return (
-          <Button key={to} size="lg" variant={to === "APPROVED" ? "electric" : "default"} disabled={pending} onClick={() => run(() => transitionBooking(bookingId, to))}>
-            {pending && <Loader2 className="animate-spin" />} {LABELS[to] ?? labelize(to)}
-          </Button>
-        );
-      })}
+        })}
+      </div>
+      {actor === "BUSINESS" && next.includes("APPROVED") && (
+        <p className="text-xs text-muted-foreground">Approving declines any other requests for this car on overlapping dates.</p>
+      )}
     </div>
   );
 }
