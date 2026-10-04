@@ -6,6 +6,7 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "cn";
 import { setBusinessLogo, setStoreCover, updateStorefront } from "@/app/actions/business";
+import { AiFaqButton, AiWriteButton } from "@/components/business/ai-write";
 import { Field } from "@/components/common/field";
 import { TagInput } from "@/components/common/tag-input";
 import { ImageUpload } from "@/components/common/uploads";
@@ -59,6 +60,7 @@ export function StoreEditor({
     business_hours: hours0,
   });
   const set = <K extends keyof StorefrontInput>(k: K, val: StorefrontInput[K]) => setV((x) => ({ ...x, [k]: val }));
+  const setPolicy = (key: string, text: string) => setV((x) => ({ ...x, policies: { ...x.policies, [key]: text } }));
 
   function save() {
     start(async () => {
@@ -96,10 +98,12 @@ export function StoreEditor({
             </label>
           </div>
         </Field>
-        <Field label="Tagline" htmlFor="tagline" error={errors.tagline}>
+        <Field label="Tagline" htmlFor="tagline" error={errors.tagline}
+          labelAside={<AiWriteButton businessId={business.id} field="tagline" value={v.tagline ?? ""} onChange={(t) => set("tagline", t)} />}>
           <Input id="tagline" value={v.tagline ?? ""} maxLength={140} onChange={(e) => set("tagline", e.target.value)} placeholder="Self-drive vehicles across Cebu." />
         </Field>
-        <Field label="About your business" htmlFor="about" error={errors.about} hint="Tell your story: how long you've been renting, what makes you different.">
+        <Field label="About your business" htmlFor="about" error={errors.about} hint="Tell your story: how long you've been renting, what makes you different. Rough notes are fine; AI can polish them."
+          labelAside={<AiWriteButton businessId={business.id} field="about" value={v.about ?? ""} onChange={(t) => set("about", t)} />}>
           <Textarea id="about" value={v.about ?? ""} rows={6} maxLength={5000} onChange={(e) => set("about", e.target.value)} />
         </Field>
       </Section>
@@ -140,9 +144,10 @@ export function StoreEditor({
       <Section title="Rental policies" description="Shown on your store and inserted automatically into every rental agreement.">
         <div className="grid gap-4 sm:grid-cols-2">
           {POLICY_FIELDS.map((p) => (
-            <Field key={p.key} label={p.label} htmlFor={`policy-${p.key}`}>
+            <Field key={p.key} label={p.label} htmlFor={`policy-${p.key}`} error={errors[`policies.${p.key}`]}
+              labelAside={<AiWriteButton businessId={business.id} field={p.key} value={v.policies[p.key] ?? ""} onChange={(t) => setPolicy(p.key, t)} />}>
               <Textarea id={`policy-${p.key}`} rows={3} maxLength={1500} placeholder={p.placeholder} value={v.policies[p.key] ?? ""}
-                onChange={(e) => set("policies", { ...v.policies, [p.key]: e.target.value })} />
+                onChange={(e) => setPolicy(p.key, e.target.value)} />
             </Field>
           ))}
         </div>
@@ -159,7 +164,10 @@ export function StoreEditor({
           </div>
         ))}
         {errors.faqs && <p className="text-xs text-destructive">Each FAQ needs a question (3+ characters) and an answer.</p>}
-        <Button type="button" variant="outline" className="justify-self-start" onClick={() => set("faqs", [...v.faqs, { q: "", a: "" }])}><Plus /> Add question</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" onClick={() => set("faqs", [...v.faqs, { q: "", a: "" }])}><Plus /> Add question</Button>
+          {v.faqs.length < 20 && <AiFaqButton businessId={business.id} faqs={v.faqs} onChange={(update) => setV((x) => ({ ...x, faqs: update(x.faqs) }))} />}
+        </div>
       </Section>
 
       <Section title="Business hours & contact">

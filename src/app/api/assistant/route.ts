@@ -2,9 +2,9 @@ import { createHmac } from "node:crypto";
 import { z } from "zod";
 import { answerText, ASSISTANT_INSTRUCTIONS, faqAnswer } from "@/lib/assistant";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { workersAI } from "@/lib/workers-ai";
 
-// Cloudflare Workers AI: a free daily allowance; past it, requests fail (never billed) and visitors get the ready-made answers.
-const MODEL = "@cf/google/gemma-4-26b-a4b-it";
+// When the AI can't answer (free daily allowance used up, outage), visitors get the ready-made answers.
 const DAILY_LIMIT = 40; // messages per visitor per day
 
 const chat = z.object({
@@ -27,21 +27,8 @@ export async function POST(request: Request) {
   const { data: allowed } = await createAdminClient().rpc("assistant_allow", { p_key: key, p_limit: DAILY_LIMIT });
   if (!allowed) return fallback(question, 429);
 
-  const { CLOUDFLARE_ACCOUNT_ID: account, CLOUDFLARE_AI_TOKEN: token } = process.env;
-  if (!account || !token) return fallback(question, 503);
-  const ai = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/ai/v1/chat/completions`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL, messages: [{ role: "system", content: ASSISTANT_INSTRUCTIONS }, ...messages], max_completion_tokens: 500, stream: true,
-      chat_template_kwargs: { enable_thinking: false }, // thinking is on by default and can use up the token limit before any answer
-    }),
-    signal: AbortSignal.timeout(30_000),
-  }).catch((error) => { console.error("[assistant]", error); return null; });
-  if (!ai?.ok || !ai.body) {
-    if (ai) console.error("[assistant]", ai.status, await ai.text().catch(() => ""));
-    return fallback(question, 503);
-  }
+  const ai = await workersAI([{ role: "system", content: ASSISTANT_INSTRUCTIONS }, ...messages], { maxTokens: 500, stream: true });
+  if (!ai?.body) return fallback(question, 503);
 
   // Wait for the first words, so a failure (daily allowance used up, outage) becomes the ready-made answer.
   const text = answerText(ai.body);

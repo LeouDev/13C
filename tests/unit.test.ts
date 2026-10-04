@@ -9,6 +9,7 @@ import { EMAILS } from "@/emails";
 import { PLAN_PRICE_CENTAVOS, PLANS } from "@/lib/constants";
 import { renderContractPdf, toWinAnsi, type ContractPdfInput } from "@/lib/contracts/pdf";
 import { answerText, faqAnswer } from "@/lib/assistant";
+import { cleanText, parseFaqs } from "@/lib/store-writer";
 import { friendlyError } from "@/lib/errors";
 import { browserLabel, formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
@@ -300,5 +301,36 @@ describe("assistant", () => {
     const words: string[] = [];
     for await (const w of answerText(body)) words.push(w);
     expect(words).toEqual(["From", " ₱499/month"]);
+  });
+});
+
+describe("Write with AI (store editor)", () => {
+  it("cleans a draft for its field", () => {
+    expect(cleanText('"Self-drive cars across Cebu"', 140, true)).toBe("Self-drive cars across Cebu");
+    expect(cleanText("**Fast** cars\nSecond line", 140, true)).toBe("Fast cars");
+    expect(cleanText('We rent "clean" cars.', 140)).toBe('We rent "clean" cars.');
+    expect(cleanText("Late fee ₱___ per hour.\n\n\n\nGrace: ___ hour.", 1500)).toBe("Late fee ₱___ per hour.\n\nGrace: ___ hour.");
+    expect(cleanText("one two three", 9)).toBe("one two"); // cut at a word
+  });
+
+  it("reads FAQs from the reply", () => {
+    const reply = `Here you go:
+
+**Q: Do you deliver to the airport?**
+A: Yes, delivery is ₱500.
+
+2. Question: How do I pay?
+Answer: GCash, Maya or cash.
+We confirm when you pick up.
+
+Q: Hi
+A: too short a question
+
+Q: No answer here?`;
+    expect(parseFaqs(reply)).toEqual([
+      { q: "Do you deliver to the airport?", a: "Yes, delivery is ₱500." },
+      { q: "How do I pay?", a: "GCash, Maya or cash. We confirm when you pick up." },
+    ]);
+    expect(parseFaqs("A valid license is required.")).toEqual([]);
   });
 });

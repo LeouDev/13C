@@ -6,6 +6,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { fail, invalid, ok, type ActionResult } from "@/lib/actions";
 import { BUSINESS_COOKIE } from "@/lib/auth";
+import { POLICY_FIELDS } from "@/lib/constants";
+import { draftStoreText, suggestFaqs, type Faq, type StoreTextField } from "@/lib/store-writer";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { businessSchema, paymentMethodsSchema, storefrontSchema, type BusinessInput, type StorefrontInput } from "@/lib/validation";
 
@@ -130,6 +133,42 @@ export async function patchStorefront(businessId: string, input: Partial<Storefr
   if (error) return fail(error);
   revalidatePath("/dashboard", "layout");
   return ok();
+}
+
+const AI_DAILY_LIMIT = 30; // AI drafts per store per day, so one store can't use up the free AI allowance every store shares
+const AI_UNAVAILABLE = "AI writing isn't available right now. Please try again later.";
+
+/** Only people who can edit the store, within its daily limit. An error message, or null when allowed (and counted). */
+async function refuseAiWriting(supabase: Awaited<ReturnType<typeof createClient>>, businessId: string) {
+  const { data: canEdit } = await supabase.rpc("has_business_role", { p_business: businessId, p_min: "MANAGER" });
+  if (!canEdit) return "Only owners and managers can edit the store.";
+  const key = `write:${new Date().toISOString().slice(0, 10)}:${businessId}`;
+  const { data: allowed } = await createAdminClient().rpc("assistant_allow", { p_key: key, p_limit: AI_DAILY_LIMIT });
+  return allowed ? null : `That's today's ${AI_DAILY_LIMIT} AI drafts for this store. You can write more tomorrow.`;
+}
+
+/** "Write with AI": a draft of the tagline, about text or one rental policy. Not saved; the owner checks it first. */
+export async function writeStoreText(businessId: string, field: StoreTextField, draft: string): Promise<ActionResult<string>> {
+  const parsed = z.object({ businessId: z.uuid(), field: z.enum(["tagline", "about", ...POLICY_FIELDS.map((p) => p.key)]), draft: z.string().max(5000) })
+    .safeParse({ businessId, field, draft });
+  if (!parsed.success) return invalid(parsed.error);
+  const supabase = await createClient();
+  const refused = await refuseAiWriting(supabase, businessId);
+  if (refused) return { ok: false, error: refused };
+  const text = await draftStoreText(supabase, businessId, parsed.data.field, draft);
+  return text ? ok(text) : { ok: false, error: AI_UNAVAILABLE };
+}
+
+/** "Suggest questions with AI": up to 5 FAQs the store doesn't have yet. Not saved; the owner checks them first. */
+export async function suggestStoreFaqs(businessId: string, questions: string[]): Promise<ActionResult<Faq[]>> {
+  const parsed = z.object({ businessId: z.uuid(), questions: z.array(z.string().max(200)).max(20) }).safeParse({ businessId, questions });
+  if (!parsed.success) return invalid(parsed.error);
+  const supabase = await createClient();
+  const refused = await refuseAiWriting(supabase, businessId);
+  if (refused) return { ok: false, error: refused };
+  const faqs = await suggestFaqs(supabase, businessId, questions);
+  if (!faqs) return { ok: false, error: AI_UNAVAILABLE };
+  return faqs.length ? ok(faqs) : { ok: false, error: "The AI couldn't think of new questions. Try again, or add more details about your cars and policies first." };
 }
 
 /** Hours needed between one rental's return and the next pickup. The database applies it to every booking. */

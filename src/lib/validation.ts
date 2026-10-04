@@ -67,7 +67,8 @@ export const storefrontSchema = z.object({
   featured_vehicle_ids: z.array(z.uuid()).max(6),
   hidden_sections: z.array(z.string()).max(10),
   faqs: z.array(z.object({ q: z.string().trim().min(3).max(200), a: z.string().trim().min(1).max(1500) })).max(20),
-  policies: z.record(z.string(), z.string().trim().max(1500)),
+  // "___" is a blank left by "Write with AI"; policies go into rental agreements, so it must be filled in first.
+  policies: z.record(z.string(), z.string().trim().max(1500).refine((t) => !t.includes("___"), "Fill in the blank (___) first.")),
   social_links: z.object({ facebook: url, instagram: url, tiktok: url, website: url, messenger: url }),
   business_hours: z.array(z.object({ day: z.string(), open: z.string(), close: z.string(), closed: z.boolean() })).max(7),
 });

@@ -6,6 +6,7 @@ import { Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "cn";
 import { patchStorefront, registerBusiness, savePaymentMethods, setBusinessLogo, setStoreCover, submitVerification } from "@/app/actions/business";
+import { AiWriteButton } from "@/components/business/ai-write";
 import { BusinessForm } from "@/components/business/business-form";
 import { Field } from "@/components/common/field";
 import { DocumentUpload, ImageUpload, type UploadedDoc } from "@/components/common/uploads";
@@ -103,7 +104,8 @@ export function RegisterWizard({ resume }: { resume: Resume }) {
                 }} />
             </Field>
           </div>
-          <Field label="Tagline" htmlFor="tagline" hint="One line under your business name on your store.">
+          <Field label="Tagline" htmlFor="tagline" hint="One line under your business name on your store."
+            labelAside={<AiWriteButton businessId={biz.id} field="tagline" value={tagline} onChange={setTagline} />}>
             <Input id="tagline" value={tagline} maxLength={140} onChange={(e) => setTagline(e.target.value)} placeholder="Self-drive cars across Cebu City & Mactan" />
           </Field>
           <div className="flex justify-between gap-3">

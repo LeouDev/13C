@@ -37,6 +37,7 @@ Storefront
 - A sample store at 13c.online/demo shows what owners get: a made-up business called "Your Car Rental" with six cars. Booking is turned off there.
 - It looks like the business's own website: its logo, cover, accent color, about text, fleet, pickup and delivery areas, rental policies, reviews, FAQ and contact details, with only a small "Powered by 13C" footer. Car pages live inside it (13c.online/your-business/your-car).
 - Policies the owner sets: ${POLICY_FIELDS.map((p) => p.label.toLowerCase()).join(", ")}. They show on the store and are written into every rental agreement.
+- "Write with AI" in the store editor drafts the tagline, about text and each policy (or polishes the owner's rough notes), and suggests FAQs, using the business's own cars, rates and settings. Amounts it doesn't know are left as blanks for the owner to fill in. Nothing is published until the owner checks and saves it.
 
 Cars, pricing and availability
 - Per car: photos (the first is the main photo), daily, weekly and monthly rates, security deposit, mileage limit and excess-km fee, delivery fee, self-drive or with-driver (driver fee), and status (active, inactive, maintenance, unavailable).
