@@ -69,7 +69,7 @@ Not offered yet: GPS tracking (coming on Business), processing rental payments, 
 Contact: support@13c.online`;
 
 const SUPPORT = "For anything else, email support@13c.online.";
-/** Ready-made answers for when the AI is unavailable (free credit used up, rate limit, outage). */
+/** Ready-made answers for when the AI is unavailable (daily allowance used up, rate limit, outage). */
 const FAQ: { words: RegExp; answer: string }[] = [
   {
     words: /price|cost|plan|pro\b|business plan|trial|free|magkano|bayad|presyo|subscription/i,
@@ -100,4 +100,28 @@ const FAQ: { words: RegExp; answer: string }[] = [
 export function faqAnswer(question: string) {
   const hit = FAQ.find((f) => f.words.test(question));
   return hit ? `${hit.answer}\n${SUPPORT}` : `I can't answer that right now. ${SUPPORT}`;
+}
+
+/** The answer's words from an OpenAI-style event stream: `data: {"choices":[{"delta":{"content":"…"}}]}` lines, then `data: [DONE]`. */
+export async function* answerText(body: ReadableStream<Uint8Array>) {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let rest = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return;
+      const lines = (rest + decoder.decode(value, { stream: true })).split("\n");
+      rest = lines.pop()!;
+      for (const line of lines) {
+        const data = line.startsWith("data:") ? line.slice(5).trim() : "";
+        if (data === "[DONE]") return;
+        if (!data) continue;
+        const piece: unknown = JSON.parse(data).choices?.[0]?.delta?.content;
+        if (typeof piece === "string" && piece) yield piece;
+      }
+    }
+  } finally {
+    reader.cancel().catch(() => {});
+  }
 }

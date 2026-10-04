@@ -1,10 +1,10 @@
 import { createHmac } from "node:crypto";
-import { streamText } from "ai";
 import { z } from "zod";
-import { ASSISTANT_INSTRUCTIONS, faqAnswer } from "@/lib/assistant";
+import { answerText, ASSISTANT_INSTRUCTIONS, faqAnswer } from "@/lib/assistant";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const MODEL = "anthropic/claude-haiku-4.5"; // via Vercel AI Gateway (OIDC on Vercel; free monthly credit)
+// Cloudflare Workers AI: a free daily allowance; past it, requests fail (never billed) and visitors get the ready-made answers.
+const MODEL = "@cf/google/gemma-4-26b-a4b-it";
 const DAILY_LIMIT = 40; // messages per visitor per day
 
 const chat = z.object({
@@ -27,17 +27,21 @@ export async function POST(request: Request) {
   const { data: allowed } = await createAdminClient().rpc("assistant_allow", { p_key: key, p_limit: DAILY_LIMIT });
   if (!allowed) return fallback(question, 429);
 
-  const result = streamText({
-    model: MODEL,
-    instructions: { role: "system", content: ASSISTANT_INSTRUCTIONS, providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } } },
-    messages,
-    maxOutputTokens: 500,
-    timeout: 30_000,
-    onError: ({ error }) => console.error("[assistant]", error),
-  });
+  const { CLOUDFLARE_ACCOUNT_ID: account, CLOUDFLARE_AI_TOKEN: token } = process.env;
+  if (!account || !token) return fallback(question, 503);
+  const ai = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/ai/v1/chat/completions`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ model: MODEL, messages: [{ role: "system", content: ASSISTANT_INSTRUCTIONS }, ...messages], max_completion_tokens: 500, stream: true }),
+    signal: AbortSignal.timeout(30_000),
+  }).catch((error) => { console.error("[assistant]", error); return null; });
+  if (!ai?.ok || !ai.body) {
+    if (ai) console.error("[assistant]", ai.status, await ai.text().catch(() => ""));
+    return fallback(question, 503);
+  }
 
-  // Wait for the first words, so a failure (no credit left, gateway down) becomes the ready-made answer.
-  const text = result.textStream[Symbol.asyncIterator]();
+  // Wait for the first words, so a failure (daily allowance used up, outage) becomes the ready-made answer.
+  const text = answerText(ai.body);
   const first = await text.next().catch(() => ({ done: true as const, value: undefined }));
   if (first.done) return fallback(question, 503);
   const encoder = new TextEncoder();
@@ -47,6 +51,6 @@ export async function POST(request: Request) {
       const next = await text.next();
       if (next.done) c.close(); else c.enqueue(encoder.encode(next.value));
     },
-    cancel: () => void text.return?.(),
+    cancel: () => void text.return(undefined),
   }), { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
 }

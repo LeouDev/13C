@@ -8,6 +8,7 @@ import { templateFor } from "@/lib/notification-email";
 import { EMAILS } from "@/emails";
 import { PLAN_PRICE_CENTAVOS, PLANS } from "@/lib/constants";
 import { renderContractPdf, toWinAnsi, type ContractPdfInput } from "@/lib/contracts/pdf";
+import { answerText } from "@/lib/assistant";
 import { friendlyError } from "@/lib/errors";
 import { browserLabel, formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
@@ -278,5 +279,17 @@ describe("contract PDF", () => {
     const hex = "0123456789abcdef".repeat(4);
     expect(groupFingerprint(hex)).toBe("01234567 89abcdef ".repeat(4).trim());
     expect(groupFingerprint(hex).replace(/ /g, "")).toBe(hex);
+  });
+});
+
+describe("assistant", () => {
+  it("reads the answer's words from the AI's event stream, even when lines and characters arrive split", async () => {
+    const event = (delta: object) => `data: ${JSON.stringify({ choices: [{ delta }] })}\n\n`;
+    const raw = event({ role: "assistant" }) + event({ content: "From" }) + event({ content: " ₱499/month" }) + "data: [DONE]\n\n" + event({ content: "ignored" });
+    const bytes = new TextEncoder().encode(raw);
+    const body = new ReadableStream<Uint8Array>({ start(c) { for (let i = 0; i < bytes.length; i += 7) c.enqueue(bytes.slice(i, i + 7)); c.close(); } });
+    const words: string[] = [];
+    for await (const w of answerText(body)) words.push(w);
+    expect(words).toEqual(["From", " ₱499/month"]);
   });
 });

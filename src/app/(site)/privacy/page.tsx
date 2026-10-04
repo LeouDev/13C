@@ -31,7 +31,7 @@ export default function PrivacyPage() {
   return (
     <LegalDoc
       title="Privacy Policy"
-      updated="October 3, 2026"
+      updated="October 4, 2026"
       toc={TOC}
       intro={
         <>
@@ -148,7 +148,8 @@ export default function PrivacyPage() {
         <p>
           We use trusted providers that process data on our behalf under written agreements, including <strong>Supabase</strong> (database,
           authentication and private file storage), <strong>PayMongo</strong> (subscription payments by rental businesses; we never see or store full
-          card or e-wallet details), cloud hosting and content-delivery providers, and email delivery services. Some providers
+          card or e-wallet details), cloud hosting and content-delivery providers, email delivery services, and <strong>Cloudflare Workers AI</strong>,
+          which answers questions typed into the 13C assistant chat (13C doesn&apos;t save those chats, and Cloudflare doesn&apos;t use them to train AI models). Some providers
           may store or process data outside the Philippines; where they do, we require safeguards that provide a comparable level of protection,
           as the Data Privacy Act requires.
         </p>
