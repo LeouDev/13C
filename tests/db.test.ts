@@ -9,6 +9,7 @@ import { createHmac } from "node:crypto";
 import { POST as emailDispatch } from "@/app/api/email/dispatch/route";
 import { POST as paymongoWebhook } from "@/app/api/webhooks/paymongo/route";
 import { prepareNotificationEmail, templateFor } from "@/lib/notification-email";
+import { onRequestError } from "@/instrumentation";
 import { PLAN_PRICE_CENTAVOS, PLAN_VEHICLE_LIMIT, RESERVED_SLUGS, TRIAL_DAYS } from "@/lib/constants";
 import { anon, completeRenterProfile, day, makeUser, must, service, SIGNATURE, type TestUser } from "./helpers";
 
@@ -680,5 +681,33 @@ describe("For Business assistant", () => {
     expect((await anon().rpc("assistant_allow", { p_key: key, p_limit: 1000 })).error).not.toBeNull();
     expect((await anon().from("assistant_usage").select("key")).data).toEqual([]);
     must(await service.from("assistant_usage").delete().eq("key", key).select("key"));
+  });
+});
+
+describe("site error alerts", () => {
+  it("records server errors without the query string and sums them up in one admin email", async () => {
+    const admin = await makeUser("erroradmin");
+    const tag = `test error ${crypto.randomUUID()}`;
+    const context = { routerKind: "App Router", routePath: "/__test__/page", routeType: "render", revalidateReason: undefined } as const;
+    // What Next.js calls for every server error.
+    await onRequestError(new Error(tag), { path: "/__test__/page?email=someone@example.com", method: "GET", headers: {} }, context);
+    await onRequestError(new Error(tag), { path: "/__test__/page", method: "GET", headers: {} }, context);
+    const rows = must(await service.from("app_errors").select("path, route, notified_at").eq("message", tag));
+    expect(rows).toEqual([1, 2].map(() => ({ path: "/__test__/page", route: "render /__test__/page", notified_at: null })));
+
+    // Sent to one test user (never emailed) and left unmarked; the hourly run tells the admins and marks the errors.
+    expect(must(await service.rpc("send_error_summary", { p_user_id: admin.id }))).toBeGreaterThanOrEqual(2);
+    const [n] = must(await service.from("notifications").select("id, user_id, business_id, type, title, body, link").eq("user_id", admin.id).eq("type", "site_errors"));
+    expect(n!.title).toMatch(/^\d+ server errors? on 13C$/);
+    expect(n!.body).toContain(`2× /__test__/page · ${tag}`);
+    expect(must(await service.from("app_errors").select("notified_at").eq("message", tag)).every((r) => r.notified_at === null)).toBe(true);
+    const mail = await prepareNotificationEmail({ ...n!, email: admin.email, full_name: "Test Admin", attempts: 1 });
+    expect(mail?.key).toBe("admin_site_errors");
+    expect(mail!.text).toContain(tag);
+
+    // Server only.
+    expect((await anon().rpc("send_error_summary", {})).error).not.toBeNull();
+    expect((await admin.client.from("app_errors").select("id")).data).toEqual([]);
+    must(await service.from("app_errors").delete().eq("message", tag).select("id"));
   });
 });

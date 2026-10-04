@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_errors: {
+        Row: {
+          created_at: string
+          digest: string | null
+          id: number
+          message: string
+          method: string | null
+          notified_at: string | null
+          path: string | null
+          route: string | null
+        }
+        Insert: {
+          created_at?: string
+          digest?: string | null
+          id?: never
+          message: string
+          method?: string | null
+          notified_at?: string | null
+          path?: string | null
+          route?: string | null
+        }
+        Update: {
+          created_at?: string
+          digest?: string | null
+          id?: never
+          message?: string
+          method?: string | null
+          notified_at?: string | null
+          path?: string | null
+          route?: string | null
+        }
+        Relationships: []
+      }
       assistant_usage: {
         Row: {
           count: number
@@ -2636,6 +2669,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      send_error_summary: { Args: { p_user_id?: string }; Returns: number }
       send_fleet_reminders: {
         Args: { p_business_id?: string }
         Returns: number

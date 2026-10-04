@@ -785,6 +785,27 @@ export const EMAILS = {
       footer: "admin",
     }),
   },
+  admin_site_errors: {
+    audience: "Admin",
+    trigger: "Hourly check: the site had server errors since the last summary (at most one email an hour)",
+    notificationType: "site_errors",
+    sample: { ...SAMPLE, reason: "3 server errors on 13C", note: "2× /dashboard/bookings · Database request timed out\n1× /api/assistant · fetch failed" },
+    build: (d) => {
+      const lines = (d.note ?? "").split("\n").filter(Boolean);
+      return {
+        subject: d.reason ?? "Server errors on 13C",
+        preheader: lines[0] ?? "The site hit server errors since the last summary.",
+        heading: "Server errors on 13C",
+        blocks: [
+          { p: "These failed since the last summary, most frequent first (times · page · error):" },
+          { list: lines },
+          { p: "Vercel keeps the full logs for one hour on the free plan, so open them soon if you need more detail." },
+        ],
+        cta: { label: "Open Vercel logs", url: "https://vercel.com/dicta2/13-c/logs" },
+        footer: "admin",
+      };
+    },
+  },
 } satisfies Record<string, EmailTemplate>;
 
 export type EmailKey = keyof typeof EMAILS;

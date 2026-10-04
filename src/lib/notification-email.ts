@@ -131,6 +131,7 @@ export async function prepareNotificationEmail(n: OutboxRow) {
     d.businessName = n.body ?? undefined;
   }
   if (n.type === "deletion_requested") d.email = n.body ?? undefined;
+  if (n.type === "site_errors") Object.assign(d, { reason: n.title, note: n.body ?? undefined });
   if (n.type === "report_submitted") Object.assign(d, { reason: n.title.replace(/^New report: /, ""), note: n.body ?? undefined });
   if (n.type === "team_added" && n.business_id) {
     const { data: m } = await admin.from("business_members").select("role").eq("business_id", n.business_id).eq("user_id", n.user_id).maybeSingle();
