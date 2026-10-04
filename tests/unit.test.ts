@@ -8,7 +8,7 @@ import { templateFor } from "@/lib/notification-email";
 import { EMAILS } from "@/emails";
 import { PLAN_PRICE_CENTAVOS, PLANS } from "@/lib/constants";
 import { renderContractPdf, toWinAnsi, type ContractPdfInput } from "@/lib/contracts/pdf";
-import { answerText } from "@/lib/assistant";
+import { answerText, faqAnswer } from "@/lib/assistant";
 import { friendlyError } from "@/lib/errors";
 import { browserLabel, formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
@@ -283,6 +283,15 @@ describe("contract PDF", () => {
 });
 
 describe("assistant", () => {
+  it("answers common questions without the AI, on the right topic", () => {
+    expect(faqAnswer("Can I see a sample store?")).toContain("13c.online/demo");
+    expect(faqAnswer("Ano ang itsura ng website ko?")).toContain("13c.online/demo");
+    expect(faqAnswer("Can I try a sample contract?")).toContain("Try a sample contract");
+    expect(faqAnswer("What does the contract look like?")).toContain("Try a sample contract");
+    expect(faqAnswer("Magkano ang Pro plan?")).toContain("₱499");
+    expect(faqAnswer("What's the weather today?")).toContain("I can't answer that right now");
+  });
+
   it("reads the answer's words from the AI's event stream, even when lines and characters arrive split", async () => {
     const event = (delta: object) => `data: ${JSON.stringify({ choices: [{ delta }] })}\n\n`;
     const raw = event({ role: "assistant" }) + event({ content: "From" }) + event({ content: " ₱499/month" }) + "data: [DONE]\n\n" + event({ content: "ignored" });

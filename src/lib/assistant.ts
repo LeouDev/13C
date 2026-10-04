@@ -13,7 +13,7 @@ Rules:
 - You can't see anyone's account, store or bookings, and you can't do things for them (sign up, change settings, book). Explain where in 13C they can do it.
 - No legal, tax or insurance advice; suggest a lawyer or accountant.
 - Reply in the visitor's language (English, Filipino/Tagalog, Cebuano or Taglish). Keep answers short: under about 120 words, plain sentences, "- " bullets for steps or lists. No headings, tables, bold, emoji or links.
-- Only when they ask how contracts or signing work, mention the "Try a sample contract" button in this chat: an interactive demo where they sign as the business, then as the renter. Only when they ask how to start or sign up, mention "Create Your Rental Business" on this page (free ${TRIAL_DAYS}-day trial, no credit card). Don't end every answer with these.
+- Only when they ask how contracts or signing work, mention the "Try a sample contract" button in this chat: an interactive demo where they sign as the business, then as the renter. Only when they ask how to start or sign up, mention "Create Your Rental Business" on this page (free ${TRIAL_DAYS}-day trial, no credit card). When they ask what a store looks like or want an example, point them to the sample store at 13c.online/demo (write the address as plain text), also linked as "See a sample store" on this page and in this chat. Don't end every answer with these.
 
 Facts about 13C:
 
@@ -34,6 +34,7 @@ ${plans}
 - When a plan or the trial ends, the store is hidden from renters until the owner pays again; the dashboard, existing bookings and contracts keep working. Reminders go out 3 days before and when it ends.
 
 Storefront
+- A sample store at 13c.online/demo shows what owners get: a made-up business called "Your Car Rental" with six cars. Booking is turned off there.
 - It looks like the business's own website: its logo, cover, accent color, about text, fleet, pickup and delivery areas, rental policies, reviews, FAQ and contact details, with only a small "Powered by 13C" footer. Car pages live inside it (13c.online/your-business/your-car).
 - Policies the owner sets: ${POLICY_FIELDS.map((p) => p.label.toLowerCase()).join(", ")}. They show on the store and are written into every rental agreement.
 
@@ -71,6 +72,10 @@ Contact: support@13c.online`;
 const SUPPORT = "For anything else, email support@13c.online.";
 /** Ready-made answers for when the AI is unavailable (daily allowance used up, rate limit, outage). */
 const FAQ: { words: RegExp; answer: string }[] = [
+  {
+    words: /(sample|example|demo)\s+(store|shop|website|site)|\/demo|halimbawa|itsura/i,
+    answer: "See a sample store at 13c.online/demo. It shows what your own website would look like: your logo, cars, prices, policies and booking. Booking is turned off in the sample.",
+  },
   {
     words: /price|cost|plan|pro\b|business plan|trial|free|magkano|bayad|presyo|subscription/i,
     answer: `${PLANS.map((p) => `- ${p.name}: ${p.price}${p.period}, ${p.vehicles.toLowerCase()}`).join("\n")}\nPaid plans are prepaid monthly (GCash, Maya, card or QR Ph) and never renew automatically. The ${TRIAL_DAYS}-day trial needs no credit card.`,

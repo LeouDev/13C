@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, FileSignature, MessageCircle, X } from "lucide-react";
+import { ArrowUp, FileSignature, MessageCircle, Store, X } from "lucide-react";
 import { cn } from "cn";
 
 type Message = { role: "user" | "assistant"; content: string };
@@ -81,9 +81,14 @@ export function AssistantWidget() {
           <div className="flex-1 overflow-y-auto px-4 py-4" aria-live="polite">
             <div className="grid gap-3">
               <Bubble role="assistant">{GREETING}</Bubble>
-              <Link href="/for-business/sample-contract" className="flex items-center gap-2 justify-self-start rounded-2xl bg-accent px-3.5 py-2.5 text-sm font-semibold text-electric hover:bg-accent/70">
-                <FileSignature className="size-4" /> Try a sample contract
-              </Link>
+              <div className="flex flex-wrap gap-2">
+                <Link href="/demo" className="flex items-center gap-2 rounded-2xl bg-accent px-3.5 py-2.5 text-sm font-semibold text-electric hover:bg-accent/70">
+                  <Store className="size-4" /> See a sample store
+                </Link>
+                <Link href="/for-business/sample-contract" className="flex items-center gap-2 rounded-2xl bg-accent px-3.5 py-2.5 text-sm font-semibold text-electric hover:bg-accent/70">
+                  <FileSignature className="size-4" /> Try a sample contract
+                </Link>
+              </div>
               {messages.map((m, i) => (
                 <Bubble key={i} role={m.role}>{m.content || <span className="inline-flex gap-1" aria-label="Typing"><Dot /><Dot /><Dot /></span>}</Bubble>
               ))}
