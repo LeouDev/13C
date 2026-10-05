@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { Eye, Heart, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "cn";
 import { requestAccountDeletion, saveDriverDocument, toggleFavorite, viewMyDocument } from "@/app/actions/account";
 import { updatePassword } from "@/app/actions/auth";
+import { Field } from "@/components/common/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -72,6 +73,24 @@ export function PasswordForm({ autoFocus }: { autoFocus?: boolean }) {
       <Input name="password" type="password" minLength={8} required placeholder="New password (8+ characters)" autoComplete="new-password" aria-label="New password" autoFocus={autoFocus} />
       <Button type="submit" variant="outline" size="lg" disabled={pending}>{pending && <Loader2 className="animate-spin" />} Update password</Button>
       {state && <p className={cn("text-sm sm:self-center", state.ok ? "text-emerald-700" : "text-destructive")}>{state.ok ? state.message : state.error}</p>}
+    </form>
+  );
+}
+
+/** The page a password-reset link opens: one field, then on to `done` (the dashboard or the account page). */
+export function NewPasswordForm({ done }: { done: string }) {
+  const router = useRouter();
+  const [state, action, pending] = useActionState(updatePassword, null);
+  useEffect(() => {
+    if (state?.ok) { toast.success(state.message); router.replace(done); }
+  }, [state, done, router]);
+  const error = state && !state.ok ? Object.values(state.fieldErrors ?? {})[0] ?? state.error : undefined;
+  return (
+    <form action={action} className="grid gap-4">
+      <Field label="New password" htmlFor="new-password" error={error} hint="At least 8 characters, with letters and numbers.">
+        <Input id="new-password" name="password" type="password" minLength={8} maxLength={72} required autoComplete="new-password" autoFocus className="h-11 sm:h-10" />
+      </Field>
+      <Button type="submit" size="xl" disabled={pending || state?.ok}>{pending && <Loader2 className="animate-spin" />} Save new password</Button>
     </form>
   );
 }

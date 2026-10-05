@@ -92,7 +92,7 @@ export function SignUpForm({ next }: { next?: string }) {
       <Field label="Mobile number" htmlFor="phone" error={fe?.phone} hint="Rental businesses use this to coordinate pickup.">
         <PhoneInput id="phone" name="phone" />
       </Field>
-      <Field label="Password" htmlFor="password" error={fe?.password} hint="At least 8 characters." required>
+      <Field label="Password" htmlFor="password" error={fe?.password} hint="At least 8 characters, with letters and numbers." required>
         <Input id="password" name="password" type="password" autoComplete="new-password" required minLength={8} />
       </Field>
       <label className="flex items-start gap-2.5 text-sm text-muted-foreground">

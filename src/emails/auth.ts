@@ -26,7 +26,8 @@ export const AUTH_EMAILS: Record<string, { kind: "template" | "notification"; wh
       preheader: "Use this link to choose a new password.",
       heading: "Reset your password",
       blocks: [{ p: "We received a request to reset the password for **{{ .Email }}**. This link expires soon and can only be used once." }],
-      cta: { label: "Choose a new password", url: "{{ .ConfirmationURL }}" },
+      // A token hash (not ConfirmationURL's PKCE code), so the link works on any device: see src/app/auth/confirm/route.ts.
+      cta: { label: "Choose a new password", url: "/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/account/security" },
       footer: "auth",
     },
   },
@@ -115,6 +116,7 @@ export function previewAuthHtml(html: string, siteUrl: string) {
   return html
     .replaceAll("{{ .SiteURL }}", siteUrl)
     .replaceAll("{{ .ConfirmationURL }}", `${siteUrl}/auth/callback?code=preview`)
+    .replaceAll("{{ .TokenHash }}", "preview")
     .replaceAll("{{ .Token }}", "482915")
     .replaceAll("{{ .Email }}", "juan@example.com")
     .replaceAll("{{ .NewEmail }}", "juan.delacruz@example.com")

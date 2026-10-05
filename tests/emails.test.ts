@@ -65,7 +65,9 @@ describe("Supabase auth templates", () => {
     it(name, async () => {
       const { html } = renderAuthEmail(name);
       expect(html).toContain("{{ .SiteURL }}/assets/email-logo.png");
-      const required = name === "reauthentication" ? "{{ .Token }}" : AUTH_EMAILS[name]!.kind === "notification" ? "{{ .Email }}" : "{{ .ConfirmationURL }}";
+      const required = name === "reauthentication" ? "{{ .Token }}" : AUTH_EMAILS[name]!.kind === "notification" ? "{{ .Email }}"
+        : name === "recovery" ? "{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=recovery" // works on any device
+        : "{{ .ConfirmationURL }}";
       expect(html).toContain(required);
       await expect(html).toMatchFileSnapshot(`../supabase/templates/${name}.html`);
     });

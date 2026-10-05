@@ -47,6 +47,8 @@ describe("friendly errors", () => {
     expect(friendlyError({ message: 'duplicate key value violates unique constraint "businesses_slug_key"', code: "23505" })).toMatch(/store link is already taken/);
     expect(friendlyError({ message: "new row violates row-level security policy", code: "42501" })).toMatch(/permission/);
     expect(friendlyError({ message: "syntax error at or near select", code: "42601" })).toBe("Something went wrong. Please try again.");
+    expect(friendlyError({ message: "Password should contain at least one character of each: abcdefghijklmnopqrstuvwxyz, 0123456789", code: "weak_password" })).toMatch(/letters and numbers/);
+    expect(friendlyError({ message: "New password should be different from the old password.", code: "same_password" })).toMatch(/current password/);
   });
 });
 

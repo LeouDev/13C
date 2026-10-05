@@ -8,6 +8,7 @@ const NAV = [["/account/bookings", "Bookings"], ["/account/messages", "Messages"
 
 export function AccountNav() {
   const path = usePathname();
+  if (path === "/account/security") return null; // the reset-link page shows only the new-password form
   return (
     <nav className="flex w-full gap-1 overflow-x-auto rounded-full bg-white p-1 ring-1 ring-border sm:w-fit" aria-label="Account">
       {NAV.map(([href, label]) => {

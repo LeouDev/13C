@@ -78,11 +78,14 @@ export async function requestPasswordReset(_: unknown, form: FormData): Promise<
   return ok(undefined, "If an account exists, we've sent a reset link.");
 }
 
+/** Sets a new password (account page, or after a reset link) and signs out every other device, in case someone else had the old one. */
 export async function updatePassword(_: unknown, form: FormData): Promise<ActionResult> {
   const password = z.string().min(8, "Use at least 8 characters").max(72).safeParse(form.get("password"));
   if (!password.success) return invalid(password.error);
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password: password.data });
   if (error) return fail(error);
-  return ok(undefined, "Password updated.");
+  const { error: others } = await supabase.auth.signOut({ scope: "others" });
+  if (others) console.error("[auth] couldn't sign out other devices", others);
+  return ok(undefined, others ? "Password updated." : "Password updated. You've been signed out on your other devices.");
 }

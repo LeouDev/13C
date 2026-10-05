@@ -92,7 +92,8 @@ export function friendlyError(err: unknown, fallback = "Something went wrong. Pl
   if (/Invalid login credentials/i.test(msg)) return "Incorrect email or password.";
   if (/Email not confirmed/i.test(msg)) return "Please confirm your email first — check your inbox.";
   if (/User already registered/i.test(msg)) return "An account with this email already exists. Try signing in.";
-  if (/Password should be/i.test(msg)) return "Use a stronger password (at least 8 characters).";
+  if (e.code === "same_password" || /different from the old password/i.test(msg)) return "That's your current password. Choose a new one.";
+  if (/Password should be|Password should contain/i.test(msg)) return "Use a stronger password: at least 8 characters, with letters and numbers.";
   if (/rate limit/i.test(msg)) return "Too many attempts. Please wait a minute and try again.";
   if (e.code === "captcha_failed" || /captcha/i.test(msg)) return "The security check didn't go through. Wait for it to finish, then try again.";
   if (/mime type|invalid_mime_type/i.test(msg)) return "That file type isn't allowed.";
