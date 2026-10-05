@@ -96,6 +96,7 @@ export const STORE_SECTIONS = [
   { id: "policies", label: "Rental Policies" },
   { id: "reviews", label: "Reviews" },
   { id: "faq", label: "FAQ" },
+  { id: "assistant", label: "AI assistant" }, // the "Ask us" chat for renters (StoreAssistant)
 ] as const;
 
 export const POLICY_FIELDS = [

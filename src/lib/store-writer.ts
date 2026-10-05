@@ -41,14 +41,17 @@ function task(field: StoreTextField) {
   return `Write the store's "${label}" policy: ${POLICY_HINTS[field]} Use 1 to 3 short, clear sentences. It shows on the store and goes into the rental agreement for every car, so don't name specific cars or mention the agreement. If it needs an amount, time or age that isn't in the facts, write ___ in its place for the owner to fill in.`;
 }
 
-/** What the AI may say about the business. Leaves out the field being written, so its saved text doesn't compete with the owner's draft. */
-async function storeFacts(supabase: SupabaseClient<Database>, businessId: string, skip: StoreTextField | "faqs") {
+/**
+ * What the AI may say about the business, from what its store shows (also used by the store's assistant for renters).
+ * `skip` leaves out the field being written, so its saved text doesn't compete with the owner's draft.
+ */
+export async function storeFacts(supabase: SupabaseClient<Database>, businessId: string, skip?: StoreTextField | "faqs") {
   const [{ data: b }, { data: s }, { data: cars }, { data: methods }] = await Promise.all([
     supabase.from("businesses").select("name, city, province, description, turnaround_hours").eq("id", businessId).single(),
     supabase.from("business_storefronts").select("tagline, about, policies, faqs, pickup_locations, delivery_areas, business_hours").eq("business_id", businessId).single(),
     supabase.from("vehicles")
-      .select("make, model, variant, year, vehicle_categories(label), seats, transmission, fuel_type, self_drive, with_driver, delivery_available, min_rental_days, vehicle_pricing(daily_rate, weekly_rate, monthly_rate, security_deposit, mileage_limit_km, excess_km_fee, delivery_fee, driver_fee_per_day)")
-      .eq("business_id", businessId).is("deleted_at", null).order("created_at").limit(30),
+      .select("make, model, variant, year, status, vehicle_categories(label), seats, transmission, fuel_type, self_drive, with_driver, delivery_available, min_rental_days, vehicle_pricing(daily_rate, weekly_rate, monthly_rate, security_deposit, mileage_limit_km, excess_km_fee, delivery_fee, driver_fee_per_day)")
+      .eq("business_id", businessId).is("deleted_at", null).neq("status", "INACTIVE").order("created_at").limit(30),
     supabase.from("payment_methods").select("method").eq("business_id", businessId).eq("is_enabled", true),
   ]);
   if (!b || !s) return null;
@@ -63,6 +66,7 @@ async function storeFacts(supabase: SupabaseClient<Database>, businessId: string
       [c.self_drive && "self-drive", c.with_driver && `with a driver${p?.driver_fee_per_day ? ` (${formatPHP(p.driver_fee_per_day)}/day)` : ""}`].filter(Boolean).join(" or "),
       c.delivery_available && (p?.delivery_fee ? `delivery ${formatPHP(p.delivery_fee)}` : "delivery available"),
       c.min_rental_days > 1 && `minimum ${c.min_rental_days} days`,
+      c.status !== "ACTIVE" && "can't be booked right now",
     ].filter(Boolean).join("; ");
   };
   const policies = (s.policies ?? {}) as Record<string, string>;

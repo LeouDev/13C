@@ -6,6 +6,7 @@ import { openDashboard } from "@/app/actions/business";
 import { FacebookIcon, InstagramIcon } from "@/components/common/social-icons";
 import { Logo } from "@/components/brand/logo";
 import { VerifiedBadge } from "@/components/common/badges";
+import { StoreAssistant } from "@/components/site/assistant-widget";
 import { BusinessLogo } from "@/components/common/vehicle-image";
 import { getCurrentUser, getMemberships } from "@/lib/auth";
 import { TRIAL_DAYS } from "@/lib/constants";
@@ -79,6 +80,9 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
       </header>
 
       <main className="flex-1">{children}</main>
+      {!store.hidden_sections.includes("assistant") && (
+        <StoreAssistant businessId={business.id} slug={business.slug} name={business.name} accent={store.accent_color} isDemo={business.is_demo} signedIn={!!user} />
+      )}
 
       <footer id="contact" className="mt-16 scroll-mt-30 bg-white lg:scroll-mt-20">
         <div className="container-page grid gap-8 py-12 md:grid-cols-[1.5fr_1fr_1fr]">

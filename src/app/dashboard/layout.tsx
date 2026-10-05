@@ -6,6 +6,7 @@ import { BusinessSwitcher } from "@/components/dashboard/business-switcher";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { DashboardMobileNav } from "@/components/dashboard/mobile-nav";
 import { PlanBanner } from "@/components/dashboard/plan-banner";
+import { DashboardHelp } from "@/components/site/assistant-widget";
 import { NotificationBell } from "@/components/site/notification-bell";
 import { requireBusiness } from "@/lib/auth";
 import { storeDisplayUrl } from "@/lib/constants";
@@ -48,7 +49,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
           <Link prefetch={false} href={`/${business.slug}`} target="_blank" className="ml-auto hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-navy-800 hover:bg-canvas sm:flex">
             {storeDisplayUrl(business.slug)} <ExternalLink className="size-3.5" />
           </Link>
-          <div className="ml-auto sm:ml-0"><NotificationBell userId={user.id} initialUnread={notes.count ?? 0} /></div>
+          <div className="ml-auto flex items-center gap-1 sm:ml-0"><DashboardHelp /><NotificationBell userId={user.id} initialUnread={notes.count ?? 0} /></div>
         </header>
         <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8"><PlanBanner sub={sub.data} />{children}</main>
       </div>
