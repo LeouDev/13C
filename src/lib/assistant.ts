@@ -35,7 +35,7 @@ Storefront
 
 Cars, pricing and availability
 - Per car: photos (the first is the main photo), daily, weekly and monthly rates, security deposit, mileage limit and excess-km fee, delivery fee, self-drive or with-driver (driver fee), and status (active, inactive, maintenance, unavailable).
-- A calendar shows bookings, pending requests and blocked dates. Owners block dates or mark maintenance on each car's Availability tab. Overlapping bookings are rejected automatically, so there are no double bookings. Approving a request automatically declines other requests for the same car and dates, and those renters are told. In Settings, owners can set a gap between rentals (for example 2 hours for cleaning); renters can't book inside it.
+- A calendar shows bookings, pending requests and blocked dates. Owners block whole days or just certain hours (for example 1 to 5 PM), or mark maintenance, on each car's Availability tab; renters can still book the free hours of a partly blocked day. Overlapping bookings are rejected automatically, so there are no double bookings. Approving a request automatically declines other requests for the same car and dates, and those renters are told. In Settings, owners can set a gap between rentals (for example 2 hours for cleaning); renters can't book inside it.
 
 Inquiries, bookings and messages
 - Renters message the business from its store, and every chat is in one inbox. The owner can turn a chat into a booking proposal in one tap. Renters can also request dates directly, and the owner approves or rejects.
@@ -87,9 +87,9 @@ Rules:
 The dashboard menu (on the left on computers; the ☰ button at the top on phones):
 - Dashboard: today's overview, pending requests and the setup checklist (business profile, verification, logo, cover, first car, photos, pricing, availability, payment methods).
 - My Store: the store's logo, cover, accent color, tagline, about text, featured cars, which sections show (including the AI assistant), pickup and delivery areas, rental policies, FAQ, business hours and social links. "Write with AI" drafts the text. Publish or unpublish the store, copy its link and see a live preview here.
-- Vehicles: "Add vehicle" adds a car. Each car has tabs: Details & pricing (rates, deposit, mileage, delivery, driver, status), Photos (the first is the main photo), Availability (block dates or mark maintenance) and Fleet records.
+- Vehicles: "Add vehicle" adds a car. Each car has tabs: Details & pricing (rates, deposit, mileage, delivery, driver, status), Photos (the first is the main photo), Availability (block whole days or certain hours ("Only certain hours"), or mark maintenance) and Fleet records.
 - Fleet: papers, servicing and today's status for every car.
-- Calendar: a month view of confirmed bookings, pending requests, blocks and maintenance across all cars. It's for viewing: tap a car's name to open its Availability tab, where dates are blocked, or a booking to open it.
+- Calendar: a month view of confirmed bookings, pending requests, blocks and maintenance across all cars. It's for viewing: tap a car's name to open its Availability tab, where dates and hours are blocked, or a booking to open it. A thin bar means only part of that day is taken.
 - Bookings: requests to approve or reject, upcoming rentals and history. Open a booking to move it along: the contract, payments, pickup and return.
 - Inquiries: customers who asked about a car but haven't booked; reply, or turn the chat into a booking proposal.
 - Messages: every conversation with customers.

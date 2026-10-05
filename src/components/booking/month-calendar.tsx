@@ -3,34 +3,28 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "cn";
-import { KIND_STYLE } from "@/lib/calendar";
-import { isoToManilaDate, todayManila } from "@/lib/format";
+import { coverDays, KIND_STYLE } from "@/lib/calendar";
+import { formatDate, todayManila } from "@/lib/format";
 
 export type CalRange = { start: string; end: string; kind: string };
 
 
 const ymd = (y: number, m: number, d: number) => `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 
-/** Month grid in Manila dates. A day is covered by a range if the range overlaps any part of it. */
+/**
+ * Month grid in Manila dates. A day a range takes completely is filled in; a day it takes only part of keeps a thin bar,
+ * since the free hours can still be booked. Tapping a marked day says which hours are taken.
+ */
 export function MonthCalendar({ ranges, months = 1, legend = true, className }: { ranges: CalRange[]; months?: 1 | 2; legend?: boolean; className?: string }) {
   const today = todayManila();
   const [offset, setOffset] = useState(0);
-  const dayKinds = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const r of ranges) {
-      // walk each Manila day the range touches ([start, end))
-      let t = new Date(r.start).getTime();
-      const end = new Date(r.end).getTime();
-      const last = isoToManilaDate(new Date(end - 1));
-      for (let guard = 0; guard < 400; guard++) {
-        const day = isoToManilaDate(new Date(t));
-        if (!map.has(day) || r.kind === "SELECTED") map.set(day, r.kind);
-        if (day >= last) break;
-        t += 86400000;
-      }
-    }
-    return map;
-  }, [ranges]);
+  const [picked, setPicked] = useState<string | null>(null);
+  const covers = useMemo(() => coverDays(ranges), [ranges]);
+  const describe = (day: string) => {
+    const c = covers.get(day)!;
+    return `${KIND_STYLE[c.kind]?.label ?? "Taken"} ${c.hours}${c.partial ? ". The rest of the day is free." : "."}`;
+  };
+  const shown = picked && covers.get(picked);
 
   const startY = Number(today.slice(0, 4));
   const startM = Number(today.slice(5, 7)) - 1;
@@ -57,13 +51,17 @@ export function MonthCalendar({ ranges, months = 1, legend = true, className }: 
                 {Array.from({ length: firstDow }, (_, k) => <span key={`b${k}`} />)}
                 {Array.from({ length: days }, (_, k) => {
                   const key = ymd(y, m, k + 1);
-                  const kind = dayKinds.get(key);
-                  const past = key < today;
+                  const c = covers.get(key);
+                  const style = c && KIND_STYLE[c.kind];
+                  const cell = cn("relative grid aspect-square place-items-center rounded-lg text-sm", style && !c.partial ? style.cell : "bg-white text-navy-900",
+                    key < today && "opacity-35", key === today && "ring-2 ring-electric ring-inset", picked === key && "outline-2 outline-offset-1 outline-navy-900");
+                  if (!c) return <span key={key} className={cell}>{k + 1}</span>;
                   return (
-                    <span key={key} title={kind ? KIND_STYLE[kind]?.label : undefined}
-                      className={cn("grid aspect-square place-items-center rounded-lg text-sm", kind ? KIND_STYLE[kind]?.cell : "bg-white text-navy-900", past && "opacity-35", key === today && "ring-2 ring-electric ring-inset")}>
+                    <button key={key} type="button" title={describe(key)} aria-label={`${formatDate(`${key}T12:00:00+08:00`, { month: "long", day: "numeric" })}: ${describe(key)}`}
+                      onClick={() => setPicked(picked === key ? null : key)} className={cell}>
                       {k + 1}
-                    </span>
+                      {c.partial && <span className={cn("absolute inset-x-1.5 bottom-1 h-1 rounded-full", style?.dot ?? "bg-slate-400")} />}
+                    </button>
                   );
                 })}
               </div>
@@ -71,9 +69,17 @@ export function MonthCalendar({ ranges, months = 1, legend = true, className }: 
           );
         })}
       </div>
+      {shown && (
+        <p className="mt-3 rounded-xl bg-canvas px-3 py-2 text-sm text-navy-900" aria-live="polite">
+          <span className="font-semibold">{formatDate(`${picked}T12:00:00+08:00`, { weekday: "short", month: "short", day: "numeric" })}:</span> {describe(picked)}
+        </p>
+      )}
       {legend && (
         <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-sm border bg-white" /> Available</span>
+          {[...covers.values()].some((c) => c.partial) && (
+            <span className="flex items-center gap-1.5"><span className="relative size-2.5 overflow-hidden rounded-sm border bg-white"><span className="absolute inset-x-0 bottom-0 h-[3px] bg-slate-400" /></span> Partly available</span>
+          )}
           {[...new Set(ranges.map((r) => KIND_STYLE[r.kind]?.label))].filter(Boolean).map((label) => {
             const style = Object.values(KIND_STYLE).find((s) => s.label === label)!;
             return <span key={label} className="flex items-center gap-1.5"><span className={cn("size-2.5 rounded-sm", style.dot)} /> {label}</span>;

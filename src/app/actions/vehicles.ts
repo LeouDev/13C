@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { fail, invalid, ok, type ActionResult } from "@/lib/actions";
 import { createClient } from "@/lib/supabase/server";
-import { manilaToISO } from "@/lib/format";
+import { blockWindow } from "@/lib/calendar";
 import { fleetSchema, pricingSchema, serviceLogSchema, vehicleSchema } from "@/lib/validation";
 import type { Enums } from "@/types/database";
 
@@ -82,27 +82,30 @@ export async function deleteVehicleImage(imageId: string): Promise<ActionResult>
   return ok();
 }
 
+const time = z.string().regex(/^\d{2}:\d{2}$/, "Choose a time").optional();
 const blockSchema = z.object({
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a start date"),
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose an end date"),
+  fromTime: time,
+  toTime: time,
   reason: z.enum(["BLOCKED", "MAINTENANCE"]),
   note: z.string().trim().max(300).optional(),
-}).refine((b) => b.to >= b.from, { message: "End date must be on or after the start date", path: ["to"] });
+}).refine((b) => b.to >= b.from, { message: "End date must be on or after the start date", path: ["to"] })
+  .refine((b) => { const w = blockWindow(b); return w.ends_at > w.starts_at; }, { message: "End must be after the start", path: ["toTime"] });
 
-/** Blocks whole days (Manila time); `to` is inclusive. */
+/** Blocks whole days (Manila time, `to` included), or set hours: from `fromTime` on `from` to `toTime` on `to`. */
 export async function addBlock(vehicleId: string, input: z.input<typeof blockSchema>): Promise<ActionResult> {
   const parsed = blockSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
-  const { from, to, reason, note } = parsed.data;
-  const end = new Date(new Date(manilaToISO(to, "00:00")).getTime() + 86400000).toISOString();
+  const { reason, note, fromTime } = parsed.data;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase.from("vehicle_blocked_dates").insert({
-    vehicle_id: vehicleId, starts_at: manilaToISO(from, "00:00"), ends_at: end, reason, note: note || null, created_by: user?.id,
+    vehicle_id: vehicleId, ...blockWindow(parsed.data), reason, note: note || null, created_by: user?.id,
   } as never);
   if (error) return fail(error);
   refresh();
-  return ok(undefined, reason === "MAINTENANCE" ? "Maintenance scheduled." : "Dates blocked.");
+  return ok(undefined, reason === "MAINTENANCE" ? "Maintenance scheduled." : fromTime ? "Hours blocked." : "Dates blocked.");
 }
 
 export async function removeBlock(blockId: string): Promise<ActionResult> {

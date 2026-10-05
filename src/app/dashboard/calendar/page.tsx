@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "cn";
-import { KIND_STYLE } from "@/lib/calendar";
+import { coverDays, KIND_STYLE } from "@/lib/calendar";
 import { EmptyState, PageHeader } from "@/components/common/states";
 import { requireBusiness } from "@/lib/auth";
 import { BLOCKING_STATUSES } from "@/lib/bookings/status";
@@ -37,7 +37,7 @@ export default async function FleetCalendarPage({ searchParams }: PageProps<"/da
 
   return (
     <>
-      <PageHeader eyebrow="Availability" title="Fleet calendar" description="Confirmed bookings, pending requests, blocks and maintenance across all vehicles."
+      <PageHeader eyebrow="Availability" title="Fleet calendar" description="Confirmed bookings, pending requests, blocks and maintenance across all vehicles. A thin bar means only part of the day is taken."
         actions={<div className="flex items-center gap-1 rounded-full bg-white p-1 ring-1 ring-border">
           <Link href={`?m=${shift(-1)}`} className="grid size-8 place-items-center rounded-full hover:bg-canvas" aria-label="Previous month"><ChevronLeft className="size-4" /></Link>
           <span className="px-2 text-sm font-semibold">{new Date(Date.UTC(y, mo - 1, 1)).toLocaleString("en-PH", { month: "long", year: "numeric", timeZone: "UTC" })}</span>
@@ -55,7 +55,12 @@ export default async function FleetCalendarPage({ searchParams }: PageProps<"/da
               </tr>
             </thead>
             <tbody>
-              {vehicles.map((v) => (
+              {vehicles.map((v) => {
+                const cover = coverDays([
+                  ...(bookings ?? []).filter((x) => x.vehicle_id === v.id).map((x) => ({ start: x.pickup_at, end: x.return_at, kind: BLOCKING_STATUSES.includes(x.status) ? "BOOKED" : "PENDING" })),
+                  ...(blocks ?? []).filter((x) => x.vehicle_id === v.id).map((x) => ({ start: x.starts_at, end: x.ends_at, kind: x.reason })),
+                ]);
+                return (
                 <tr key={v.id} className="border-t">
                   <td className="sticky left-0 z-10 bg-white p-3">
                     <Link href={`/dashboard/vehicles/${v.id}?tab=availability`} className="font-semibold text-navy-900 hover:text-electric">{v.make} {v.model}</Link>
@@ -64,23 +69,30 @@ export default async function FleetCalendarPage({ searchParams }: PageProps<"/da
                   {Array.from({ length: days }, (_, i) => {
                     const b = bookings?.find((x) => x.vehicle_id === v.id && covers(x.pickup_at, x.return_at, i + 1) && BLOCKING_STATUSES.includes(x.status))
                       ?? bookings?.find((x) => x.vehicle_id === v.id && covers(x.pickup_at, x.return_at, i + 1));
-                    const blk = !b && blocks?.find((x) => x.vehicle_id === v.id && covers(x.starts_at, x.ends_at, i + 1));
-                    const kind = b ? (BLOCKING_STATUSES.includes(b.status) ? "BOOKED" : "PENDING") : blk ? blk.reason : null;
-                    const cell = <span className={cn("block h-8 rounded-md", kind ? KIND_STYLE[kind]?.cell : "bg-canvas/60")} />;
+                    const c = cover.get(dayKey(i + 1));
+                    const style = c && KIND_STYLE[c.kind];
+                    const cell = (
+                      <span className={cn("relative block h-8 rounded-md", style && !c.partial ? style.cell : "bg-canvas/60")}>
+                        {c?.partial && <span className={cn("absolute inset-x-1 bottom-1 h-1.5 rounded-full", style?.dot)} />}
+                      </span>
+                    );
+                    const what = c ? `${style?.label ?? c.kind} ${c.hours}` : undefined;
                     return (
-                      <td key={i} className="p-0.5" title={b ? `${b.reference} · ${b.status}` : kind ?? undefined}>
-                        {b ? <Link href={`/dashboard/bookings/${b.id}`} aria-label={`Booking ${b.reference}`}>{cell}</Link> : cell}
+                      <td key={i} className="p-0.5" title={b ? `${b.reference} · ${what}` : what}>
+                        {b ? <Link href={`/dashboard/bookings/${b.id}`} aria-label={`Booking ${b.reference}: ${what}`}>{cell}</Link> : cell}
                       </td>
                     );
                   })}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
       <div className="mt-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
         {(["BOOKED", "PENDING", "BLOCKED", "MAINTENANCE"] as const).map((k) => <span key={k} className="flex items-center gap-1.5"><span className={cn("size-3 rounded-sm", KIND_STYLE[k]!.dot)} />{KIND_STYLE[k]!.label}</span>)}
+        <span className="flex items-center gap-1.5"><span className="relative size-3 overflow-hidden rounded-sm bg-canvas"><span className="absolute inset-x-0 bottom-0 h-1 bg-slate-400" /></span>Part of the day</span>
       </div>
     </>
   );

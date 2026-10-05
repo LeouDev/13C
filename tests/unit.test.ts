@@ -10,6 +10,7 @@ import { PLAN_PRICE_CENTAVOS, PLANS } from "@/lib/constants";
 import { renderContractPdf, toWinAnsi, type ContractPdfInput } from "@/lib/contracts/pdf";
 import { answerText, faqAnswer } from "@/lib/assistant";
 import { cleanText, parseFaqs } from "@/lib/store-writer";
+import { blockWindow, coverDays, formatSpan } from "@/lib/calendar";
 import { friendlyError } from "@/lib/errors";
 import { browserLabel, formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
@@ -332,5 +333,41 @@ Q: No answer here?`;
       { q: "How do I pay?", a: "GCash, Maya or cash. We confirm when you pick up." },
     ]);
     expect(parseFaqs("A valid license is required.")).toEqual([]);
+  });
+});
+
+describe("calendar: blocks and partly taken days (Asia/Manila)", () => {
+  const at = (day: string, time: string) => new Date(`${day}T${time}:00+08:00`).toISOString();
+
+  it("blocks whole days or set hours", () => {
+    expect(blockWindow({ from: "2026-10-12", to: "2026-10-13" })).toEqual({ starts_at: at("2026-10-12", "00:00"), ends_at: at("2026-10-14", "00:00") });
+    expect(blockWindow({ from: "2026-10-12", to: "2026-10-12", fromTime: "13:00", toTime: "17:00" })).toEqual({ starts_at: at("2026-10-12", "13:00"), ends_at: at("2026-10-12", "17:00") });
+  });
+
+  it("marks days a range only partly takes", () => {
+    const days = coverDays([{ start: at("2026-10-10", "10:00"), end: at("2026-10-12", "10:00"), kind: "BOOKED" }]);
+    expect([...days.keys()]).toEqual(["2026-10-10", "2026-10-11", "2026-10-12"]);
+    expect(days.get("2026-10-10")).toEqual({ kind: "BOOKED", partial: true, hours: "from 10:00 AM" });
+    expect(days.get("2026-10-11")).toEqual({ kind: "BOOKED", partial: false, hours: "all day" });
+    expect(days.get("2026-10-12")).toEqual({ kind: "BOOKED", partial: true, hours: "until 10:00 AM" });
+  });
+
+  it("joins ranges on the same day, and the busier kind shows", () => {
+    const days = coverDays([
+      { start: at("2026-10-12", "13:00"), end: at("2026-10-12", "17:00"), kind: "BLOCKED" },
+      { start: at("2026-10-12", "08:00"), end: at("2026-10-12", "10:00"), kind: "BOOKED" },
+      { start: at("2026-10-13", "00:00"), end: at("2026-10-13", "12:00"), kind: "MAINTENANCE" },
+      { start: at("2026-10-13", "12:00"), end: at("2026-10-14", "00:00"), kind: "BLOCKED" },
+    ]);
+    expect(days.get("2026-10-12")).toEqual({ kind: "BOOKED", partial: true, hours: "8:00 AM–10:00 AM, 1:00 PM–5:00 PM" });
+    expect(days.get("2026-10-13")).toEqual({ kind: "MAINTENANCE", partial: false, hours: "all day" });
+    expect(days.has("2026-10-14")).toBe(false); // ends at midnight
+  });
+
+  it("describes a block", () => {
+    expect(formatSpan(at("2026-10-12", "00:00"), at("2026-10-13", "00:00"))).toBe("Oct 12, 2026");
+    expect(formatSpan(at("2026-10-12", "00:00"), at("2026-10-15", "00:00"))).toBe("Oct 12, 2026 – Oct 14, 2026");
+    expect(formatSpan(at("2026-10-12", "13:00"), at("2026-10-12", "17:00"))).toBe("Oct 12, 2026, 1:00 PM–5:00 PM");
+    expect(formatSpan(at("2026-10-12", "18:00"), at("2026-10-14", "08:00"))).toBe("Oct 12, 2026, 6:00 PM – Oct 14, 2026, 8:00 AM");
   });
 });
