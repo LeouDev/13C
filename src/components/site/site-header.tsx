@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { Building2, CalendarCheck, Heart, LayoutDashboard, LogOut, Menu, MessageSquare, Shield, User } from "lucide-react";
+import { Building2, CalendarCheck, Heart, LayoutDashboard, LogOut, MessageSquare, Shield, User } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
 import { Logo } from "@/components/brand/logo";
+import { MobileMenu } from "@/components/site/mobile-menu";
 import { NotificationBell } from "@/components/site/notification-bell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { buttonVariants } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { getCurrentUser, getMemberships } from "@/lib/auth";
 import { initials } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -88,33 +88,27 @@ export async function SiteHeader() {
               <Link href="/signup" className={buttonVariants({ className: "hidden h-10 rounded-full px-5 sm:inline-flex" })}>Get started</Link>
             </>
           )}
-          <Sheet>
-            <SheetTrigger className="grid size-10 place-items-center rounded-full hover:bg-black/5 md:hidden" aria-label="Open menu">
-              <Menu className="size-5" />
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[85vw] max-w-sm p-6">
-              <SheetTitle className="sr-only">Menu</SheetTitle>
-              <Logo className="h-8" />
-              <nav className="mt-6 grid gap-1" aria-label="Mobile">
-                {NAV.map((n) => (
-                  <Link key={n.href} href={n.href} className="rounded-xl px-3 py-3 text-base font-medium hover:bg-canvas">{n.label}</Link>
-                ))}
-                {user && (
-                  <>
-                    <Link href="/account/bookings" className="rounded-xl px-3 py-3 text-base font-medium hover:bg-canvas">My bookings</Link>
-                    <Link href="/account/messages" className="rounded-xl px-3 py-3 text-base font-medium hover:bg-canvas">Messages</Link>
-                    {memberships.length > 0 && <Link href="/dashboard" className="rounded-xl px-3 py-3 text-base font-medium hover:bg-canvas">Business dashboard</Link>}
-                  </>
-                )}
-              </nav>
-              {!user && (
-                <div className="mt-auto grid gap-2">
-                  <Link href="/signup" className={buttonVariants({ size: "xl" })}>Get started</Link>
-                  <Link href="/login" className={buttonVariants({ size: "xl", variant: "outline" })}>Sign in</Link>
-                </div>
+          <MobileMenu>
+            <Logo className="h-8" />
+            <nav className="mt-6 grid gap-1" aria-label="Mobile">
+              {NAV.map((n) => (
+                <Link key={n.href} href={n.href} className="rounded-xl px-3 py-3 text-base font-medium hover:bg-canvas">{n.label}</Link>
+              ))}
+              {user && (
+                <>
+                  <Link href="/account/bookings" className="rounded-xl px-3 py-3 text-base font-medium hover:bg-canvas">My bookings</Link>
+                  <Link href="/account/messages" className="rounded-xl px-3 py-3 text-base font-medium hover:bg-canvas">Messages</Link>
+                  {memberships.length > 0 && <Link href="/dashboard" className="rounded-xl px-3 py-3 text-base font-medium hover:bg-canvas">Business dashboard</Link>}
+                </>
               )}
-            </SheetContent>
-          </Sheet>
+            </nav>
+            {!user && (
+              <div className="mt-auto grid gap-2">
+                <Link href="/signup" className={buttonVariants({ size: "xl" })}>Get started</Link>
+                <Link href="/login" className={buttonVariants({ size: "xl", variant: "outline" })}>Sign in</Link>
+              </div>
+            )}
+          </MobileMenu>
         </div>
       </div>
     </header>
