@@ -99,7 +99,7 @@ export function TwoStepPanel({ on }: { on: boolean }) {
     <div className="grid gap-3">
       <p className="text-sm text-muted-foreground">
         Each sign-in also asks for a 6-digit code from an app on your phone (Google Authenticator, Microsoft Authenticator or similar), so a stolen password
-        isn&apos;t enough to get in. Recommended for business owners: it guards your payment details.
+        isn&apos;t enough to get in.
       </p>
       <Button variant="outline" className="justify-self-start" disabled={pending} onClick={() => start(async () => {
         const r = await startTwoStep();

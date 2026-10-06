@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
 import { signInAgain } from "@/app/actions/auth";
 import { PaymentMethodsEditor } from "@/components/business/payment-methods-editor";
 import { PageHeader } from "@/components/common/states";
@@ -28,12 +26,6 @@ export default async function PaymentSettingsPage() {
           <p>To change payment details, sign in again first. It keeps someone using a device you left signed in from redirecting your payments.</p>
           <Button type="submit" variant="outline" className="shrink-0">Sign in again</Button>
         </form>
-      )}
-      {canEdit && !user.twoStep && (
-        <p className="mb-4 flex gap-2 text-sm text-muted-foreground">
-          <ShieldCheck className="size-4 shrink-0 text-electric" />
-          <span>Protect these details: <Link href="/account#two-step" className="font-semibold text-electric hover:underline">turn on two-step sign-in</Link>, so a stolen password isn&apos;t enough to change them.</span>
-        </p>
       )}
       <PaymentMethodsEditor businessId={business.id} existing={data ?? []} canEdit={canEdit} />
     </>

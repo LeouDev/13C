@@ -40,8 +40,11 @@ export default async function AccountPage() {
         <h2 className="mb-1 font-semibold text-navy-900">Security</h2>
         <p className="mb-3 text-sm text-muted-foreground">Changing your password signs you out on your other devices.</p>
         <PasswordForm />
-        <h3 id="two-step" className="mt-6 mb-2 scroll-mt-24 text-sm font-semibold text-navy-900">Two-step sign-in</h3>
-        <TwoStepPanel on={user.twoStep} />
+        {/* On hold for owners and renters during launch (easier sign-in); admins can use it, and anyone who has it can turn it off. */}
+        {(user.is_admin || user.twoStep) && <>
+          <h3 id="two-step" className="mt-6 mb-2 scroll-mt-24 text-sm font-semibold text-navy-900">Two-step sign-in</h3>
+          <TwoStepPanel on={user.twoStep} />
+        </>}
       </section>
       <section className={card}>
         <h2 className="mb-1 font-semibold text-navy-900">Privacy</h2>
