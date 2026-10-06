@@ -64,7 +64,7 @@ Trust and privacy
 - Either side can report a booking to 13C with "Report a problem" on the booking (for example a renter who didn't show up, or a request to pay a different account). The other side isn't told.
 - Payment safety: owners get an email whenever their payment details change, and renters see a warning if the details changed after they booked. Owners can add a GCash, Maya or bank QR code in Payment Settings so renters don't mistype the number. Renters are told to pay only the account on their booking page, never one sent in chat.
 - Licenses, IDs, contracts and signatures are stored privately and never shown publicly. Businesses see a renter's license and ID with their own business name, the booking and the date stamped across them, and can't download the originals. 13C follows the Philippine Data Privacy Act; privacy requests go to privacy@13c.online.
-- Account security: changing payment details on a verified business needs a sign-in from the last 15 minutes. Owners get an email whenever payment details change.
+- Account security: owners get an email whenever their payment details change.
 
 Not offered yet: GPS tracking (coming on Business), processing rental payments, insurance, mobile apps and custom domains.
 

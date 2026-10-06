@@ -13,9 +13,9 @@ export default async function PaymentSettingsPage() {
   const supabase = await createClient();
   const { data } = await supabase.from("payment_methods").select("*").eq("business_id", business.id);
   const canEdit = hasRole(role, "OWNER");
-  // Changes on a verified business need a sign-in from the last 15 minutes (savePaymentMethods checks the same).
+  // With FRESH_SIGN_IN_MS set (paused during launch), changes on a verified business need a recent sign-in; savePaymentMethods checks the same.
   // eslint-disable-next-line react-hooks/purity -- a request-time check, rendered once on the server
-  const stale = canEdit && business.status === "VERIFIED" && Date.now() - user.signedInAt > FRESH_SIGN_IN_MS;
+  const stale = !!FRESH_SIGN_IN_MS && canEdit && business.status === "VERIFIED" && Date.now() - user.signedInAt > FRESH_SIGN_IN_MS;
   return (
     <>
       <PageHeader eyebrow="Payments" title="Payment settings" description="Choose how customers pay you. 13C never processes or holds your money. Payment details are shown only to renters with a booking, and owners get an email whenever they change." />

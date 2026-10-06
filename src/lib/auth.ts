@@ -42,8 +42,8 @@ export async function requireUser(next = "/") {
   return user;
 }
 
-/** How recently someone must have signed in to change payment details */
-export const FRESH_SIGN_IN_MS = 15 * 60_000;
+/** How recently someone must have signed in to change payment details. null: paused during launch (it was 15 * 60_000). */
+export const FRESH_SIGN_IN_MS: number | null = null;
 
 export async function requireAdmin() {
   const user = await requireUser("/admin");

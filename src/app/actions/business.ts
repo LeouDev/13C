@@ -80,13 +80,15 @@ export async function setStoreCover(businessId: string, path: string | null): Pr
   return ok();
 }
 
-/** Once the business is verified (renters may be paying), changes need a sign-in from the last 15 minutes. */
+/** With FRESH_SIGN_IN_MS set, changes on a verified business (renters may be paying) need a recent sign-in. */
 export async function savePaymentMethods(businessId: string, input: z.input<typeof paymentMethodsSchema>): Promise<ActionResult> {
   const parsed = paymentMethodsSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
   const supabase = await createClient();
-  const [user, { data: biz }] = await Promise.all([getCurrentUser(), supabase.from("businesses").select("status").eq("id", businessId).maybeSingle()]);
-  if (biz?.status === "VERIFIED" && Date.now() - (user?.signedInAt ?? 0) > FRESH_SIGN_IN_MS) return { ok: false, error: SIGN_IN_AGAIN };
+  if (FRESH_SIGN_IN_MS) {
+    const [user, { data: biz }] = await Promise.all([getCurrentUser(), supabase.from("businesses").select("status").eq("id", businessId).maybeSingle()]);
+    if (biz?.status === "VERIFIED" && Date.now() - (user?.signedInAt ?? 0) > FRESH_SIGN_IN_MS) return { ok: false, error: SIGN_IN_AGAIN };
+  }
   const { data: existing, error: readError } = await supabase.from("payment_methods").select("method").eq("business_id", businessId);
   if (readError) return fail(readError);
   const have = new Set(existing.map((m) => m.method));
