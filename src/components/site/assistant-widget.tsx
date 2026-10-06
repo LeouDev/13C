@@ -58,7 +58,7 @@ export function DashboardHelp() {
           greeting="Hi! Ask me how to do anything in 13C: cars, bookings, contracts, your store and more."
           suggestions={["How do I add a car?", "How do I block dates?", "How do I send a contract?", "Why isn't my store public?"]}
           note="AI answers can be wrong. For account problems, email support@13c.online."
-          className="top-16 sm:top-16 sm:right-4 sm:bottom-auto sm:h-[min(600px,calc(100svh-6rem))]" />
+          className="top-16 sm:top-16 sm:right-4 sm:bottom-auto sm:h-[min(600px,calc(100svh-6rem-var(--app-bottom,0px)))]" />
       )}
     </>
   );
@@ -79,7 +79,7 @@ export function StoreAssistant({ businessId, slug, name, accent, isDemo, signedI
   const onCarPage = pathname.split("/").filter(Boolean).length > 1; // car pages have a booking bar at the bottom on phones
   return (
     <>
-      <FloatingButton open={open} label="Ask us" style={{ background: accent }} className={cn("hover:brightness-110", onCarPage && "max-lg:bottom-24")}
+      <FloatingButton open={open} label="Ask us" style={{ background: accent }} className={cn("hover:brightness-110", onCarPage && "max-lg:bottom-[calc(6rem+var(--app-bottom,0px))]")}
         onClick={() => { setOpen(!open); setUsed(true); }} />
       {used && (
         <ChatPanel open={open} onClose={() => setOpen(false)} context={{ context: "store", store: slug }} accent={accent}
@@ -98,7 +98,7 @@ export function StoreAssistant({ businessId, slug, name, accent, isDemo, signedI
 function FloatingButton({ open, label, className, style, onClick }: { open: boolean; label: string; className?: string; style?: React.CSSProperties; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} aria-expanded={open} aria-controls="assistant-panel" style={style}
-      className={cn("fixed right-4 bottom-4 z-50 flex h-14 items-center gap-2 rounded-full px-5 font-semibold text-white shadow-[0_10px_30px_rgb(18_31_59/0.35)] transition sm:right-6 sm:bottom-6",
+      className={cn("fixed right-4 bottom-[calc(1rem+var(--app-bottom,0px))] z-50 flex h-14 items-center gap-2 rounded-full px-5 font-semibold text-white shadow-[0_10px_30px_rgb(18_31_59/0.35)] transition sm:right-6 sm:bottom-[calc(1.5rem+var(--app-bottom,0px))]",
         open && "max-sm:hidden", className)}>
       {open ? <X className="size-5" /> : <MessageCircle className="size-5" />}
       <span>{open ? "Close" : label}</span>
@@ -168,7 +168,7 @@ function ChatPanel({ open, onClose, context, title, subtitle, greeting, suggesti
 
   return createPortal(
     <section id="assistant-panel" role="dialog" aria-label={title} hidden={!open} onKeyDown={(e) => e.key === "Escape" && onClose()}
-      className={cn("fixed inset-x-3 top-20 bottom-3 z-50 flex flex-col overflow-hidden rounded-3xl bg-white shadow-[0_20px_60px_rgb(10_20_48/0.35)] ring-1 ring-black/5 sm:inset-x-auto sm:top-auto sm:right-6 sm:bottom-24 sm:h-[min(600px,calc(100svh-8rem))] sm:w-[390px]", className)}>
+      className={cn("fixed inset-x-3 top-20 bottom-[calc(0.75rem+var(--app-bottom,0px))] z-50 flex flex-col overflow-hidden rounded-3xl bg-white shadow-[0_20px_60px_rgb(10_20_48/0.35)] ring-1 ring-black/5 sm:inset-x-auto sm:top-auto sm:right-6 sm:bottom-[calc(6rem+var(--app-bottom,0px))] sm:h-[min(600px,calc(100svh-8rem-var(--app-bottom,0px)))] sm:w-[390px]", className)}>
       <header className="flex items-start gap-3 bg-navy-900 px-5 py-4 text-white" style={accent ? { background: accent } : undefined}>
         <div className="min-w-0 flex-1">
           <p className="truncate font-display text-lg font-bold">{title}</p>

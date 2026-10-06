@@ -6,6 +6,7 @@ import { BusinessSwitcher } from "@/components/dashboard/business-switcher";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { DashboardMobileNav } from "@/components/dashboard/mobile-nav";
 import { PlanBanner } from "@/components/dashboard/plan-banner";
+import { DashboardTabBar } from "@/components/site/app-tab-bar";
 import { DashboardHelp } from "@/components/site/assistant-widget";
 import { NotificationBell } from "@/components/site/notification-bell";
 import { requireBusiness } from "@/lib/auth";
@@ -52,6 +53,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
           <div className="ml-auto flex items-center gap-1 sm:ml-0"><DashboardHelp /><NotificationBell userId={user.id} initialUnread={notes.count ?? 0} /></div>
         </header>
         <main className="mx-auto w-full min-w-0 max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8"><PlanBanner sub={sub.data} />{children}</main>
+        <DashboardTabBar badges={badges} />
       </div>
     </div>
   );

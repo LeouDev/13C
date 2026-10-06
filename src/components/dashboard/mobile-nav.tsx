@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
+/** Opens this menu from elsewhere (the Home Screen app's "More" tab, components/site/app-tab-bar.tsx). */
+export const OPEN_DASHBOARD_MENU = "13c:dashboard-menu";
+
 export function DashboardMobileNav({ badges, header }: { badges: { requests: number; unread: number }; header: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const show = () => setOpen(true);
+    window.addEventListener(OPEN_DASHBOARD_MENU, show);
+    return () => window.removeEventListener(OPEN_DASHBOARD_MENU, show);
+  }, []);
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger className="grid size-10 place-items-center rounded-full hover:bg-black/5 lg:hidden" aria-label="Open dashboard menu">

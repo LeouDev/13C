@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { z } from "zod";
 import { fail, ok, type ActionResult } from "@/lib/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -29,6 +29,7 @@ export async function sendMessage(conversationId: string, text: string): Promise
 export async function markConversationRead(conversationId: string): Promise<void> {
   const supabase = await createClient();
   await supabase.rpc("mark_conversation_read", { p_conversation_id: conversationId });
+  refresh(); // the unread badges (app tab bar, dashboard menu) are in layouts, which navigation doesn't re-render
 }
 
 const reportSchema = z.object({

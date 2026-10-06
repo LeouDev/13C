@@ -209,7 +209,7 @@ export default async function VehiclePage({ params, searchParams }: PageProps<"/
       </div>
 
       {bookable && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 p-3 backdrop-blur lg:hidden">
+        <div className="fixed inset-x-0 bottom-[var(--app-bottom,0px)] z-30 border-t bg-white/95 p-3 backdrop-blur lg:hidden">
           <div className="container-page flex items-center gap-3">
             <p className="flex-1"><span className="font-display text-xl font-bold">{formatPHP(p?.daily_rate)}</span><span className="text-sm text-muted-foreground"> /day</span></p>
             <Link href="#book" className="inline-flex h-12 items-center rounded-full px-6 font-semibold text-white" style={{ background: "var(--store-accent)" }}>Request Booking</Link>

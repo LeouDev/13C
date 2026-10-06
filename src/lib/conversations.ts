@@ -15,6 +15,15 @@ export async function customerConversations(userId: string): Promise<Conversatio
   }));
 }
 
+/** Chats with something the renter hasn't read (same rule as customerConversations), for the app's Messages tab. */
+export async function customerUnreadCount(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase.from("conversations").select("last_message_at, last_sender_role, customer_last_read_at")
+    .eq("customer_id", userId).order("last_message_at", { ascending: false }).limit(100);
+  return (data ?? []).filter((c) => c.last_sender_role !== "CUSTOMER"
+    && (!c.customer_last_read_at || c.customer_last_read_at < c.last_message_at)).length;
+}
+
 export async function businessConversations(businessId: string, filter?: "inquiries") {
   const supabase = await createClient();
   const { data } = await supabase.from("conversations")

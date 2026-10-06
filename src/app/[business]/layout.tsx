@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Globe, LayoutDashboard, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
@@ -6,10 +7,12 @@ import { openDashboard } from "@/app/actions/business";
 import { FacebookIcon, InstagramIcon } from "@/components/common/social-icons";
 import { Logo } from "@/components/brand/logo";
 import { VerifiedBadge } from "@/components/common/badges";
+import { SiteTabBar } from "@/components/site/app-tab-bar";
 import { StoreAssistant } from "@/components/site/assistant-widget";
 import { BusinessLogo } from "@/components/common/vehicle-image";
 import { getCurrentUser, getMemberships } from "@/lib/auth";
 import { TRIAL_DAYS } from "@/lib/constants";
+import { customerUnreadCount } from "@/lib/conversations";
 import { getStorefront, storeSections } from "@/lib/queries";
 
 export default async function StorefrontLayout({ children, params }: LayoutProps<"/[business]">) {
@@ -115,6 +118,7 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
           </div>
         </div>
       </footer>
+      <Suspense><SiteTabBar signedIn={!!user} unread={user ? await customerUnreadCount(user.id) : 0} /></Suspense>
     </div>
   );
 }
