@@ -33,7 +33,9 @@ describe("MVP workflow (35 steps)", () => {
     // 2. Submit verification (private documents)
     const doc = `${businessId}/dti.pdf`;
     must(await owner.client.storage.from("business-docs").upload(doc, new Blob(["%PDF-1.4"], { type: "application/pdf" }), { contentType: "application/pdf" }));
-    must(await owner.client.rpc("submit_business_verification", { p_business_id: businessId, p_documents: [{ type: "REGISTRATION", path: doc, name: "dti.pdf" }] }));
+    must(await owner.client.rpc("submit_business_verification", { p_business_id: businessId, p_documents: [
+      { type: "REPRESENTATIVE_ID", path: doc, name: "id.pdf" }, { type: "REGISTRATION", path: doc, name: "dti.pdf" }, { type: "CAR_PHOTO", path: doc, name: "car.jpg" },
+    ] }));
     // 3. Admin approves
     must(await admin.client.rpc("admin_review_business", { p_business_id: businessId, p_decision: "VERIFIED" }));
     // 4–6. Storefront, logo, cover

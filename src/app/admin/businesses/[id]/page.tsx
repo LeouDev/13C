@@ -6,7 +6,8 @@ import { BusinessDecision, DocumentLink } from "@/components/admin/business-revi
 import { BUSINESS_STATUS_TONE, Pill } from "@/components/common/badges";
 import { PageHeader } from "@/components/common/states";
 import { BusinessLogo } from "@/components/common/vehicle-image";
-import { formatDateTime, labelize } from "@/lib/format";
+import { BUSINESS_DOC_TYPES } from "@/lib/constants";
+import { formatDate, formatDateTime, labelize } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Business review" };
@@ -63,7 +64,12 @@ export default async function AdminBusinessPage({ params }: PageProps<"/admin/bu
                 <p className="mb-2 text-xs text-muted-foreground">{formatDateTime(v.created_at)} · {v.decision ? labelize(v.decision) : "Pending"}</p>
                 {v.submitter_note && <p className="mb-2 text-sm italic">“{v.submitter_note}”</p>}
                 <div className="grid gap-2">
-                  {(v.documents as { type: string; path: string; name: string }[]).map((d) => <DocumentLink key={d.path} path={d.path} name={`${labelize(d.type)} — ${d.name}`} />)}
+                  {(v.documents as { type: string; path: string; name: string }[]).map((d) => (
+                    <DocumentLink key={d.path} path={d.path} name={`${BUSINESS_DOC_TYPES.find((t) => t.value === d.type)?.label ?? labelize(d.type)} — ${d.name}`} />
+                  ))}
+                  {!v.decision && (v.documents as { type: string }[]).some((d) => d.type === "CAR_PHOTO") && (
+                    <p className="text-xs text-muted-foreground">Car photo: check the plate is readable and the paper shows the business name and a date near {formatDate(v.created_at)}.</p>
+                  )}
                 </div>
               </div>
             ))}

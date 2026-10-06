@@ -9,24 +9,16 @@ import { patchStorefront, registerBusiness, savePaymentMethods, setBusinessLogo,
 import { AiWriteButton } from "@/components/business/ai-write";
 import { BusinessForm } from "@/components/business/business-form";
 import { Field } from "@/components/common/field";
-import { DocumentUpload, ImageUpload, type UploadedDoc } from "@/components/common/uploads";
+import { VerificationDocs } from "@/components/business/verification-docs";
+import { ImageUpload, type UploadedDoc } from "@/components/common/uploads";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { PAYMENT_METHODS } from "@/lib/constants";
+import { missingVerificationDocs, PAYMENT_METHODS } from "@/lib/constants";
 import type { Enums } from "@/types/database";
 
 const STEPS = ["Business details", "Branding", "Verification & payments"];
-export const DOC_TYPES = [
-  { value: "REGISTRATION", label: "DTI / SEC / CDA registration" },
-  { value: "MAYORS_PERMIT", label: "Mayor's / business permit" },
-  { value: "BIR", label: "BIR certificate (2303)" },
-  { value: "REPRESENTATIVE_ID", label: "Representative's government ID" },
-  { value: "INSURANCE", label: "Fleet insurance" },
-  { value: "BUSINESS_PHOTO", label: "Business photo (office / garage)" },
-  { value: "OTHER", label: "Other" },
-];
 
 type Resume = { id: string; logo_path: string | null; cover_path: string | null; tagline: string | null } | null;
 
@@ -45,7 +37,8 @@ export function RegisterWizard({ resume }: { resume: Resume }) {
 
   function finish() {
     if (!biz) return;
-    if (docs.length === 0) return toast.error("Upload at least one registration document.");
+    const missing = missingVerificationDocs(docs.map((d) => d.type));
+    if (missing.length) return toast.error(`Still needed for verification: ${missing.join("; ").toLowerCase()}.`);
     start(async () => {
       const pm = await savePaymentMethods(biz.id, PAYMENT_METHODS.map((m) => ({
         method: m.value as Enums<"payment_method_type">, is_enabled: methods[m.value]!.on,
@@ -122,9 +115,9 @@ export function RegisterWizard({ resume }: { resume: Resume }) {
       {step === 2 && biz && (
         <div className="grid gap-8">
           <section className="grid gap-3">
-            <h2 className="font-semibold text-navy-900">Registration documents</h2>
-            <p className="text-sm text-muted-foreground">Upload your business registration and permits, plus a photo of your office or garage. 13C reviews every business before it can go live — your store shows <span className="font-semibold text-electric">Verified Business</span> only after approval.</p>
-            <DocumentUpload bucket="business-docs" prefix={biz.id} value={docs} onChange={setDocs} types={DOC_TYPES} />
+            <h2 className="font-semibold text-navy-900">Verification</h2>
+            <p className="text-sm text-muted-foreground">13C checks every business before it can go live, so renters know you&apos;re real. Your store shows <span className="font-semibold text-electric">Verified Business</span> only after approval.</p>
+            <VerificationDocs businessId={biz.id} value={docs} onChange={setDocs} />
           </section>
 
           <section className="grid gap-3">

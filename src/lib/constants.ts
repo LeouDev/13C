@@ -36,6 +36,34 @@ export const PAYMENT_METHODS: { value: Enums<"payment_method_type">; label: stri
   { value: "OTHER", label: "Other" },
 ];
 
+/**
+ * Business verification documents. Applying needs one of each required group (submit_business_verification checks the
+ * same, in supabase/migrations/20261006000042_verification_requirements.sql); "extra" is optional.
+ */
+export const VERIFICATION_GROUPS = [
+  { key: "id", title: "Your government ID", hint: "The representative's valid ID: driver's license, passport, UMID, PhilSys or similar." },
+  { key: "business", title: "One business document", hint: "DTI, SEC or CDA registration, a Mayor's or business permit, a barangay business clearance, or BIR 2303." },
+  { key: "car", title: "A photo of one of your cars", hint: "Plate visible, with a sheet of paper on the car showing your business name and today's date." },
+  { key: "extra", title: "Anything else (optional)", hint: "Fleet insurance, a photo of your office or garage, or another document." },
+] as const;
+export type VerificationGroup = (typeof VERIFICATION_GROUPS)[number]["key"];
+export const BUSINESS_DOC_TYPES: { value: string; label: string; group: VerificationGroup }[] = [
+  { value: "REPRESENTATIVE_ID", label: "Representative's government ID", group: "id" },
+  { value: "REGISTRATION", label: "DTI / SEC / CDA registration", group: "business" },
+  { value: "MAYORS_PERMIT", label: "Mayor's / business permit", group: "business" },
+  { value: "BARANGAY_CLEARANCE", label: "Barangay business clearance", group: "business" },
+  { value: "BIR", label: "BIR certificate (2303)", group: "business" },
+  { value: "CAR_PHOTO", label: "Car photo with today's date", group: "car" },
+  { value: "INSURANCE", label: "Fleet insurance", group: "extra" },
+  { value: "BUSINESS_PHOTO", label: "Business photo (office / garage)", group: "extra" },
+  { value: "OTHER", label: "Other", group: "extra" },
+];
+/** Required groups the documents don't cover yet (titles, in order). */
+export function missingVerificationDocs(types: string[]) {
+  const have = new Set(types.map((t) => BUSINESS_DOC_TYPES.find((d) => d.value === t)?.group));
+  return VERIFICATION_GROUPS.filter((g) => g.key !== "extra" && !have.has(g.key)).map((g) => g.title);
+}
+
 export const PAYMENT_STATUSES: { value: Enums<"payment_status">; label: string }[] = [
   { value: "UNPAID", label: "Unpaid" },
   { value: "PARTIALLY_PAID", label: "Partially paid" },

@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { fail, invalid, ok, type ActionResult } from "@/lib/actions";
 import { BUSINESS_COOKIE } from "@/lib/auth";
-import { POLICY_FIELDS } from "@/lib/constants";
+import { missingVerificationDocs, POLICY_FIELDS } from "@/lib/constants";
 import { draftStoreText, suggestFaqs, type Faq, type StoreTextField } from "@/lib/store-writer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -99,11 +99,13 @@ export async function savePaymentMethods(businessId: string, input: z.input<type
   return ok(undefined, "Payment methods saved.");
 }
 
-const docSchema = z.array(z.object({ type: z.string().max(40), path: z.string().max(300), name: z.string().max(200) })).min(1, "Upload at least one document");
+const docSchema = z.array(z.object({ type: z.string().max(40), path: z.string().max(300), name: z.string().max(200) })).max(30);
 
 export async function submitVerification(businessId: string, documents: z.input<typeof docSchema>, note?: string): Promise<ActionResult> {
   const parsed = docSchema.safeParse(documents);
   if (!parsed.success) return invalid(parsed.error);
+  const missing = missingVerificationDocs(parsed.data.map((d) => d.type));
+  if (missing.length) return { ok: false, error: `Still needed: ${missing.join("; ").toLowerCase()}.` };
   const supabase = await createClient();
   const { error } = await supabase.rpc("submit_business_verification", {
     p_business_id: businessId, p_documents: parsed.data, p_note: note?.slice(0, 2000) || undefined,

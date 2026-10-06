@@ -74,13 +74,16 @@ export type UploadedDoc = { type: string; path: string; name: string };
 
 /** Private document list (business verification). Files go to `bucket/prefix/…`. */
 export function DocumentUpload({
-  bucket, prefix, value, onChange, types,
+  bucket, prefix, value, onChange, types, footer = true,
 }: {
   bucket: "business-docs" | "kyc";
   prefix: string;
   value: UploadedDoc[];
   onChange: (docs: UploadedDoc[]) => void;
+  /** With one type there's nothing to choose, so no picker */
   types: { value: string; label: string }[];
+  /** The file types / privacy line under the list */
+  footer?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [type, setType] = useState(types[0]!.value);
@@ -107,9 +110,11 @@ export function DocumentUpload({
   return (
     <div className="grid gap-3">
       <div className="flex flex-col gap-2 sm:flex-row">
-        <select value={type} onChange={(e) => setType(e.target.value)} className="h-10 rounded-xl border border-input bg-white px-3 text-sm" aria-label="Document type">
-          {types.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-        </select>
+        {types.length > 1 && (
+          <select value={type} onChange={(e) => setType(e.target.value)} className="h-10 rounded-xl border border-input bg-white px-3 text-sm" aria-label="Document type">
+            {types.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+        )}
         <Button type="button" variant="outline" size="lg" disabled={busy} onClick={() => input.current?.click()}>
           {busy ? <Loader2 className="animate-spin" /> : <Upload />} Upload file
         </Button>
@@ -129,7 +134,7 @@ export function DocumentUpload({
           ))}
         </ul>
       )}
-      <p className="text-xs text-muted-foreground">PDF, JPG, PNG or WebP · up to 10 MB each · stored privately, visible only to you and 13C reviewers.</p>
+      {footer && <p className="text-xs text-muted-foreground">PDF, JPG, PNG or WebP · up to 10 MB each · stored privately, visible only to you and 13C reviewers.</p>}
     </div>
   );
 }

@@ -90,9 +90,13 @@ describe("business lifecycle", () => {
     const peek = await outsider.client.storage.from("business-docs").download(path);
     expect(peek.error).toBeTruthy();
 
-    must(await owner.client.rpc("submit_business_verification", {
-      p_business_id: businessId, p_documents: [{ type: "DTI", path, name: "permit.pdf" }],
-    }));
+    // Needs the representative's ID, one business document and a dated car photo, not just any one document.
+    const submit = (types: string[]) => owner.client.rpc("submit_business_verification", {
+      p_business_id: businessId, p_documents: types.map((type) => ({ type, path, name: "permit.pdf" })),
+    });
+    await expectError(submit(["MAYORS_PERMIT"]), "VERIFICATION_DOCS_INCOMPLETE");
+    await expectError(submit(["REPRESENTATIVE_ID", "BARANGAY_CLEARANCE"]), "VERIFICATION_DOCS_INCOMPLETE");
+    must(await submit(["REPRESENTATIVE_ID", "BARANGAY_CLEARANCE", "CAR_PHOTO"]));
     await expectError(owner.client.rpc("admin_review_business", { p_business_id: businessId, p_decision: "VERIFIED" }), "NOT_AUTHORIZED");
     must(await admin.client.rpc("admin_review_business", { p_business_id: businessId, p_decision: "VERIFIED" }));
     const notes = must(await owner.client.from("notifications").select("type").eq("business_id", businessId));

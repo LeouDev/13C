@@ -6,7 +6,7 @@ import { PDFDict, PDFDocument, PDFName } from "pdf-lib";
 import { paidPayment, parseWebhookEvent, verifyWebhookSignature } from "@/lib/billing";
 import { templateFor } from "@/lib/notification-email";
 import { EMAILS } from "@/emails";
-import { PLAN_PRICE_CENTAVOS, PLANS } from "@/lib/constants";
+import { missingVerificationDocs, PLAN_PRICE_CENTAVOS, PLANS } from "@/lib/constants";
 import { renderContractPdf, toWinAnsi, type ContractPdfInput } from "@/lib/contracts/pdf";
 import { answerText, faqAnswer } from "@/lib/assistant";
 import { cleanText, parseFaqs } from "@/lib/store-writer";
@@ -37,6 +37,14 @@ describe("booking state machine (UI mirror)", () => {
   it("terminal states have no exits and every status has UI copy", () => {
     for (const s of ["COMPLETED", "CANCELLED", "REJECTED", "EXPIRED"] as const) expect(TRANSITIONS.some(([f]) => f === s)).toBe(false);
     for (const [, to] of TRANSITIONS) expect(STATUS_META[to].label).toBeTruthy();
+  });
+});
+
+describe("business verification documents", () => {
+  it("need the representative's ID, one business document and a dated car photo (extras don't count)", () => {
+    expect(missingVerificationDocs([])).toHaveLength(3);
+    expect(missingVerificationDocs(["REPRESENTATIVE_ID", "BIR", "CAR_PHOTO"])).toEqual([]);
+    expect(missingVerificationDocs(["REPRESENTATIVE_ID", "INSURANCE", "BUSINESS_PHOTO", "CAR_PHOTO"])).toEqual(["One business document"]);
   });
 });
 

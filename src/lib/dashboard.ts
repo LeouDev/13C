@@ -31,7 +31,7 @@ export async function getStoreChecklist(business: Tables<"businesses">) {
     { key: "profile", tier: "required", label: "Business details: address, phone and representative", href: "/dashboard/profile",
       done: filled(business.address) && filled(business.phone) && filled(business.representative_name) },
     { key: "verified", tier: "required", label: "Verification approved by 13C", href: "/dashboard/profile#verification", done: verified,
-      hint: business.status === "DRAFT" ? "Upload one document to apply"
+      hint: business.status === "DRAFT" ? "Upload your ID, a business document and a dated car photo"
         : ["PENDING", "UNDER_REVIEW"].includes(business.status) ? "In review, usually 1–2 business days"
         : business.status === "CHANGES_REQUESTED" ? "13C asked for changes" : undefined },
     ...(verified && !subscriptionState(sub).active

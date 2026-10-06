@@ -6,10 +6,11 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { setBusinessLogo, submitVerification, updateBusinessProfile } from "@/app/actions/business";
 import { BusinessForm } from "@/components/business/business-form";
-import { DOC_TYPES } from "@/components/business/register-wizard";
-import { DocumentUpload, ImageUpload, type UploadedDoc } from "@/components/common/uploads";
+import { VerificationDocs } from "@/components/business/verification-docs";
+import { ImageUpload, type UploadedDoc } from "@/components/common/uploads";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { missingVerificationDocs } from "@/lib/constants";
 import type { Tables } from "@/types/database";
 
 export function ProfileEditor({ business }: { business: Tables<"businesses"> }) {
@@ -44,9 +45,9 @@ export function ResubmitVerification({ businessId }: { businessId: string }) {
   const [pending, start] = useTransition();
   return (
     <div className="grid gap-4">
-      <DocumentUpload bucket="business-docs" prefix={businessId} value={docs} onChange={setDocs} types={DOC_TYPES} />
+      <VerificationDocs businessId={businessId} value={docs} onChange={setDocs} />
       <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you change? (optional)" maxLength={2000} aria-label="Note to reviewers" />
-      <Button size="lg" variant="electric" className="justify-self-start" disabled={pending || docs.length === 0} onClick={() => start(async () => {
+      <Button size="lg" variant="electric" className="justify-self-start" disabled={pending || missingVerificationDocs(docs.map((d) => d.type)).length > 0} onClick={() => start(async () => {
         const r = await submitVerification(businessId, docs, note);
         if (r.ok) { toast.success(r.message); router.refresh(); } else toast.error(r.error);
       })}>

@@ -16,7 +16,7 @@ What it is
 
 Getting started
 - Sign up, then register the business: name, store address (13c.online/your-name), city, contact details and representative. Add a logo, cover photo and tagline.
-- Submit verification documents. Any ONE document of any kind is enough to submit; no particular document is required, not even a government ID. The choices: DTI, SEC or CDA registration; Mayor's or business permit; BIR certificate (2303); the representative's government ID; fleet insurance; a photo of the office or garage; or another document. The 13C team usually reviews within 1–2 business days and may ask for changes. Verified stores get a "Verified Business" badge.
+- Submit three things for verification: (1) the representative's government ID; (2) one business document: DTI, SEC or CDA registration, a Mayor's or business permit, a barangay business clearance, or BIR certificate 2303; (3) a photo of one of the business's cars with the plate visible and a sheet of paper on it showing the business name and that day's date. Fleet insurance or a photo of the office or garage can be added too, but aren't needed. The 13C team usually reviews within 1–2 business days and may ask for changes. Verified stores get a "Verified Business" badge.
 - Add cars and payment methods, then publish. A store is public once it's verified and published. Most stores go live the same week.
 - Publishing needs: verification approved, the business address, phone and representative (Business Profile), a car that's active, priced and has at least one photo, a payment method, and a cancellation policy. The dashboard and My Store show a "Before you go live" checklist with these, plus recommended extras (logo, cover photo, tagline and about text, more policies, pickup areas, hours, FAQs) and optional booking settings (down payment, gap between rentals). Only the Owner can publish.
 - The ${TRIAL_DAYS}-day free trial starts when the business is verified. No credit card needed.
@@ -146,7 +146,7 @@ const FAQ: { words: RegExp; answer: string }[] = [
   },
   {
     words: /verif|document|permit|dti|sec\b|bir|requirement/i,
-    answer: "Upload any one of these to apply: DTI, SEC or CDA registration, Mayor's or business permit, BIR 2303, or your representative's government ID. One document is enough. Reviews usually take 1–2 business days.",
+    answer: "To get verified, upload three things: your government ID, one business document (DTI, SEC or CDA registration, a Mayor's or business permit, a barangay business clearance, or BIR 2303), and a photo of one of your cars showing its plate with a paper that has your business name and today's date. Reviews usually take 1–2 business days.",
   },
   {
     words: /commission|percent|porsyento|cut\b/i,
