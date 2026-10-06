@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter, Kanit } from "next/font/google";
+import { AppMode } from "@/components/site/app-mode";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SITE_URL } from "@/lib/constants";
@@ -27,7 +28,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#121f3b",
+  // Opened from the Home Screen: a white status bar like the header (browsers keep the navy)
+  themeColor: [{ media: "(display-mode: standalone)", color: "#ffffff" }, { color: "#121f3b" }],
   width: "device-width",
   initialScale: 1,
 };
@@ -38,6 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster position="top-center" richColors closeButton />
+        <AppMode />
       </body>
     </html>
   );

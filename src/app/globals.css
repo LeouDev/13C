@@ -227,6 +227,14 @@
     fb-float 5s ease-in-out calc(var(--fb-delay, 0s) + 0.7s) infinite;
 }
 
+/* Opened from the Home Screen (as an app): feel native. No double-tap or pinch zoom (zoom is also locked in
+   components/site/app-mode.tsx), no grey tap flash, and no Copy / Look Up popup when holding buttons and menus. Text in
+   messages and agreements stays selectable. A browser tab is unaffected. */
+@media (display-mode: standalone) {
+  html { touch-action: pan-x pan-y; -webkit-tap-highlight-color: transparent; }
+  button, [role="button"], header a, nav a { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-rush, .animate-fade-in-x, .animate-streak, .animate-drive, .animate-bob, .road-dashes, .animate-fb-toast { animation: none; }
   .animate-streak { display: none; }
