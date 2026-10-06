@@ -155,11 +155,21 @@ describe("bookings", () => {
     }), "RENTER_PROFILE_INCOMPLETE");
   });
 
-  it("requires the driver's license (front and back) and a government ID before booking", async () => {
+  it("renters can request before uploading their license and ID; approval needs them, and the business hears when they arrive", async () => {
     await completeRenterProfile(renter, { documents: false });
-    await expectError(renter.client.rpc("request_booking", {
-      p_vehicle_id: vehicleId, p_pickup_at: day(10), p_return_at: day(11), p_pickup_location: "Cebu City", p_return_location: "Cebu City", p_payment_method: "GCASH",
-    }), "RENTER_DOCUMENTS_MISSING");
+    const early = must(await renter.client.rpc("request_booking", {
+      p_vehicle_id: vehicleId, p_pickup_at: day(30), p_return_at: day(31), p_pickup_location: "Cebu City", p_return_location: "Cebu City", p_payment_method: "GCASH",
+    }));
+    await expectError(owner.client.rpc("transition_booking", { p_booking_id: early, p_to: "APPROVED" }), "RENTER_DOCUMENTS_MISSING");
+    // Still waiting 2 hours later: one nudge, to the renter, since the business can't approve yet.
+    must(await service.from("bookings").update({ created_at: new Date(Date.now() - 3 * 3_600_000).toISOString() }).eq("id", early));
+    expect(must(await service.rpc("send_request_reminders", { p_booking_id: early }))).toBe(1);
+    expect(must(await service.rpc("send_request_reminders", { p_booking_id: early }))).toBe(0);
+    expect(must(await renter.client.from("notifications").select("id").eq("user_id", renter.id).eq("type", "documents_needed"))).toHaveLength(1);
+    // The documents arrive: the business is told (once per request) and can approve.
+    await completeRenterProfile(renter);
+    expect(must(await owner.client.from("notifications").select("id").eq("user_id", owner.id).eq("type", "renter_documents_ready").eq("link", `/dashboard/bookings/${early}`))).toHaveLength(1);
+    must(await renter.client.rpc("transition_booking", { p_booking_id: early, p_to: "CANCELLED", p_note: "Test cleanup" }));
   });
 
   it("creates PENDING_OWNER_APPROVAL requests; pending requests don't block each other", async () => {
@@ -179,6 +189,10 @@ describe("bookings", () => {
     await expectError(renter.client.rpc("request_booking", { ...args, p_payment_method: "CARD" }), "PAYMENT_METHOD_NOT_ACCEPTED");
     const notes = must(await owner.client.from("notifications").select("type").eq("type", "booking_request").eq("business_id", businessId));
     expect(notes.length).toBeGreaterThanOrEqual(2);
+    // Unanswered 2 hours later (the renter's documents are in): one reminder to the business.
+    must(await service.from("bookings").update({ created_at: new Date(Date.now() - 3 * 3_600_000).toISOString() }).eq("id", booking2Id));
+    expect(must(await service.rpc("send_request_reminders", { p_booking_id: booking2Id }))).toBe(1);
+    expect(must(await owner.client.from("notifications").select("id").eq("type", "booking_request_reminder").eq("link", `/dashboard/bookings/${booking2Id}`))).toHaveLength(1);
   });
 
   it("isolates bookings and renter details by party", async () => {
@@ -188,6 +202,31 @@ describe("bookings", () => {
     expect(asOutsider).toHaveLength(0);
     const asOwner = must(await owner.client.from("renters").select("license_number").eq("user_id", renter.id).single());
     expect(asOwner.license_number).toBe("G01-23-456789");
+  });
+
+  it("the renter and the business can report a booking to 13C; nobody else can", async () => {
+    const report = (u: TestUser, reason: string) => u.client.from("reports").insert({ entity_type: "BOOKING", entity_id: bookingId, reason } as never);
+    must(await report(renter, "Asked me to pay a different account"));
+    must(await report(owner, "The renter didn't show up"));
+    await expectError(report(outsider, "Spam"), /row-level security/);
+    await expectError(report(renter2, "Spam"), /row-level security/);
+    // Reports by the suite's test accounts never alert the real admins.
+    const ref = must(await owner.client.from("bookings").select("reference").eq("id", bookingId).single()).reference;
+    expect(must(await service.from("notifications").select("id").eq("type", "report_submitted").like("body", `%${ref}%`))).toHaveLength(0);
+  });
+
+  it("owners are told when payment details change; renters see when, and a QR image can only come from the business's own folder", async () => {
+    const since = new Date().toISOString();
+    must(await owner.client.from("payment_methods").update({ instructions: "Send a screenshot in chat", qr_path: `b/${businessId}/pay/qr.png` }).eq("business_id", businessId).eq("method", "GCASH"));
+    expect(must(await owner.client.from("notifications").select("body").eq("user_id", owner.id).eq("type", "payment_details_changed"))).toEqual([{ body: "GCash · 0917 000 0000 (Owner Test)" }]);
+    const seen = must(await renter.client.from("payment_methods").select("qr_path, details_changed_at").eq("business_id", businessId).eq("method", "GCASH").single());
+    expect(seen.qr_path).toBe(`b/${businessId}/pay/qr.png`);
+    expect(seen.details_changed_at! >= since).toBe(true);
+    // Switching it on and off again isn't a change of details.
+    must(await owner.client.from("payment_methods").update({ is_enabled: true }).eq("business_id", businessId).eq("method", "GCASH"));
+    expect(must(await owner.client.from("notifications").select("id").eq("user_id", owner.id).eq("type", "payment_details_changed"))).toHaveLength(1);
+    await expectError(owner.client.from("payment_methods").update({ qr_path: "b/00000000-0000-0000-0000-000000000000/pay/qr.png" }).eq("business_id", businessId).eq("method", "GCASH"), "payment_methods_qr_path_scope");
+    must(await owner.client.from("payment_methods").update({ qr_path: null, instructions: null }).eq("business_id", businessId).eq("method", "GCASH"));
   });
 
   it("renter cannot approve their own request", async () => {
@@ -459,6 +498,35 @@ describe("down payment", () => {
       .toEqual({ status: "CANCELLED", cancel_reason: expect.stringMatching(/down payment wasn't received/) });
     expect(must(await owner.client.from("notifications").select("id").eq("user_id", owner.id).eq("type", "down_payment_missed"))).not.toHaveLength(0);
 
+    // The renter said they paid: the deadline doesn't cancel it. It's held until pickup and the business is asked to check.
+    const reported = must(await renter2.client.rpc("request_booking", { ...args, p_pickup_at: day(76), p_return_at: day(77) }));
+    must(await owner.client.rpc("transition_booking", { p_booking_id: reported, p_to: "APPROVED" }));
+    await expectError(owner.client.rpc("reject_down_payment", { p_booking_id: reported, p_note: "" }), "INVALID_TRANSITION"); // nothing reported yet
+    must(await renter2.client.rpc("report_down_payment", { p_booking_id: reported, p_reference: "GC-777" }));
+    must(await service.from("bookings").update({ down_payment_due_at: new Date(Date.now() - 60_000).toISOString() }).eq("id", reported));
+    expect(must(await service.rpc("cancel_unpaid_down_payments", { p_booking_id: reported }))).toBe(0);
+    const held = must(await owner.client.from("bookings").select("status, pickup_at, down_payment_due_at").eq("id", reported).single());
+    expect(held.status).toBe("APPROVED");
+    expect(new Date(held.down_payment_due_at!).getTime()).toBe(new Date(held.pickup_at).getTime());
+    expect(must(await owner.client.from("notifications").select("id").eq("user_id", owner.id).eq("type", "down_payment_unconfirmed"))).toHaveLength(1);
+    // "Not received": only the business, which cancels it and files a dispute for 13C.
+    await expectError(renter2.client.rpc("reject_down_payment", { p_booking_id: reported, p_note: "" }), "NOT_AUTHORIZED");
+    must(await owner.client.rpc("reject_down_payment", { p_booking_id: reported, p_note: "Nothing in our GCash" }));
+    expect(must(await renter2.client.from("bookings").select("status, cancel_reason").eq("id", reported).single()))
+      .toEqual({ status: "CANCELLED", cancel_reason: expect.stringContaining("Nothing in our GCash") });
+    const dispute = must(await service.from("reports").select("reporter_id, reason, details").eq("entity_type", "BOOKING").eq("entity_id", reported).single());
+    expect(dispute).toEqual({ reporter_id: owner.id, reason: "Down payment dispute", details: expect.stringContaining("GC-777") });
+
+    // Still unconfirmed at pickup: cancelled, with a dispute filed for the renter.
+    const ignored = must(await renter2.client.rpc("request_booking", { ...args, p_pickup_at: day(78), p_return_at: day(79) }));
+    must(await owner.client.rpc("transition_booking", { p_booking_id: ignored, p_to: "APPROVED" }));
+    must(await renter2.client.rpc("report_down_payment", { p_booking_id: ignored, p_reference: "" }));
+    const past = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
+    must(await service.from("bookings").update({ pickup_at: past(120), return_at: past(60), down_payment_due_at: past(120) }).eq("id", ignored));
+    expect(must(await service.rpc("cancel_unpaid_down_payments", { p_booking_id: ignored }))).toBe(1);
+    expect(must(await owner.client.from("bookings").select("status").eq("id", ignored).single()).status).toBe("CANCELLED");
+    expect(must(await service.from("reports").select("reporter_id, reason").eq("entity_id", ignored).single())).toEqual({ reporter_id: renter2.id, reason: "Down payment not confirmed" });
+
     // Waived: only a manager or owner can, and the agreement is prepared right away (same dates: they were freed).
     const waived = must(await renter2.client.rpc("request_booking", { ...args, p_pickup_at: day(74), p_return_at: day(75) }));
     must(await owner.client.rpc("transition_booking", { p_booking_id: waived, p_to: "APPROVED" }));
@@ -633,7 +701,8 @@ describe("notification emails", () => {
     const ids = [owner, admin, renter, renter2, outsider].map((u) => u.id);
     const rows = must(await service.from("notifications").select("id, user_id, business_id, type, title, body, link").in("user_id", ids));
     const one = new Map(rows.map((r) => [`${r.type}|${templateFor(r.type, r.link)}`, r]));
-    expect([...one.keys()].map((k) => k.split("|")[0])).toEqual(expect.arrayContaining(["business_submitted", "plan_changed", "booking_request", "booking_request_sent", "contract_sent", "booking_confirmed", "contract_signed", "message", "review_received", "verification_verified", "subscription_paid"]));
+    expect([...one.keys()].map((k) => k.split("|")[0])).toEqual(expect.arrayContaining(["business_submitted", "plan_changed", "booking_request", "booking_request_sent", "contract_sent", "booking_confirmed", "contract_signed", "message", "review_received", "verification_verified", "subscription_paid",
+      "documents_needed", "renter_documents_ready", "booking_request_reminder", "payment_details_changed", "down_payment_unconfirmed", "down_payment_missed"]));
     for (const r of one.values()) {
       const mail = await prepareNotificationEmail({ ...r, email: "someone@13c.test", full_name: "Test Person", attempts: 1 });
       expect(mail, r.type).not.toBeNull();

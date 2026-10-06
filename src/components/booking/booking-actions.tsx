@@ -34,14 +34,15 @@ const LABELS: Partial<Record<BookingStatus, string>> = {
   RETURNED: "Mark as returned", COMPLETED: "Complete rental",
 };
 
-function NoteDialog({ title, description, confirm, required, destructive, onConfirm, pending }: {
+export function NoteDialog({ title, description, confirm, required, destructive, onConfirm, pending, size = "lg" }: {
   title: string; description: string; confirm: string; required?: boolean; destructive?: boolean; pending: boolean; onConfirm: (note: string) => void;
+  size?: "default" | "lg";
 }) {
   const [note, setNote] = useState("");
   const [open, setOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="lg" variant={destructive ? "destructive" : "outline"} />}>{confirm}</DialogTrigger>
+      <DialogTrigger render={<Button size={size} variant={destructive ? "destructive" : "outline"} />}>{confirm}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>{title}</DialogTitle><DialogDescription>{description}</DialogDescription></DialogHeader>
         <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder={required ? "Reason (required)" : "Reason (optional)"} maxLength={500} aria-label="Reason" />
@@ -55,7 +56,10 @@ function NoteDialog({ title, description, confirm, required, destructive, onConf
 
 /** Buttons for every transition the state machine allows this actor (SYSTEM steps are triggered elsewhere). */
 /** `pickupFrom`: set (e.g. "Oct 31, 2026") while it's before the pickup day, which disables "picked up". */
-export function TransitionActions({ bookingId, status, actor, pickupFrom }: { bookingId: string; status: BookingStatus; actor: Exclude<Actor, "SYSTEM">; pickupFrom?: string | null }) {
+/** `approveWaiting`: why Approve can't be used yet (the renter's license and ID aren't uploaded). */
+export function TransitionActions({ bookingId, status, actor, pickupFrom, approveWaiting }: {
+  bookingId: string; status: BookingStatus; actor: Exclude<Actor, "SYSTEM">; pickupFrom?: string | null; approveWaiting?: string | null;
+}) {
   const { pending, run } = useRun();
   const next = nextStatuses(status, actor).filter((s) => !(actor === "RENTER" && s === "APPROVED"));
   if (next.length === 0) return null;
@@ -65,11 +69,11 @@ export function TransitionActions({ bookingId, status, actor, pickupFrom }: { bo
         {next.map((to) => {
           if (to === "REJECTED") return <NoteDialog key={to} title="Decline this request?" description="The renter will be notified with your reason." confirm="Decline" required destructive pending={pending} onConfirm={(n) => run(() => transitionBooking(bookingId, to, n))} />;
           if (to === "CANCELLED") return <NoteDialog key={to} title="Cancel this booking?" description="The other party is notified. Your cancellation policy applies to any payments." confirm="Cancel booking" destructive pending={pending} onConfirm={(n) => run(() => transitionBooking(bookingId, to, n))} />;
-          if (to === "ACTIVE" && pickupFrom) {
+          if ((to === "ACTIVE" && pickupFrom) || (to === "APPROVED" && approveWaiting)) {
             return (
               <div key={to} className="grid gap-1">
-                <Button size="lg" disabled>{LABELS[to] ?? labelize(to)}</Button>
-                <span className="text-xs text-muted-foreground">Available from {pickupFrom}</span>
+                <Button size="lg" variant={to === "APPROVED" ? "electric" : "default"} disabled>{LABELS[to] ?? labelize(to)}</Button>
+                <span className="text-xs text-muted-foreground">{to === "APPROVED" ? approveWaiting : `Available from ${pickupFrom}`}</span>
               </div>
             );
           }
@@ -157,7 +161,7 @@ export function PaymentsPanel({ bookingId, total, status, method, payments, canE
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-muted-foreground">Paid {formatPHP(paid)} of {formatPHP(total)} · via {labelize(method)}</p>
-          <p className="text-xs text-muted-foreground">13C doesn&apos;t process payments. Record what the renter paid you.</p>
+          <p className="text-xs text-muted-foreground">13C doesn&apos;t process payments.{canEdit ? " Record what the renter paid you." : " The business records what you've paid."}</p>
         </div>
         {canEdit ? (
           <NativeSelect className="w-48" value={status} disabled={pending} aria-label="Payment status" onChange={(e) => run(() => setPaymentStatus(bookingId, e.target.value as Enums<"payment_status">))}>

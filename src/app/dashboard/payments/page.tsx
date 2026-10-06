@@ -12,7 +12,7 @@ export default async function PaymentSettingsPage() {
   const { data } = await supabase.from("payment_methods").select("*").eq("business_id", business.id);
   return (
     <>
-      <PageHeader eyebrow="Payments" title="Payment settings" description="Choose how customers pay you. 13C never processes or holds your money — payment details are shown only to renters with a booking." />
+      <PageHeader eyebrow="Payments" title="Payment settings" description="Choose how customers pay you. 13C never processes or holds your money. Payment details are shown only to renters with a booking, and owners get an email whenever they change." />
       {!hasRole(role, "OWNER") && <p className="mb-4 rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">Only the business owner can change payment methods.</p>}
       <PaymentMethodsEditor businessId={business.id} existing={data ?? []} canEdit={hasRole(role, "OWNER")} />
     </>

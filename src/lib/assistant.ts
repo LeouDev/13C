@@ -40,10 +40,11 @@ Cars, pricing and availability
 
 Inquiries, bookings and messages
 - Renters message the business from its store, and every chat is in one inbox. The owner can turn a chat into a booking proposal in one tap. Renters can also request dates directly, and the owner approves or rejects.
-- Before booking, renters complete their profile and upload a driver's license (front and back) and a government ID. A business sees these only for its own bookings.
+- Renters complete their profile to request a booking, and upload a driver's license (front and back) and a government ID before the business can approve it. They can add them after requesting; the business is told when they arrive. A business sees these only for its own bookings.
+- A request still waiting 2 hours later gets one reminder: to the business, or to the renter if their documents are missing.
 - Booking steps: request, approved, contract generated, contract sent, signed by the renter, confirmed, picked up, returned, completed. A request that isn't approved before its pickup time expires. Either side can cancel before pickup, following the business's cancellation policy.
 - Owners record payments (unpaid, partly paid, paid, pay on pickup) for their own records.
-- To prevent no-shows, owners can require a down payment in Settings: a percentage of the total, due within a number of hours they choose after approving. The renter sends it to the business directly and taps "I've paid" with the reference; the owner marks it received (or waives it), and only then is the rental agreement prepared and sent. If it isn't recorded by the deadline, the booking is cancelled automatically and the dates open again.
+- To prevent no-shows, owners can require a down payment in Settings: a percentage of the total, due within a number of hours they choose after approving. The renter sends it to the business directly and taps "I've paid" with the reference; the owner marks it received (or waives it), and only then is the rental agreement prepared and sent. If the renter hasn't paid by the deadline, the booking is cancelled automatically and the dates open again. If they tapped "I've paid", it isn't cancelled: it's held until pickup while the owner checks, and the owner either marks it received or taps "Not received", which cancels the booking and flags it to 13C.
 - Owners and renters get email and in-app notifications for requests, contracts and confirmations, plus reminders 24 hours before pickup and return.
 
 Digital contracts and e-signatures
@@ -60,6 +61,8 @@ Business plan extras
 
 Trust and privacy
 - Renters can review a business after a completed rental, and the owner can reply.
+- Either side can report a booking to 13C with "Report a problem" on the booking (for example a renter who didn't show up, or a request to pay a different account). The other side isn't told.
+- Payment safety: owners get an email whenever their payment details change, and renters see a warning if the details changed after they booked. Owners can add a GCash, Maya or bank QR code in Payment Settings so renters don't mistype the number. Renters are told to pay only the account on their booking page, never one sent in chat.
 - Licenses, IDs, contracts and signatures are stored privately and never shown publicly. 13C follows the Philippine Data Privacy Act; privacy requests go to privacy@13c.online.
 
 Not offered yet: GPS tracking (coming on Business), processing rental payments, insurance, mobile apps and custom domains.

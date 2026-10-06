@@ -94,7 +94,7 @@ export async function storeFacts(supabase: SupabaseClient<Database>, businessId:
     faqs.length > 0 && `FAQs on the store:\n${faqs.join("\n")}`,
     `How renting works (the same on every 13C store):
 - Renters pick a car and dates and send a booking request, or message the business first.
-- Before booking, renters upload their driver's license (front and back) and a government ID to their 13C account. Only the business they book with sees them.
+- Before the business approves, renters upload their driver's license (front and back) and a government ID to their 13C account. Only the business they book with sees them.
 - The business approves the request; the renter then signs the rental agreement online and gets the signed PDF by email.
 - Renters pay the business directly, with the payment methods above.`,
   ].filter(Boolean).join("\n");

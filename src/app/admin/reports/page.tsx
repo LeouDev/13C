@@ -21,10 +21,11 @@ const TONE: Record<Enums<"report_status">, "danger" | "info" | "success" | "neut
   OPEN: "danger", REVIEWING: "info", RESOLVED: "success", DISMISSED: "neutral",
 };
 
-/** Admin page for the reported entity, when one exists. */
-function entityHref(type: string, id: string) {
+/** Admin page for the reported entity, when one exists (bookings: the bookings list searched by reference). */
+function entityHref(type: string, id: string, refs: Map<string, string>) {
   if (type === "BUSINESS") return `/admin/businesses/${id}`;
   if (type === "USER") return `/admin/users/${id}`;
+  if (type === "BOOKING" && refs.has(id)) return `/admin/bookings?q=${refs.get(id)}`;
   return null;
 }
 
@@ -40,24 +41,29 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
     query,
     supabase.from("reports").select("id", { count: "exact", head: true }).in("status", ["OPEN", "REVIEWING"]),
   ]);
+  const bookingIds = (rows ?? []).filter((r) => r.entity_type === "BOOKING").map((r) => r.entity_id);
+  const { data: bookings } = bookingIds.length ? await supabase.from("bookings").select("id, reference").in("id", bookingIds) : { data: [] };
+  const refs = new Map((bookings ?? []).map((b) => [b.id, b.reference]));
 
   return (
     <>
-      <PageHeader title="Reports" description="Flags raised by users about businesses, vehicles, reviews and accounts." />
+      <PageHeader title="Reports" description="Flags raised by users about businesses, vehicles, bookings, reviews and accounts, plus down payment disputes." />
       <ListFilters basePath="/admin/reports" options={VIEWS.map((v) => (v.key === "open" ? { ...v, count: openCount } : v))} active={view.key} />
       {!rows?.length ? (
         <EmptyState icon={Flag} title={view.key === "open" ? "No open reports" : "No reports here"} description={view.key === "open" ? "All caught up." : undefined} />
       ) : (
         <ul className="grid gap-3">
           {rows.map((r) => {
-            const href = entityHref(r.entity_type, r.entity_id);
+            const href = entityHref(r.entity_type, r.entity_id, refs);
             return (
               <li key={r.id} className="rounded-2xl border bg-white p-4 sm:p-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Pill tone={TONE[r.status]}>{labelize(r.status)}</Pill>
                   <Pill>{labelize(r.entity_type)}</Pill>
                   {href ? (
-                    <Link href={href} className="text-sm font-medium text-electric hover:underline">Open {labelize(r.entity_type).toLowerCase()}</Link>
+                    <Link href={href} className="text-sm font-medium text-electric hover:underline">
+                      {refs.has(r.entity_id) ? `Booking ${refs.get(r.entity_id)}` : `Open ${labelize(r.entity_type).toLowerCase()}`}
+                    </Link>
                   ) : (
                     <code className="max-w-full truncate rounded bg-canvas px-1.5 py-0.5 text-xs" title={r.entity_id}>{r.entity_id}</code>
                   )}

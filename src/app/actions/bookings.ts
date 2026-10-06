@@ -148,6 +148,17 @@ export async function waiveDownPayment(bookingId: string): Promise<ActionResult>
   return ok(undefined, "Down payment waived. The rental agreement is ready to review.");
 }
 
+/** The business never got the down payment the renter reported: cancels the booking and flags it to 13C. */
+export async function rejectDownPayment(bookingId: string, note: string): Promise<ActionResult> {
+  const parsed = z.object({ bookingId: z.uuid(), note: z.string().trim().max(300) }).safeParse({ bookingId, note });
+  if (!parsed.success) return invalid(parsed.error);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reject_down_payment", { p_booking_id: parsed.data.bookingId, p_note: parsed.data.note });
+  if (error) return fail(error);
+  refresh();
+  return ok(undefined, "Booking cancelled. 13C will follow up with the renter.");
+}
+
 export async function deletePayment(paymentId: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("payments").delete().eq("id", paymentId);

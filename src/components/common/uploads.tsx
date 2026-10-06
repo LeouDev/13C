@@ -11,11 +11,13 @@ import { DOC_TYPES, IMAGE_TYPES, uploadDocument, uploadImage, validateFile } fro
 
 /** Single image (logo / cover) that uploads immediately to the public media bucket. */
 export function ImageUpload({
-  prefix, value, onChange, aspect = "aspect-square", maxPx = 1200, label = "Upload image", className, rounded = "rounded-2xl", png,
+  prefix, value, onChange, aspect = "aspect-square", maxPx = 1200, label = "Upload image", className, rounded = "rounded-2xl", png, contain,
 }: {
   prefix: string;
   /** Store as PNG (logos: transparency, and contract PDFs can embed it) */
   png?: boolean;
+  /** Show the whole image (QR codes) instead of filling the box */
+  contain?: boolean;
   value: string | null;
   onChange: (path: string | null) => Promise<void> | void;
   aspect?: string;
@@ -46,7 +48,7 @@ export function ImageUpload({
 
   return (
     <div className={cn("group relative overflow-hidden border border-dashed border-input bg-canvas", aspect, rounded, className)}>
-      {src && <Image src={src} alt="" fill sizes="600px" className="object-cover" />}
+      {src && <Image src={src} alt="" fill sizes="600px" className={contain ? "object-contain" : "object-cover"} />}
       <button
         type="button"
         onClick={() => input.current?.click()}

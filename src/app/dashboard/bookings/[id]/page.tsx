@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/common/states";
 import { ContractDocument, ContractSections } from "@/components/contract/contract-document";
 import { BeforePickupCard, SignedAgreementSummary } from "@/components/contract/signed-agreement";
 import { SendContractDialog } from "@/components/contract/sign-panel";
+import { ReportButton } from "@/components/storefront/report-button";
 import { buttonVariants } from "@/components/ui/button";
 import { hasRole, requireBusiness } from "@/lib/auth";
 import { STATUS_META } from "@/lib/bookings/status";
@@ -41,6 +42,8 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
   const canManage = hasRole(role, "MANAGER");
   const paid = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
   const downOwed = b.status === "APPROVED" && Number(b.down_payment_amount) > paid; // the agreement waits for it
+  // Renters can request before uploading their license and ID; approving needs them (assert_renter_ready).
+  const docsMissing = b.status === "PENDING_OWNER_APPROVAL" && new Set(docs?.map((d) => d.doc_type)).size < 3;
   const editable = ["BOOKING_REQUESTED", "PENDING_OWNER_APPROVAL", "CONTRACT_DRAFT", "CONTRACT_SENT", "AWAITING_SIGNATURE", "SIGNED", "CONFIRMED"].includes(b.status);
   const vars = (current?.data ?? {}) as Record<string, string>;
   const signedNow = current?.status === "SIGNED";
@@ -63,12 +66,16 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
       <section className="mb-6 rounded-3xl border bg-white p-5">
         <BookingProgress status={b.status} />
         <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <p className="text-sm text-navy-800">{downOwed ? "Approved. Waiting for the renter's down payment; the rental agreement is prepared as soon as you record it." : nextStepCopy(b.status)}</p>
+          <p className="text-sm text-navy-800">
+            {downOwed ? "Approved. Waiting for the renter's down payment; the rental agreement is prepared as soon as you record it."
+              : docsMissing ? "New request. The renter hasn't uploaded their driver's license and ID yet; you can approve once they do (we'll let you know), or message them."
+              : nextStepCopy(b.status)}
+          </p>
           <div className="flex flex-wrap gap-2">
             {b.status === "CONTRACT_DRAFT" && contract && canManage && <SendContractDialog contractId={contract.id} defaultName={business.representative_name ?? user.full_name} />}
             {canManage && contract && ["CONTRACT_DRAFT", "CONTRACT_SENT", "AWAITING_SIGNATURE", "SIGNED", "CONFIRMED"].includes(b.status) && <RegenerateButton bookingId={b.id} signed={["SIGNED", "CONFIRMED"].includes(b.status)} />}
             {canManage && editable && <TermsEditor booking={b} />}
-            <TransitionActions bookingId={b.id} status={b.status} actor="BUSINESS"
+            <TransitionActions bookingId={b.id} status={b.status} actor="BUSINESS" approveWaiting={docsMissing ? "Waiting for the renter's license and ID" : null}
               pickupFrom={isoToManilaDate(new Date()) < isoToManilaDate(b.pickup_at) ? formatDate(b.pickup_at) : null} />
           </div>
         </div>
@@ -148,6 +155,7 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
               <div className="mt-3 grid gap-2">{docs.map((d) => <DocumentLink key={d.storage_path} bucket="kyc" path={d.storage_path} name={labelize(d.doc_type)} />)}</div>
             )}
             {b.conversation_id && <Link href={`/dashboard/messages/${b.conversation_id}`} className={buttonVariants({ variant: "outline", className: "mt-4 w-full" })}><MessageSquare /> Message renter</Link>}
+            <div className="mt-3 text-center"><ReportButton entityType="BOOKING" entityId={b.id} signedIn side="business" /></div>
           </section>
           <section className="rounded-3xl border bg-white p-5">
             <h2 className="mb-4 font-semibold text-navy-900">History</h2>

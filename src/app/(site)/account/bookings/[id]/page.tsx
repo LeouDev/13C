@@ -5,10 +5,12 @@ import { CheckCircle2, FileSignature, MapPin, MessageSquare, Phone, Wallet } fro
 import { DriverDocuments } from "@/components/account/account-panels";
 import { AcceptProposal, PaymentsPanel, ReviewForm, TransitionActions } from "@/components/booking/booking-actions";
 import { DownPaymentBox } from "@/components/booking/down-payment";
+import { PayToDetails } from "@/components/booking/pay-to";
 import { BookingProgress, StatusHistory } from "@/components/booking/booking-timeline";
 import { SignedAgreementCard } from "@/components/contract/signed-agreement";
 import { BookingStatusBadge, Stars } from "@/components/common/badges";
 import { BusinessLogo, VehicleImage } from "@/components/common/vehicle-image";
+import { ReportButton } from "@/components/storefront/report-button";
 import { buttonVariants } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth";
 import { STATUS_META } from "@/lib/bookings/status";
@@ -27,7 +29,7 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
     .eq("id", id).eq("renter_id", user.id).order("created_at", { referencedTable: "booking_status_history" }).maybeSingle();
   if (!b) return <BookingOnOtherAccount bookingId={id} email={user.email} />;
   const [{ data: methods }, { data: myDocs }] = await Promise.all([
-    supabase.from("payment_methods").select("method, account_name, account_number, instructions").eq("business_id", b.business_id).eq("is_enabled", true),
+    supabase.from("payment_methods").select("method, account_name, account_number, instructions, qr_path, details_changed_at").eq("business_id", b.business_id).eq("is_enabled", true),
     supabase.from("driver_documents").select("doc_type, storage_path").eq("user_id", user.id),
   ]);
   const docsReady = new Set(myDocs?.map((d) => d.doc_type)).size >= 3;
@@ -66,7 +68,7 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
       </section>
 
       {downOwed && b.down_payment_due_at && (
-        <DownPaymentBox total={Number(b.total_amount)} businessName={b.businesses?.name ?? "The business"} method={b.payment_method} payTo={payInfo ?? null}
+        <DownPaymentBox total={Number(b.total_amount)} businessName={b.businesses?.name ?? "The business"} method={b.payment_method} payTo={payInfo ?? null} bookedAt={b.created_at}
           due={{ bookingId: b.id, amount: Number(b.down_payment_amount), percent: b.down_payment_percent, dueAt: b.down_payment_due_at, reportedAt: b.down_payment_reported_at, reference: b.down_payment_reference }} />
       )}
 
@@ -80,6 +82,13 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
         <div className="grid content-start gap-6">
+          {b.status === "PENDING_OWNER_APPROVAL" && !docsReady && (
+            <div className="grid gap-3 rounded-2xl bg-electric/5 p-4">
+              <p className="text-sm font-semibold text-navy-900">Upload your driver&apos;s license and ID so {b.businesses?.name} can approve your request</p>
+              <p className="text-sm text-muted-foreground">Front and back of your license, plus a government-issued ID. Only businesses you book with can view them. Never public.</p>
+              <DriverDocuments userId={user.id} docs={myDocs ?? []} />
+            </div>
+          )}
           {b.status === "BOOKING_REQUESTED" && methods && (docsReady ? <AcceptProposal bookingId={b.id} methods={methods.map((m) => m.method)} /> : (
             <div className="grid gap-3 rounded-2xl bg-electric/5 p-4">
               <p className="text-sm font-semibold text-navy-900">Upload your driver&apos;s license and ID to accept this proposal</p>
@@ -107,13 +116,13 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
 
           <section className="rounded-3xl bg-white p-5 ring-1 ring-black/5">
             <h2 className="mb-3 flex items-center gap-2 font-semibold text-navy-900"><Wallet className="size-5 text-electric" /> Payment · {labelize(b.payment_method)}</h2>
-            {payInfo && (payInfo.account_number || payInfo.instructions) && !["CANCELLED", "REJECTED", "EXPIRED"].includes(b.status) && (
+            {downOwed ? <p className="mb-4 text-sm text-muted-foreground">For now, send only the down payment above. The rest is paid as agreed.</p>
+              : payInfo && (payInfo.account_number || payInfo.instructions || payInfo.qr_path) && !["CANCELLED", "REJECTED", "EXPIRED"].includes(b.status) && (
               <div className="mb-4 rounded-2xl bg-canvas p-4 text-sm">
-                <p className="font-semibold">Pay {b.businesses?.name} directly</p>
-                {payInfo.account_name && <p>Account name: {payInfo.account_name}</p>}
-                {payInfo.account_number && <p>Number: <span className="font-mono">{payInfo.account_number}</span></p>}
-                {payInfo.instructions && <p className="mt-1 text-muted-foreground">{payInfo.instructions}</p>}
-                <p className="mt-2 text-xs text-muted-foreground">{downOwed ? "For now, send only the down payment above." : "Only pay after your booking is confirmed."} 13C never asks you to pay 13C for a rental.</p>
+                <PayToDetails payTo={payInfo} method={b.payment_method} businessName={b.businesses?.name ?? "the business"} bookedAt={b.created_at} />
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Only pay after your booking is confirmed, and only to this account, never one sent in chat. 13C never asks you to pay 13C for a rental.
+                </p>
               </div>
             )}
             <PaymentsPanel bookingId={b.id} total={Number(b.total_amount)} status={b.payment_status} method={b.payment_method} payments={b.payments} canEdit={false} />
@@ -145,6 +154,7 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
               {b.businesses?.address && <span>{b.businesses.address}, {b.businesses.city}</span>}
             </div>
             {b.conversation_id && <Link href={`/account/messages/${b.conversation_id}`} className={buttonVariants({ variant: "outline", className: "mt-4 w-full" })}><MessageSquare /> Message business</Link>}
+            <div className="mt-3 text-center"><ReportButton entityType="BOOKING" entityId={b.id} signedIn side="renter" /></div>
           </section>
           <section className="rounded-3xl bg-white p-5 ring-1 ring-black/5">
             <h2 className="mb-4 font-semibold text-navy-900">History</h2>

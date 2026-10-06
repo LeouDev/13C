@@ -50,6 +50,8 @@ export const paymentMethodsSchema = z
     account_name: optionalText(120),
     account_number: optionalText(60),
     instructions: optionalText(500),
+    /** A QR image in the public media bucket, under b/<business>/pay/ (the database checks the business) */
+    qr_path: z.string().regex(/^b\/[0-9a-f-]{36}\/pay\/[\w.-]+$/, "Upload the QR image again").nullable().optional(),
   }))
   .refine((list) => list.some((m) => m.is_enabled), "Accept at least one payment method");
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { ConversationList } from "@/components/chat/conversation-list";
 import { BusinessLogo } from "@/components/common/vehicle-image";
@@ -34,6 +34,9 @@ export default async function ConversationPage({ params }: PageProps<"/account/m
           </div>
           {c.vehicles && <Link href={`/${c.businesses?.slug}/${c.vehicles.slug}#book`} className="rounded-full bg-navy-900 px-4 py-2 text-xs font-semibold text-white hover:bg-electric">Book this car</Link>}
         </header>
+        <p className="flex items-center gap-2 border-b bg-amber-50 px-4 py-2 text-xs text-amber-950 sm:px-5">
+          <ShieldCheck className="size-4 shrink-0" /> Pay only the account on your booking page, never one sent in chat. 13C never asks you to pay 13C.
+        </p>
         <ChatThread conversationId={c.id} viewer="CUSTOMER" initial={messages ?? []} otherReadAt={c.business_last_read_at} bookingBase="/account/bookings/" />
       </div>
     </div>

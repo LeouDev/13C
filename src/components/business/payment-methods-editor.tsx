@@ -6,20 +6,23 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "cn";
 import { savePaymentMethods } from "@/app/actions/business";
+import { ImageUpload } from "@/components/common/uploads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { PAYMENT_METHODS } from "@/lib/constants";
 import type { Enums, Tables } from "@/types/database";
 
-type Row = { method: Enums<"payment_method_type">; is_enabled: boolean; account_name: string; account_number: string; instructions: string };
+type Row = { method: Enums<"payment_method_type">; is_enabled: boolean; account_name: string; account_number: string; instructions: string; qr_path: string | null };
+/** Methods renters can pay by scanning (GCash, Maya, and banks via InstaPay QR) */
+const QR = new Set<Row["method"]>(["GCASH", "MAYA", "BANK_TRANSFER"]);
 
 export function PaymentMethodsEditor({ businessId, existing, canEdit }: { businessId: string; existing: Tables<"payment_methods">[]; canEdit: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [rows, setRows] = useState<Row[]>(PAYMENT_METHODS.map((m) => {
     const e = existing.find((x) => x.method === m.value);
-    return { method: m.value, is_enabled: e?.is_enabled ?? false, account_name: e?.account_name ?? "", account_number: e?.account_number ?? "", instructions: e?.instructions ?? "" };
+    return { method: m.value, is_enabled: e?.is_enabled ?? false, account_name: e?.account_name ?? "", account_number: e?.account_number ?? "", instructions: e?.instructions ?? "", qr_path: e?.qr_path ?? null };
   }));
   const set = (i: number, patch: Partial<Row>) => setRows((r) => r.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   return (
@@ -37,6 +40,14 @@ export function PaymentMethodsEditor({ businessId, existing, canEdit }: { busine
                 <Input disabled={!canEdit} placeholder={r.method === "BANK_TRANSFER" ? "Bank · account number" : r.method === "CARD" ? "Card terminal / link" : "Number"} value={r.account_number} onChange={(e) => set(i, { account_number: e.target.value })} aria-label="Account number" />
               </>}
               <Input disabled={!canEdit} className="sm:col-span-2" placeholder="Instructions shown to renters with a booking (e.g. send screenshot via chat)" value={r.instructions} onChange={(e) => set(i, { instructions: e.target.value })} aria-label="Instructions" />
+              {QR.has(r.method) && canEdit && (
+                <div className="flex items-center gap-3 sm:col-span-2">
+                  <ImageUpload prefix={`b/${businessId}/pay`} value={r.qr_path} onChange={(path) => set(i, { qr_path: path })} png contain maxPx={1000} label="QR code" className="size-28 shrink-0" />
+                  <p className="text-xs text-muted-foreground">
+                    Optional: your {PAYMENT_METHODS[i]!.label} QR code. Renters with a booking can scan it instead of typing your number, so payments don&apos;t go to a mistyped account.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

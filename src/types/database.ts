@@ -214,6 +214,7 @@ export type Database = {
           reference: string
           rental_days: number
           renter_id: string
+          request_reminded_at: string | null
           return_at: string
           return_location: string
           returned_at: string | null
@@ -261,6 +262,7 @@ export type Database = {
           reference?: string
           rental_days: number
           renter_id: string
+          request_reminded_at?: string | null
           return_at: string
           return_location: string
           returned_at?: string | null
@@ -308,6 +310,7 @@ export type Database = {
           reference?: string
           rental_days?: number
           renter_id?: string
+          request_reminded_at?: string | null
           return_at?: string
           return_location?: string
           returned_at?: string | null
@@ -1400,10 +1403,12 @@ export type Database = {
           account_number: string | null
           business_id: string
           created_at: string
+          details_changed_at: string | null
           id: string
           instructions: string | null
           is_enabled: boolean
           method: Database["public"]["Enums"]["payment_method_type"]
+          qr_path: string | null
           updated_at: string
         }
         Insert: {
@@ -1411,10 +1416,12 @@ export type Database = {
           account_number?: string | null
           business_id: string
           created_at?: string
+          details_changed_at?: string | null
           id?: string
           instructions?: string | null
           is_enabled?: boolean
           method: Database["public"]["Enums"]["payment_method_type"]
+          qr_path?: string | null
           updated_at?: string
         }
         Update: {
@@ -1422,10 +1429,12 @@ export type Database = {
           account_number?: string | null
           business_id?: string
           created_at?: string
+          details_changed_at?: string | null
           id?: string
           instructions?: string | null
           is_enabled?: boolean
           method?: Database["public"]["Enums"]["payment_method_type"]
+          qr_path?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2341,6 +2350,7 @@ export type Database = {
         Returns: string
       }
       archive_vehicle: { Args: { p_vehicle_id: string }; Returns: undefined }
+      assert_renter_profile: { Args: { p_user: string }; Returns: undefined }
       assert_renter_ready: { Args: { p_user: string }; Returns: undefined }
       assistant_allow: {
         Args: { p_key: string; p_limit: number }
@@ -2598,6 +2608,10 @@ export type Database = {
         }
         Returns: string
       }
+      reject_down_payment: {
+        Args: { p_booking_id: string; p_note?: string }
+        Returns: undefined
+      }
       remove_business_member: {
         Args: { p_business_id: string; p_user_id: string }
         Returns: undefined
@@ -2607,6 +2621,7 @@ export type Database = {
         Returns: string
       }
       rental_gap: { Args: { p_business_id: string }; Returns: string }
+      renter_has_documents: { Args: { p_user: string }; Returns: boolean }
       report_down_payment: {
         Args: { p_booking_id: string; p_reference: string }
         Returns: undefined
@@ -2716,6 +2731,10 @@ export type Database = {
         Returns: number
       }
       send_rental_reminders: { Args: never; Returns: number }
+      send_request_reminders: {
+        Args: { p_booking_id?: string }
+        Returns: number
+      }
       send_trial_reminders: { Args: never; Returns: number }
       set_storefront_published: {
         Args: { p_business_id: string; p_publish: boolean }

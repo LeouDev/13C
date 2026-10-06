@@ -32,7 +32,7 @@ export async function markConversationRead(conversationId: string): Promise<void
 }
 
 const reportSchema = z.object({
-  entity_type: z.enum(["BUSINESS", "VEHICLE", "REVIEW", "USER"]),
+  entity_type: z.enum(["BUSINESS", "VEHICLE", "REVIEW", "USER", "BOOKING"]),
   entity_id: z.uuid(),
   reason: z.string().trim().min(3).max(120),
   details: z.string().trim().max(2000).optional(),

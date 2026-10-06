@@ -141,6 +141,25 @@ export const EMAILS = {
       disclaimer: provider(d),
     }),
   },
+  documents_needed: {
+    audience: "Renter",
+    trigger: "A request has waited 2 hours and the renter's license and ID still aren't uploaded (once)",
+    notificationType: "documents_needed",
+    sample: SAMPLE,
+    build: (d) => ({
+      subject: `Add your documents to get ${d.reference} approved`,
+      preheader: `${d.businessName} needs your driver's license and ID before approving.`,
+      heading: "Add your documents to get approved",
+      blocks: [
+        { p: `${hi(d)} **${d.businessName}** can approve your request once your driver's license (front and back) and a government ID are uploaded. It takes a minute, and only businesses you book with can see them.` },
+        bookingDetails(d),
+      ],
+      cta: { label: "Upload documents", url: "/account#documents" },
+      accent: d.accent,
+      brand: brand(d),
+      disclaimer: provider(d),
+    }),
+  },
   booking_proposal: {
     audience: "Renter",
     trigger: "A business turns a conversation into a booking proposal",
@@ -587,6 +606,72 @@ export const EMAILS = {
         bookingDetails(d),
       ],
       cta: { label: "Open booking", url: businessBooking(d) },
+    }),
+  },
+  down_payment_unconfirmed: {
+    audience: "Business",
+    trigger: "The down payment deadline passes after the renter said they paid: the booking is held until pickup instead of cancelled",
+    notificationType: "down_payment_unconfirmed",
+    sample: { ...SAMPLE, downPayment: "₱360", downPaymentReference: "1009 2837 4655" },
+    build: (d) => ({
+      subject: `Please confirm the down payment — ${d.reference}`,
+      preheader: `${d.customerName} says they sent ${d.downPayment}.`,
+      heading: "Did the down payment arrive?",
+      blocks: [
+        { p: `**${d.customerName}** says they sent the **${d.downPayment}** down payment via ${d.paymentMethod}${d.downPaymentReference ? ` (reference ${d.downPaymentReference})` : ""}, but it hasn't been marked received. The booking stays on hold until pickup instead of being cancelled.` },
+        { p: "Check your account, then open the booking: mark it received if it's there, or tap **Not received** if it never arrived and 13C will follow up." },
+        bookingDetails(d),
+      ],
+      cta: { label: "Open booking", url: businessBooking(d) },
+    }),
+  },
+  booking_request_reminder: {
+    audience: "Business",
+    trigger: "A booking request has waited 2 hours without an answer (once)",
+    notificationType: "booking_request_reminder",
+    sample: SAMPLE,
+    build: (d) => ({
+      subject: `Waiting for you: ${d.customerName}'s request for the ${d.vehicle}`,
+      preheader: `Approve or decline ${d.reference} before they book elsewhere.`,
+      heading: "A booking request is waiting",
+      blocks: [
+        { p: `**${d.customerName}** asked for your ${d.vehicle} a while ago and is still waiting for an answer. Renters often book elsewhere when they don't hear back.` },
+        bookingDetails(d),
+      ],
+      cta: { label: "Approve or decline", url: businessBooking(d) },
+    }),
+  },
+  renter_documents_ready: {
+    audience: "Business",
+    trigger: "A renter with a waiting request finishes uploading their license and ID",
+    notificationType: "renter_documents_ready",
+    sample: SAMPLE,
+    build: (d) => ({
+      subject: `Documents in: ${d.reference} is ready to approve`,
+      preheader: `${d.customerName} uploaded their license and ID.`,
+      heading: "Ready to approve",
+      blocks: [
+        { p: `**${d.customerName}** uploaded their driver's license and government ID. Check them on the booking, then approve or decline.` },
+        bookingDetails(d),
+      ],
+      cta: { label: "Review request", url: businessBooking(d) },
+    }),
+  },
+  payment_details_changed: {
+    audience: "Business",
+    trigger: "An owner adds or changes a payment account, its instructions or its QR code (once the business has bookings)",
+    notificationType: "payment_details_changed",
+    sample: { ...SAMPLE, note: "GCash · 0917 123 4567 (Juan Dela Cruz)" },
+    build: (d) => ({
+      subject: "Your payment details changed",
+      preheader: d.note ?? "A payment account on your store changed.",
+      heading: "Your payment details changed",
+      blocks: [
+        { p: `Renters booking with **${d.businessName}** now see these details when they pay:` },
+        { details: [["Account", d.note]] },
+        { note: "If you didn't make this change, change your password now and fix the details under Payments: someone with access to your account could be redirecting renters' payments.", tone: "warning" },
+      ],
+      cta: { label: "Check payment details", url: "/dashboard/payments" },
     }),
   },
   contract_generated: {
