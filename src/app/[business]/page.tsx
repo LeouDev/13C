@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarSearch, Car, ChevronDown, Clock, MapPin, ShieldCheck, Truck } from "lucide-react";
 import { Rating, Stars, VerifiedBadge } from "@/components/common/badges";
+import { DateInput } from "@/components/common/date-input";
 import { EmptyState } from "@/components/common/states";
 import { BusinessLogo } from "@/components/common/vehicle-image";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
@@ -113,8 +114,8 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
             <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-navy-900 sm:text-3xl">{dated ? `Available ${formatDate(sp.from!, { month: "short", day: "numeric" })} – ${formatDate(sp.to!, { month: "short", day: "numeric" })}` : "Choose your car"}</h2>
           </div>
           <form id="availability" className="flex scroll-mt-32 lg:scroll-mt-24 flex-wrap items-end gap-2 rounded-2xl bg-white p-2 ring-1 ring-black/5">
-            <label className="grid gap-0.5 px-2 text-[11px] font-semibold text-muted-foreground uppercase">Pickup<input type="date" name="from" min={todayManila()} defaultValue={sp.from} required className="text-sm font-semibold text-navy-900 normal-case outline-none" /></label>
-            <label className="grid gap-0.5 px-2 text-[11px] font-semibold text-muted-foreground uppercase">Return<input type="date" name="to" min={todayManila(1)} defaultValue={sp.to} required className="text-sm font-semibold text-navy-900 normal-case outline-none" /></label>
+            <label className="grid gap-0.5 px-2 text-[11px] font-semibold text-muted-foreground uppercase">Pickup<DateInput name="from" min={todayManila()} defaultValue={sp.from} required placeholder="Pick a date" className="text-sm font-semibold text-navy-900 normal-case outline-none" /></label>
+            <label className="grid gap-0.5 px-2 text-[11px] font-semibold text-muted-foreground uppercase">Return<DateInput name="to" min={todayManila(1)} defaultValue={sp.to} required placeholder="Pick a date" className="text-sm font-semibold text-navy-900 normal-case outline-none" /></label>
             <button className="h-10 rounded-xl px-4 text-sm font-semibold text-white" style={{ background: "var(--store-accent)" }}>Check</button>
             {dated && <Link href={`/${business.slug}#fleet`} className="px-2 text-xs font-medium text-muted-foreground hover:underline">Clear</Link>}
           </form>

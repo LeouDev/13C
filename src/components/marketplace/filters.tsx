@@ -1,3 +1,4 @@
+import { DateInput } from "@/components/common/date-input";
 import { NativeSelect } from "@/components/common/field";
 import { LOCATIONS, TRANSMISSIONS } from "@/lib/constants";
 import { todayManila } from "@/lib/format";
@@ -23,8 +24,8 @@ export function ExploreFilters({ p, categories, action = "/explore", lockLocatio
         </div>
       )}
       <div className="grid grid-cols-2 gap-2">
-        <div><label className={label} htmlFor="f-from">Pickup</label><input id="f-from" type="date" name="from" min={todayManila()} defaultValue={p.from} className="h-10 w-full rounded-xl border border-input bg-white px-2 text-sm" /></div>
-        <div><label className={label} htmlFor="f-to">Return</label><input id="f-to" type="date" name="to" min={todayManila(1)} defaultValue={p.to} className="h-10 w-full rounded-xl border border-input bg-white px-2 text-sm" /></div>
+        <div><label className={label} htmlFor="f-from">Pickup</label><DateInput id="f-from" name="from" min={todayManila()} defaultValue={p.from} placeholder="Any date" className="h-10 w-full rounded-xl border border-input bg-white px-2 text-sm" /></div>
+        <div><label className={label} htmlFor="f-to">Return</label><DateInput id="f-to" name="to" min={todayManila(1)} defaultValue={p.to} placeholder="Any date" className="h-10 w-full rounded-xl border border-input bg-white px-2 text-sm" /></div>
       </div>
       <div>
         <label className={label} htmlFor="f-type">Vehicle type</label>

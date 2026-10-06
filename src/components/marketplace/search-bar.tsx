@@ -1,5 +1,6 @@
 import { CalendarDays, Car, MapPin, Search } from "lucide-react";
 import { cn } from "cn";
+import { DateInput } from "@/components/common/date-input";
 import { LOCATIONS } from "@/lib/constants";
 import { todayManila } from "@/lib/format";
 
@@ -27,7 +28,7 @@ export function SearchBar({
         <CalendarDays className="size-5 shrink-0 text-electric" />
         <span className="min-w-0 flex-1">
           <span className={label}>Pickup date</span>
-          <input type="date" name="from" min={todayManila()} defaultValue={defaults.from} className={input} />
+          <DateInput name="from" min={todayManila()} defaultValue={defaults.from} placeholder="Any date" className={input} />
         </span>
       </label>
       <span className="hidden h-10 w-px bg-border md:block" />
@@ -35,7 +36,7 @@ export function SearchBar({
         <CalendarDays className="size-5 shrink-0 text-electric" />
         <span className="min-w-0 flex-1">
           <span className={label}>Return date</span>
-          <input type="date" name="to" min={todayManila(1)} defaultValue={defaults.to} className={input} />
+          <DateInput name="to" min={todayManila(1)} defaultValue={defaults.to} placeholder="Any date" className={input} />
         </span>
       </label>
       <span className="hidden h-10 w-px bg-border md:block" />
