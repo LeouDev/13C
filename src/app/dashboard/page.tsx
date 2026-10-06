@@ -1,13 +1,14 @@
 import { HoverPrefetchLink } from "@/components/common/hover-prefetch-link";
-import { ArrowRight, Car, CheckCircle2, Circle, ClipboardList, Eye, KeyRound, MessageSquare, TrendingUp, Undo2, Wallet } from "lucide-react";
+import { ArrowRight, Car, ClipboardList, Eye, KeyRound, MessageSquare, TrendingUp, Undo2, Wallet } from "lucide-react";
 import { BookingStatusBadge } from "@/components/common/badges";
 import { EmptyState, PageHeader, StatCard } from "@/components/common/states";
+import { StoreChecklistGroups } from "@/components/dashboard/store-checklist";
 import { VerificationBanner } from "@/components/dashboard/verification-banner";
 import { buttonVariants } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { requireBusiness } from "@/lib/auth";
 import { BLOCKING_STATUSES } from "@/lib/bookings/status";
-import { getOnboarding } from "@/lib/dashboard";
+import { getStoreChecklist } from "@/lib/dashboard";
 import { formatDateTime, formatPHP, formatRange, todayManila } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,8 +19,8 @@ export default async function DashboardHome() {
   const dayStart = new Date(`${today}T00:00:00+08:00`).toISOString();
   const dayEnd = new Date(`${today}T23:59:59+08:00`).toISOString();
 
-  const [onboarding, pickups, returns, pending, upcoming, active, activeVehicles, unread, analytics] = await Promise.all([
-    getOnboarding(business),
+  const [checklist, pickups, returns, pending, upcoming, active, activeVehicles, unread, analytics] = await Promise.all([
+    getStoreChecklist(business),
     supabase.from("bookings").select("id", { count: "exact", head: true }).eq("business_id", business.id).in("status", ["CONFIRMED", "SIGNED"]).gte("pickup_at", dayStart).lte("pickup_at", dayEnd),
     supabase.from("bookings").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("status", "ACTIVE").gte("return_at", dayStart).lte("return_at", dayEnd),
     supabase.from("bookings").select("id, reference, status, pickup_at, return_at, total_amount, vehicles(make, model), renter:profiles!bookings_renter_id_fkey(full_name)").eq("business_id", business.id).eq("status", "PENDING_OWNER_APPROVAL").order("pickup_at").limit(5),
@@ -37,32 +38,29 @@ export default async function DashboardHome() {
       <VerificationBanner business={business} />
       <PageHeader eyebrow="Dashboard" title={`Good day, ${business.name}`} description="Here's what's happening with your rental business." />
 
-      {!onboarding.published && (
+      {!checklist.published && (
         <section className="mb-6 rounded-3xl border bg-white p-5 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="font-display text-lg font-bold text-navy-900">Complete your 13C Store</h2>
-              <p className="text-sm text-muted-foreground">Finish these steps to publish your storefront.</p>
+              <h2 className="font-display text-lg font-bold text-navy-900">Get your store ready to go live</h2>
+              <p className="text-sm text-muted-foreground">
+                {checklist.ready ? "Everything needed is done. Publish your store from My Store." : "Finish the items needed to go live, then publish from My Store."}
+              </p>
             </div>
             <div className="flex items-center gap-3 sm:w-64">
-              <Progress value={onboarding.percent} className="flex-1" />
-              <span className="font-display text-lg font-bold text-navy-900">{onboarding.percent}%</span>
+              <Progress value={checklist.percent} className="flex-1" />
+              <span className="font-display text-lg font-bold text-navy-900">{checklist.percent}%</span>
             </div>
           </div>
-          <ul className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {onboarding.steps.map((s) => (
-              <li key={s.key}>
-                <HoverPrefetchLink href={s.href} className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm hover:bg-canvas">
-                  {s.done ? <CheckCircle2 className="size-5 text-emerald-600" /> : <Circle className="size-5 text-slate-300" />}
-                  <span className={s.done ? "text-muted-foreground line-through decoration-slate-300" : "font-medium text-navy-900"}>{s.label}</span>
-                  {s.optional && !s.done && <span className="text-xs text-muted-foreground">(optional)</span>}
-                </HoverPrefetchLink>
-              </li>
-            ))}
-          </ul>
-          <HoverPrefetchLink href={onboarding.steps.find((s) => !s.done && !s.optional)?.href ?? "/dashboard/store"} className={buttonVariants({ size: "lg", className: "mt-4" })}>
-            Complete Store <ArrowRight />
-          </HoverPrefetchLink>
+          <StoreChecklistGroups items={checklist.items} className="mt-5" />
+          {(() => {
+            const next = checklist.items.find((i) => i.tier === "required" && !i.done);
+            return (
+              <HoverPrefetchLink href={next?.href ?? "/dashboard/store"} className={buttonVariants({ size: "lg", className: "mt-4" })}>
+                {next ? `Next: ${next.label}` : "Publish your store"} <ArrowRight />
+              </HoverPrefetchLink>
+            );
+          })()}
         </section>
       )}
 

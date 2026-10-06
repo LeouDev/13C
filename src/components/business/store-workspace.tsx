@@ -8,18 +8,21 @@ import { toast } from "sonner";
 import { cn } from "cn";
 import { setStorePublished } from "@/app/actions/business";
 import { StoreEditor } from "@/components/business/store-editor";
+import { StoreChecklistGroups } from "@/components/dashboard/store-checklist";
 import { Pill } from "@/components/common/badges";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ROOT_DOMAIN, SITE_URL } from "@/lib/constants";
+import type { StoreChecklist } from "@/lib/dashboard";
 import type { Tables } from "@/types/database";
 
 export function StoreWorkspace({
-  business, store, vehicles, canPublish,
+  business, store, vehicles, canPublish, checklist,
 }: {
   business: Tables<"businesses">;
   store: Tables<"business_storefronts">;
   vehicles: { id: string; make: string; model: string; year: number }[];
   canPublish: boolean;
+  checklist: StoreChecklist;
 }) {
   const router = useRouter();
   const [previewKey, setPreviewKey] = useState(0);
@@ -53,18 +56,28 @@ export function StoreWorkspace({
                 <Copy /> Copy Store Link
               </Button>
               {canPublish && (
-                <Button size="lg" variant="outline" disabled={pending} onClick={togglePublish}
+                <Button size="lg" variant="outline" disabled={pending || (!store.is_published && !checklist.ready)} onClick={togglePublish}
                   className="border-white/20 bg-white/5 text-white hover:bg-white/15 hover:text-white">
                   {pending ? <Loader2 className="animate-spin" /> : store.is_published ? <EyeOff /> : <Eye />}
                   {store.is_published ? "Unpublish" : "Publish store"}
                 </Button>
               )}
             </div>
-            {!store.is_published && business.status !== "VERIFIED" && (
-              <p className="mt-4 rounded-xl bg-white/10 px-3 py-2 text-xs text-white/80">You can publish once 13C verifies your business. Until then, only your team can see the preview.</p>
+            {!store.is_published && !checklist.ready && (
+              <p className="mt-4 rounded-xl bg-white/10 px-3 py-2 text-xs text-white/80">Finish the items needed to go live (below), then publish. Until then, only your team can see the preview.</p>
             )}
           </div>
         </section>
+        {!store.is_published && (
+          <section className="rounded-3xl border bg-white p-5 sm:p-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="font-semibold text-navy-900">Before you go live</h2>
+              <p className="text-sm text-muted-foreground">{checklist.ready ? "Ready to publish" : `${checklist.percent}% ready`}</p>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">Publishing needs everything in the first list. The rest makes your store look complete and builds trust.</p>
+            <StoreChecklistGroups items={checklist.items} className="mt-4" />
+          </section>
+        )}
         <div id="customize" className="scroll-mt-20">
           <StoreEditor business={business} store={store} vehicles={vehicles} onSaved={() => setPreviewKey((k) => k + 1)} />
         </div>

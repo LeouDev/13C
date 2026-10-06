@@ -111,7 +111,13 @@ describe("business lifecycle", () => {
         fuel_type: "GASOLINE", seats: 5, color: "White", plate_number: "ZZT 1234", city: "Cebu City", self_drive: true, delivery_available: true },
       p_pricing: { daily_rate: 1500, weekly_rate: 9000, security_deposit: 3000, delivery_fee: 300 },
     }));
-    must(await owner.client.rpc("set_storefront_published", { p_business_id: businessId, p_publish: true }));
+    // The rest of "Needed to go live": a photo on the car and a cancellation policy (details and payment methods are in).
+    const publish = () => owner.client.rpc("set_storefront_published", { p_business_id: businessId, p_publish: true });
+    await expectError(publish(), "STORE_NEEDS_PHOTOS");
+    must(await owner.client.from("vehicle_images").insert({ vehicle_id: vehicleId, business_id: businessId, storage_path: `b/${businessId}/v/${vehicleId}/test.webp`, position: 0 }).select("id"));
+    await expectError(publish(), "STORE_NEEDS_CANCELLATION_POLICY");
+    must(await owner.client.from("business_storefronts").update({ policies: { cancellation: "Free cancellation up to 48 hours before pickup." } }).eq("business_id", businessId).select("business_id"));
+    must(await publish());
     const v = must(await anon().from("vehicles").select("slug, vehicle_pricing(daily_rate)").eq("id", vehicleId).single());
     expect(v.slug).toBe("toyota-vios-1-3-xle");
     expect(Number(v.vehicle_pricing?.daily_rate)).toBe(1500);

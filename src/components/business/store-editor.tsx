@@ -22,9 +22,9 @@ import type { Tables } from "@/types/database";
 type Hours = { day: string; open: string; close: string; closed: boolean };
 const AREA_SUGGESTIONS = ["Mactan-Cebu Int'l Airport", ...LOCATIONS.map((l) => l.name), "SM Seaside", "IT Park"];
 
-function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function Section({ id, title, description, children }: { id?: string; title: string; description?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-3xl border bg-white p-5 sm:p-6">
+    <section id={id} className="scroll-mt-20 rounded-3xl border bg-white p-5 sm:p-6">
       <h2 className="font-semibold text-navy-900">{title}</h2>
       {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
       <div className="mt-4 grid gap-4">{children}</div>
@@ -72,7 +72,7 @@ export function StoreEditor({
 
   return (
     <div className="grid gap-5">
-      <Section title="Brand" description="Logo, cover and accent color. Your layout stays 13C-quality on every device.">
+      <Section id="brand" title="Brand" description="Logo, cover and accent color. Your layout stays 13C-quality on every device.">
         <div className="grid gap-5 sm:grid-cols-[160px_1fr]">
           <Field label="Logo">
             <ImageUpload prefix={`b/${business.id}`} value={logo} maxPx={600} png label="Upload logo" onChange={async (p) => {
@@ -132,7 +132,7 @@ export function StoreEditor({
         </div>
       </Section>
 
-      <Section title="Pickup & delivery">
+      <Section id="locations" title="Pickup & delivery">
         <Field label="Pickup locations" hint="Press Enter to add.">
           <TagInput value={v.pickup_locations} onChange={(x) => set("pickup_locations", x)} placeholder="e.g. Our garage, A.S. Fortuna St." suggestions={[business.city]} />
         </Field>
@@ -141,7 +141,7 @@ export function StoreEditor({
         </Field>
       </Section>
 
-      <Section title="Rental policies" description="Shown on your store and inserted automatically into every rental agreement.">
+      <Section id="policies" title="Rental policies" description="Shown on your store and inserted automatically into every rental agreement.">
         <div className="grid gap-4 sm:grid-cols-2">
           {POLICY_FIELDS.map((p) => (
             <Field key={p.key} label={p.label} htmlFor={`policy-${p.key}`} error={errors[`policies.${p.key}`]}
@@ -153,7 +153,7 @@ export function StoreEditor({
         </div>
       </Section>
 
-      <Section title="Frequently asked questions">
+      <Section id="faq" title="Frequently asked questions">
         {v.faqs.map((f, i) => (
           <div key={i} className="grid gap-2 rounded-2xl border p-3">
             <div className="flex gap-2">
@@ -170,7 +170,7 @@ export function StoreEditor({
         </div>
       </Section>
 
-      <Section title="Business hours & contact">
+      <Section id="hours" title="Business hours & contact">
         <div className="grid gap-2">
           {(v.business_hours as Hours[]).map((h, i) => (
             <div key={h.day} className="flex flex-wrap items-center gap-2 text-sm">
