@@ -5,12 +5,14 @@ import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "cn";
+import { signInAgain } from "@/app/actions/auth";
 import { savePaymentMethods } from "@/app/actions/business";
 import { ImageUpload } from "@/components/common/uploads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { PAYMENT_METHODS } from "@/lib/constants";
+import { SIGN_IN_AGAIN } from "@/lib/errors";
 import type { Enums, Tables } from "@/types/database";
 
 type Row = { method: Enums<"payment_method_type">; is_enabled: boolean; account_name: string; account_number: string; instructions: string; qr_path: string | null };
@@ -20,6 +22,7 @@ const QR = new Set<Row["method"]>(["GCASH", "MAYA", "BANK_TRANSFER"]);
 export function PaymentMethodsEditor({ businessId, existing, canEdit }: { businessId: string; existing: Tables<"payment_methods">[]; canEdit: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [again, setAgain] = useState(false);
   const [rows, setRows] = useState<Row[]>(PAYMENT_METHODS.map((m) => {
     const e = existing.find((x) => x.method === m.value);
     return { method: m.value, is_enabled: e?.is_enabled ?? false, account_name: e?.account_name ?? "", account_number: e?.account_number ?? "", instructions: e?.instructions ?? "", qr_path: e?.qr_path ?? null };
@@ -55,8 +58,16 @@ export function PaymentMethodsEditor({ businessId, existing, canEdit }: { busine
       {canEdit && (
         <Button size="lg" className="justify-self-start" disabled={pending} onClick={() => start(async () => {
           const res = await savePaymentMethods(businessId, rows);
-          if (res.ok) { toast.success(res.message); router.refresh(); } else toast.error(res.fieldErrors ? Object.values(res.fieldErrors)[0]! : res.error);
+          if (res.ok) { toast.success(res.message); router.refresh(); } else if (res.error === SIGN_IN_AGAIN) setAgain(true);
+          else toast.error(res.fieldErrors ? Object.values(res.fieldErrors)[0]! : res.error);
         })}>{pending && <Loader2 className="animate-spin" />} Save payment methods</Button>
+      )}
+      {again && (
+        <form action={signInAgain} className="flex flex-col gap-3 rounded-2xl bg-amber-50 p-4 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+          <input type="hidden" name="next" value="/dashboard/payments" />
+          <p>{SIGN_IN_AGAIN} Your changes here aren&apos;t saved yet.</p>
+          <Button type="submit" variant="outline" className="shrink-0">Sign in again</Button>
+        </form>
       )}
     </div>
   );

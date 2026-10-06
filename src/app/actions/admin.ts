@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { fail, ok, type ActionResult } from "@/lib/actions";
+import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { Enums } from "@/types/database";
@@ -68,6 +69,24 @@ export async function setKycStatus(userId: string, status: Enums<"kyc_status">):
  * secret key, we delete the user's private KYC files and scrub + ban the auth identity.
  * Booking and signed-contract records are retained as required by law.
  */
+/** Support: removes a user's two-step sign-in (a lost phone), after checking who they are outside 13C. */
+export async function resetTwoStep(userId: string): Promise<ActionResult> {
+  const id = z.uuid().safeParse(userId);
+  if (!id.success) return { ok: false, error: "Invalid user." };
+  const me = await getCurrentUser();
+  if (!me?.is_admin || !me.twoStepPassed) return { ok: false, error: "You don't have permission to do that." };
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.mfa.listFactors({ userId: id.data });
+  if (error) return fail(error);
+  for (const f of data.factors) {
+    const { error: delError } = await admin.auth.admin.mfa.deleteFactor({ id: f.id, userId: id.data });
+    if (delError) return fail(delError);
+  }
+  await admin.rpc("log_audit", { p_action: "user.two_step_removed", p_entity_type: "user", p_entity_id: id.data, p_actor: me.id });
+  revalidatePath(`/admin/users/${id.data}`);
+  return ok(undefined, "Two-step sign-in removed. They can sign in with their password and turn it on again.");
+}
+
 export async function anonymizeUser(userId: string): Promise<ActionResult> {
   const id = z.uuid().safeParse(userId);
   if (!id.success) return { ok: false, error: "Invalid user." };

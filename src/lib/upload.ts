@@ -13,7 +13,7 @@ export function validateFile(file: File, types: string[], maxMB: number): string
 }
 
 /** Downscale to ≤ max px on the long edge and re-encode (WebP, or PNG for logos; JPEG fallback). Strips EXIF/GPS too. */
-export async function resizeImage(file: File, max = 2000, quality = 0.85, type: "image/webp" | "image/png" = "image/webp") {
+export async function resizeImage(file: File, max = 2000, quality = 0.85, type: "image/webp" | "image/png" | "image/jpeg" = "image/webp") {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
   const width = Math.round(bitmap.width * scale);
@@ -42,6 +42,13 @@ export async function uploadImage(prefix: string, file: File, max = 2000, type?:
   const path = `${prefix}/${crypto.randomUUID()}.${ext}`;
   await uploadToBucket("media", path, blob, blob.type);
   return { path, width, height };
+}
+
+/** A renter's license or ID: photos become JPEG (≤ 2000 px, no EXIF/GPS) so businesses can view them watermarked; PDFs as they are. */
+export async function uploadIdDocument(userId: string, file: File) {
+  if (file.type === "application/pdf") return uploadDocument("kyc", userId, file);
+  const { blob, ext } = await resizeImage(file, 2000, 0.88, "image/jpeg");
+  return uploadToBucket("kyc", `${userId}/${crypto.randomUUID()}.${ext}`, blob, blob.type);
 }
 
 export async function uploadDocument(bucket: "business-docs" | "kyc", prefix: string, file: File) {

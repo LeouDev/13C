@@ -2526,6 +2526,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      passed_two_step: { Args: never; Returns: boolean }
       plan_price_centavos: {
         Args: { p: Database["public"]["Enums"]["subscription_plan"] }
         Returns: number

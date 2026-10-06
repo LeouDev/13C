@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronDown, Download, FileSignature, MessageSquare, Phone } from "lucide-react";
-import { DocumentLink } from "@/components/admin/business-review";
+import { ChevronDown, Download, ExternalLink, FileSignature, FileText, MessageSquare, Phone } from "lucide-react";
 import { PaymentsPanel, RegenerateButton, TermsEditor, TransitionActions } from "@/components/booking/booking-actions";
 import { DownPaymentPanel } from "@/components/booking/down-payment";
 import { BookingProgress, StatusHistory } from "@/components/booking/booking-timeline";
@@ -33,7 +32,7 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
   if (!b) notFound();
   const [{ data: renter }, { data: docs }] = await Promise.all([
     supabase.from("renters").select("*").eq("user_id", b.renter_id).maybeSingle(),
-    supabase.from("driver_documents").select("doc_type, storage_path").eq("user_id", b.renter_id),
+    supabase.from("driver_documents").select("id, doc_type").eq("user_id", b.renter_id),
   ]);
 
   const contract = b.contracts;
@@ -152,7 +151,15 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
               <span>ID verification: {labelize(renter?.kyc_status ?? "UNVERIFIED")}</span>
             </div>
             {docs && docs.length > 0 && (
-              <div className="mt-3 grid gap-2">{docs.map((d) => <DocumentLink key={d.storage_path} bucket="kyc" path={d.storage_path} name={labelize(d.doc_type)} />)}</div>
+              <div className="mt-3 grid gap-2">
+                {docs.map((d) => (
+                  <a key={d.id} href={`/api/renter-documents/${d.id}`} target="_blank" rel="noreferrer"
+                    className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm hover:bg-canvas">
+                    <FileText className="size-4 text-electric" /><span className="min-w-0 flex-1 truncate">{labelize(d.doc_type)}</span><ExternalLink className="size-3.5 text-muted-foreground" />
+                  </a>
+                ))}
+                <p className="text-xs text-muted-foreground">Shown with your business name and today&apos;s date across them, for this rental only.</p>
+              </div>
             )}
             {b.conversation_id && <Link href={`/dashboard/messages/${b.conversation_id}`} className={buttonVariants({ variant: "outline", className: "mt-4 w-full" })}><MessageSquare /> Message renter</Link>}
             <div className="mt-3 text-center"><ReportButton entityType="BOOKING" entityId={b.id} signedIn side="business" /></div>

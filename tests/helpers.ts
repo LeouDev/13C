@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
@@ -12,8 +13,10 @@ const opts = { auth: { persistSession: false, autoRefreshToken: false } };
 export const service = createClient<Database>(url, process.env.SUPABASE_SECRET_KEY!, opts);
 export const anon = () => createClient<Database>(url, publishable, opts);
 
-export async function makeUser(tag: string) {
-  const email = `${tag}-${crypto.randomUUID().slice(0, 8)}@13c.test`;
+export const makeUser = (tag: string) => makeUserWithEmail(tag, `${tag}-${crypto.randomUUID().slice(0, 8)}@13c.test`);
+
+/** Only for tests that make Supabase Auth itself send an email: use Resend's test inbox (delivered+…@resend.dev), and delete the user afterwards. */
+export async function makeUserWithEmail(tag: string, email: string) {
   const password = `T3st-${crypto.randomUUID()}`;
   const { data, error } = await service.auth.admin.createUser({
     email, password, email_confirm: true, user_metadata: { full_name: `Test ${tag}` },
@@ -26,9 +29,30 @@ export async function makeUser(tag: string) {
   const client = anon();
   const session = await client.auth.setSession(signIn.data.session);
   if (session.error) throw session.error;
-  return { id: data.user!.id, email, client };
+  return { id: data.user!.id, email, password, client };
 }
-export type TestUser = Awaited<ReturnType<typeof makeUser>>;
+
+/** A fresh password sign-in for the user, as its own client (with two-step sign-in on, this session is only aal1). */
+export async function signInAgain(u: { email: string; password: string }) {
+  const signIn = await createClient<Database>(url, process.env.SUPABASE_SECRET_KEY!, opts).auth.signInWithPassword({ email: u.email, password: u.password });
+  if (signIn.error) throw signIn.error;
+  const client = anon();
+  const session = await client.auth.setSession(signIn.data.session);
+  if (session.error) throw session.error;
+  return client;
+}
+
+/** The authenticator app's current 6-digit code for a base32 TOTP secret (RFC 6238: SHA-1, 30 seconds). */
+export function totp(secret: string, at = Date.now()) {
+  const bits = [...secret.replace(/=+$/, "").toUpperCase()].map((c) => "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".indexOf(c).toString(2).padStart(5, "0")).join("");
+  const key = Buffer.from(bits.match(/.{8}/g)!.map((b) => parseInt(b, 2)));
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(at / 30_000)));
+  const h = createHmac("sha1", key).update(counter).digest();
+  const offset = h[h.length - 1]! & 0xf;
+  return String((h.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).padStart(6, "0");
+}
+export type TestUser = Awaited<ReturnType<typeof makeUserWithEmail>>;
 
 export function must<T>(res: { data: T; error: unknown }): NonNullable<T> {
   if (res.error) throw res.error;

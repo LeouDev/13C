@@ -2,16 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { Eye, Heart, Loader2, Upload } from "lucide-react";
+import { Eye, Heart, Loader2, ShieldCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "cn";
 import { requestAccountDeletion, saveDriverDocument, toggleFavorite, viewMyDocument } from "@/app/actions/account";
-import { updatePassword } from "@/app/actions/auth";
+import { confirmTwoStep, startTwoStep, turnOffTwoStep, updatePassword } from "@/app/actions/auth";
 import { Field } from "@/components/common/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-import { DOC_TYPES, uploadDocument, validateFile } from "@/lib/upload";
+import { DOC_TYPES, uploadIdDocument, validateFile } from "@/lib/upload";
 import type { Enums } from "@/types/database";
 
 type DocType = Enums<"driver_document_type">;
@@ -32,7 +32,7 @@ export function DriverDocuments({ userId, docs }: { userId: string; docs: { doc_
     if (problem) return toast.error(problem);
     setBusy(type);
     try {
-      const path = await uploadDocument("kyc", userId, file);
+      const path = await uploadIdDocument(userId, file);
       const r = await saveDriverDocument({ doc_type: type, storage_path: path });
       if (r.ok) { toast.success(r.message); router.refresh(); } else toast.error(r.error);
     } catch (e) { toast.error((e as Error).message); }
@@ -73,6 +73,54 @@ export function PasswordForm({ autoFocus }: { autoFocus?: boolean }) {
       <Input name="password" type="password" minLength={8} required placeholder="New password (8+ characters)" autoComplete="new-password" aria-label="New password" autoFocus={autoFocus} />
       <Button type="submit" variant="outline" size="lg" disabled={pending}>{pending && <Loader2 className="animate-spin" />} Update password</Button>
       {state && <p className={cn("text-sm sm:self-center", state.ok ? "text-emerald-700" : "text-destructive")}>{state.ok ? state.message : state.error}</p>}
+    </form>
+  );
+}
+
+/** Two-step sign-in: a code from an authenticator app at every sign-in. Setup shows a QR code, confirmed with the first code. */
+export function TwoStepPanel({ on }: { on: boolean }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [setup, setSetup] = useState<{ factorId: string; qr: string; secret: string } | null>(null);
+  const [code, setCode] = useState("");
+  const run = (fn: () => Promise<{ ok: boolean; message?: string; error?: string }>) => start(async () => {
+    const r = await fn();
+    if (r.ok) { toast.success(r.message); setSetup(null); setCode(""); router.refresh(); } else toast.error(r.error);
+  });
+  if (on) return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="flex gap-2 text-sm text-emerald-800"><ShieldCheck className="size-5 shrink-0" /> On. Each sign-in asks for a code from your authenticator app.</p>
+      <Button variant="outline" disabled={pending} onClick={() => confirm("Turn off two-step sign-in? Your password alone will be enough to sign in.") && run(turnOffTwoStep)}>
+        {pending && <Loader2 className="animate-spin" />} Turn off
+      </Button>
+    </div>
+  );
+  if (!setup) return (
+    <div className="grid gap-3">
+      <p className="text-sm text-muted-foreground">
+        Each sign-in also asks for a 6-digit code from an app on your phone (Google Authenticator, Microsoft Authenticator or similar), so a stolen password
+        isn&apos;t enough to get in. Recommended for business owners: it guards your payment details.
+      </p>
+      <Button variant="outline" className="justify-self-start" disabled={pending} onClick={() => start(async () => {
+        const r = await startTwoStep();
+        if (r.ok && r.data) setSetup(r.data); else if (!r.ok) toast.error(r.error);
+      })}>{pending && <Loader2 className="animate-spin" />} Turn on two-step sign-in</Button>
+    </div>
+  );
+  return (
+    <form className="grid gap-4 sm:grid-cols-[auto_1fr]" onSubmit={(e) => { e.preventDefault(); run(() => confirmTwoStep(setup.factorId, code)); }}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- an SVG data URL from Supabase Auth */}
+      <img src={setup.qr} alt="QR code to add 13C to your authenticator app" width={176} height={176} className="size-44 rounded-xl border bg-white p-2" />
+      <div className="grid content-start gap-3 text-sm">
+        <p><span className="font-semibold text-navy-900">1.</span> In your authenticator app, add an account and scan this code.</p>
+        <p className="text-muted-foreground">Can&apos;t scan? Enter this key instead: <span className="font-mono break-all text-navy-900 select-all">{setup.secret}</span></p>
+        <p><span className="font-semibold text-navy-900">2.</span> Enter the 6-digit code the app shows for 13C.</p>
+        <div className="flex gap-2">
+          <Input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" maxLength={7} placeholder="123 456" aria-label="6-digit code" className="max-w-40 font-mono tracking-widest" />
+          <Button type="submit" disabled={pending}>{pending && <Loader2 className="animate-spin" />} Turn on</Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Your other devices will be signed out. If you lose your phone, email support@13c.online from your account&apos;s email.</p>
+      </div>
     </form>
   );
 }

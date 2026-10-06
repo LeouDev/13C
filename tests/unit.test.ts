@@ -18,6 +18,7 @@ import { storeSections, type Storefront } from "@/lib/queries";
 import { dueKm, dueOn } from "@/lib/fleet";
 import { toCsv } from "@/lib/csv";
 import { groupFingerprint, isValidSignatureImage } from "@/lib/signature";
+import { sniff, watermark } from "@/lib/watermark";
 import { businessSchema, localPhone, phoneSchema, slugSchema, toPhilippinePhone, vehicleSchema } from "@/lib/validation";
 
 describe("booking state machine (UI mirror)", () => {
@@ -37,6 +38,21 @@ describe("booking state machine (UI mirror)", () => {
   it("terminal states have no exits and every status has UI copy", () => {
     for (const s of ["COMPLETED", "CANCELLED", "REJECTED", "EXPIRED"] as const) expect(TRANSITIONS.some(([f]) => f === s)).toBe(false);
     for (const [, to] of TRANSITIONS) expect(STATUS_META[to].label).toBeTruthy();
+  });
+});
+
+describe("watermarked renter documents", () => {
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+  it("stamps photos (as a one-page PDF) and every page of a PDF; other files aren't served", async () => {
+    const fromPhoto = await PDFDocument.load((await watermark(new Uint8Array(png), "For ZZ Rentals only - 13C-ABC123 - Oct 6, 2026 - 13C"))!);
+    expect(fromPhoto.getPageCount()).toBe(1);
+    const doc = await PDFDocument.create();
+    doc.addPage([595, 842]);
+    doc.addPage([595, 842]);
+    const stamped = await PDFDocument.load((await watermark(await doc.save(), "For ZZ Rentals only"))!);
+    expect(stamped.getPageCount()).toBe(2);
+    expect(sniff(new TextEncoder().encode("RIFF....WEBP"))).toBeNull();
+    expect(await watermark(new TextEncoder().encode("RIFF....WEBP"), "x")).toBeNull();
   });
 });
 

@@ -1,3 +1,7 @@
+
+/** Payment details changes need a recent sign-in (savePaymentMethods); the editor offers "Sign in again" on this. */
+export const SIGN_IN_AGAIN = "For your security, sign in again to change payment details.";
+
 /**
  * Turns Postgres / PostgREST / Storage / Auth errors into copy a renter or owner can act on.
  * Raw messages are logged server-side only.
@@ -99,6 +103,9 @@ export function friendlyError(err: unknown, fallback = "Something went wrong. Pl
   if (/User already registered/i.test(msg)) return "An account with this email already exists. Try signing in.";
   if (e.code === "same_password" || /different from the old password/i.test(msg)) return "That's your current password. Choose a new one.";
   if (/Password should be|Password should contain/i.test(msg)) return "Use a stronger password: at least 8 characters, with letters and numbers.";
+  if (e.code === "mfa_verification_failed" || /Invalid TOTP code/i.test(msg)) return "That code didn't work. Enter the newest code from your authenticator app (check your phone's time is set automatically).";
+  if (e.code === "mfa_challenge_expired") return "That took too long. Enter a new code from your authenticator app.";
+  if (e.code === "insufficient_aal") return "Sign in with your authenticator code first, then try again.";
   if (/rate limit/i.test(msg)) return "Too many attempts. Please wait a minute and try again.";
   if (e.code === "captcha_failed" || /captcha/i.test(msg)) return "The security check didn't go through. Wait for it to finish, then try again.";
   if (/mime type|invalid_mime_type/i.test(msg)) return "That file type isn't allowed.";

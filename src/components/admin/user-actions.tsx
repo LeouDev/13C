@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { anonymizeUser, setKycStatus, setUserSuspended } from "@/app/actions/admin";
+import { anonymizeUser, resetTwoStep, setKycStatus, setUserSuspended } from "@/app/actions/admin";
 import { NativeSelect } from "@/components/common/field";
 import { Button } from "@/components/ui/button";
 import type { ActionResult } from "@/lib/actions";
@@ -18,7 +18,7 @@ const KYC: { value: Enums<"kyc_status">; label: string }[] = [
 ];
 
 export function UserActions({
-  userId, name, suspended, kycStatus, anonymized, isSelf,
+  userId, name, suspended, kycStatus, anonymized, isSelf, twoStep = false,
 }: {
   userId: string;
   name: string;
@@ -27,6 +27,8 @@ export function UserActions({
   kycStatus: Enums<"kyc_status"> | null;
   anonymized: boolean;
   isSelf: boolean;
+  /** They have two-step sign-in on (support can remove it for a lost phone; shown on the user's page) */
+  twoStep?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -80,6 +82,14 @@ export function UserActions({
           >
             Anonymize
           </Button>
+          {twoStep && (
+            <Button size="sm" variant="outline" disabled={pending} onClick={() => {
+              if (!confirm(`Remove ${name}'s two-step sign-in? Only do this after confirming it's really them (for example a lost phone).`)) return;
+              run(() => resetTwoStep(userId));
+            }}>
+              Remove two-step sign-in
+            </Button>
+          )}
         </>
       )}
       {pending && <Loader2 className="size-4 animate-spin text-electric" aria-label="Saving" />}

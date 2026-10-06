@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
 import { Loader2, MailCheck } from "lucide-react";
-import { signIn, signUp, requestPasswordReset } from "@/app/actions/auth";
+import { signIn, signOut, signUp, requestPasswordReset, verifyTwoStep } from "@/app/actions/auth";
 import { Field, PhoneInput } from "@/components/common/field";
 import { captchaEnabled, Turnstile } from "@/components/common/turnstile";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -18,6 +18,30 @@ function FormError({ state }: { state: ActionResult<unknown> | null }) {
     <Alert variant="destructive" className="rounded-xl">
       <AlertDescription>{state.error}</AlertDescription>
     </Alert>
+  );
+}
+
+/** The code step of sign-in, for people with two-step sign-in on. */
+export function TwoStepForm({ next }: { next: string }) {
+  const [state, action, pending] = useActionState(verifyTwoStep, null);
+  return (
+    <div className="grid gap-4">
+      <form action={action} className="grid gap-4">
+        <input type="hidden" name="next" value={next} />
+        <FormError state={state} />
+        <Field label="6-digit code" htmlFor="code">
+          <Input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]*" maxLength={7} required autoFocus
+            placeholder="123 456" className="h-12 text-center font-mono text-lg tracking-[0.3em]" />
+        </Field>
+        <Button type="submit" size="xl" disabled={pending} className="w-full">{pending && <Loader2 className="animate-spin" />} Verify</Button>
+      </form>
+      <form action={signOut} className="text-center">
+        <p className="text-sm text-muted-foreground">
+          Lost your phone? Email support@13c.online from your account&apos;s email address.{" "}
+          <button type="submit" className="font-semibold text-electric hover:underline">Sign out</button>
+        </p>
+      </form>
+    </div>
   );
 }
 

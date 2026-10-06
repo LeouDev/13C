@@ -107,6 +107,36 @@ export const AUTH_EMAILS: Record<string, { kind: "template" | "notification"; wh
       footer: "auth",
     },
   },
+  mfa_factor_enrolled: {
+    kind: "notification",
+    when: "Two-step sign-in was turned on (an authenticator app was added)",
+    email: {
+      subject: "Two-step sign-in is on for your 13C account",
+      preheader: "If this wasn't you, contact support now.",
+      heading: "Two-step sign-in is on",
+      blocks: [
+        { p: "An authenticator app was added to **{{ .Email }}**. From now on, signing in also asks for a 6-digit code from that app." },
+        { note: "If you didn't do this, someone may know your password. Reset it now and contact support@13c.online.", tone: "warning" },
+      ],
+      cta: { label: "Go to sign in", url: "{{ .SiteURL }}/login" },
+      footer: "auth",
+    },
+  },
+  mfa_factor_unenrolled: {
+    kind: "notification",
+    when: "Two-step sign-in was turned off (the authenticator app was removed)",
+    email: {
+      subject: "Two-step sign-in was turned off on your 13C account",
+      preheader: "If this wasn't you, contact support now.",
+      heading: "Two-step sign-in is off",
+      blocks: [
+        { p: "Two-step sign-in was turned off for **{{ .Email }}**. Your password alone now signs you in." },
+        { note: "If you didn't do this, reset your password now and contact support@13c.online.", tone: "warning" },
+      ],
+      cta: { label: "Turn it back on", url: "{{ .SiteURL }}/account#two-step" },
+      footer: "auth",
+    },
+  },
 };
 
 export const renderAuthEmail = (name: string) => renderEmail(AUTH_EMAILS[name]!.email, { base: "{{ .SiteURL }}" });

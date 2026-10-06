@@ -11,21 +11,39 @@ export const hasRole = (role: Role, min: Role) => RANK[role] >= RANK[min];
 
 export const BUSINESS_COOKIE = "13c_business";
 
-/** Verified (auth server) user + profile, once per request. */
+/**
+ * Verified (auth server) user + profile, once per request, plus this session's sign-in: whether two-step sign-in is on
+ * (checked against the auth server) and passed here (the session's aal), and when it last signed in (the token's amr).
+ */
 export const getCurrentUser = cache(async () => {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   if (!data.user) return null;
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", data.user.id).maybeSingle();
+  const [{ data: profile }, { data: aal }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", data.user.id).maybeSingle(),
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+  ]);
   if (!profile) return null;
-  return profile;
+  const twoStep = !!data.user.factors?.some((f) => f.status === "verified");
+  return {
+    ...profile,
+    twoStep,
+    twoStepPassed: !twoStep || aal?.currentLevel === "aal2",
+    /** ms; 0 if unknown */
+    signedInAt: Math.max(0, ...(aal?.currentAuthenticationMethods ?? []).map((m) => (typeof m === "string" ? 0 : m.timestamp))) * 1000,
+  };
 });
 
+/** Signed in, and past the code step when two-step sign-in is on. */
 export async function requireUser(next = "/") {
   const user = await getCurrentUser();
   if (!user) redirect(`/login?next=${encodeURIComponent(next)}`);
+  if (!user.twoStepPassed) redirect(`/login/verify?next=${encodeURIComponent(next)}`);
   return user;
 }
+
+/** How recently someone must have signed in to change payment details */
+export const FRESH_SIGN_IN_MS = 15 * 60_000;
 
 export async function requireAdmin() {
   const user = await requireUser("/admin");

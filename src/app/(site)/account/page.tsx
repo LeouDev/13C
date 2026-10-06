@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ShieldCheck } from "lucide-react";
-import { DeletionRequest, DriverDocuments, PasswordForm } from "@/components/account/account-panels";
+import { DeletionRequest, DriverDocuments, PasswordForm, TwoStepPanel } from "@/components/account/account-panels";
 import { RenterForm } from "@/components/account/renter-form";
 import { Pill } from "@/components/common/badges";
 import { PageHeader } from "@/components/common/states";
@@ -40,6 +40,8 @@ export default async function AccountPage() {
         <h2 className="mb-1 font-semibold text-navy-900">Security</h2>
         <p className="mb-3 text-sm text-muted-foreground">Changing your password signs you out on your other devices.</p>
         <PasswordForm />
+        <h3 id="two-step" className="mt-6 mb-2 scroll-mt-24 text-sm font-semibold text-navy-900">Two-step sign-in</h3>
+        <TwoStepPanel on={user.twoStep} />
       </section>
       <section className={card}>
         <h2 className="mb-1 font-semibold text-navy-900">Privacy</h2>

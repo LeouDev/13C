@@ -9,6 +9,7 @@ import { BookingStatusBadge, BUSINESS_STATUS_TONE, Pill } from "@/components/com
 import { PageHeader } from "@/components/common/states";
 import { requireAdmin } from "@/lib/auth";
 import { formatDate, formatDateTime, formatPHP, labelize } from "@/lib/format";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "User" };
@@ -21,12 +22,13 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
     .select("*, renters(*), driver_documents(id, doc_type, storage_path, created_at)")
     .eq("id", id).maybeSingle();
   if (!u) notFound();
-  const [{ data: bookings }, { data: businesses }, { data: audit }] = await Promise.all([
+  const [{ data: bookings }, { data: businesses }, { data: audit }, { data: factors }] = await Promise.all([
     supabase.from("bookings").select("id, reference, status, pickup_at, total_amount, businesses(id, name)")
       .eq("renter_id", id).order("created_at", { ascending: false }).limit(10),
     supabase.from("businesses").select("id, name, status").eq("owner_id", id).is("deleted_at", null),
     supabase.from("audit_logs").select("action, created_at").eq("entity_type", "user").eq("entity_id", id)
       .order("created_at", { ascending: false }).limit(10),
+    createAdminClient().auth.admin.mfa.listFactors({ userId: id }), // requireAdmin above
   ]);
   const r = u.renters;
   const anonymized = isAnonymized(u);
@@ -109,7 +111,7 @@ export default async function AdminUserPage({ params }: PageProps<"/admin/users/
           <section className="rounded-2xl border bg-white p-5">
             <h2 className="mb-3 font-semibold">Actions</h2>
             <UserActions userId={u.id} name={u.full_name || "this user"} suspended={u.is_suspended} kycStatus={r?.kyc_status ?? null}
-              anonymized={anonymized} isSelf={u.id === me.id} />
+              anonymized={anonymized} isSelf={u.id === me.id} twoStep={!!factors?.factors.some((f) => f.status === "verified")} />
           </section>
           <section className="rounded-2xl border bg-white p-5">
             <div className="mb-3 flex flex-wrap items-center gap-2">

@@ -11,7 +11,7 @@ import { POST as paymongoWebhook } from "@/app/api/webhooks/paymongo/route";
 import { prepareNotificationEmail, templateFor } from "@/lib/notification-email";
 import { onRequestError } from "@/instrumentation";
 import { PLAN_PRICE_CENTAVOS, PLAN_VEHICLE_LIMIT, RESERVED_SLUGS, TRIAL_DAYS } from "@/lib/constants";
-import { anon, completeRenterProfile, day, makeUser, must, service, SIGNATURE, type TestUser } from "./helpers";
+import { anon, completeRenterProfile, day, makeUser, makeUserWithEmail, must, service, SIGNATURE, signInAgain, totp, type TestUser } from "./helpers";
 
 let owner: TestUser, admin: TestUser, renter: TestUser, renter2: TestUser, outsider: TestUser;
 let businessId: string, vehicleId: string, slug: string;
@@ -187,6 +187,11 @@ describe("bookings", () => {
     // The business can review the renter's license and ID while deciding; nobody else can.
     expect(must(await owner.client.from("driver_documents").select("doc_type").eq("user_id", renter.id))).toHaveLength(3);
     expect(must(await outsider.client.from("driver_documents").select("doc_type").eq("user_id", renter.id))).toHaveLength(0);
+    // ...and only through the watermarked viewer (/api/renter-documents): the original files are the renter's and admins' alone.
+    const original = `${renter.id}/policy-check.png`;
+    must(await renter.client.storage.from("kyc").upload(original, new Blob([Buffer.from(SIGNATURE.split(",")[1]!, "base64")], { type: "image/png" }), { contentType: "image/png" }));
+    expect((await owner.client.storage.from("kyc").download(original)).error).toBeTruthy();
+    expect((await renter.client.storage.from("kyc").download(original)).error).toBeNull();
     expect(Number(b.total_amount)).toBe(1500);
     expect(b.conversation_id).toBeTruthy();
     await expectError(renter.client.rpc("request_booking", args), "DUPLICATE_REQUEST");
@@ -610,7 +615,8 @@ describe("subscription payments (PayMongo)", () => {
     await expectError(pay(session, 100), "AMOUNT_MISMATCH");
     await expectError(pay(newSession(), 49900), "UNKNOWN_CHECKOUT");
     // Webhook and the success page racing on the same payment
-    const results = await Promise.all([pay(session, 49900, "pay_vitest_race"), pay(session, 49900, "pay_vitest_race")]);
+    const race = `pay_vitest_race_${crypto.randomUUID().slice(0, 8)}`; // unique: payment IDs are, and runs with KEEP_TEST_DATA keep old ones
+    const results = await Promise.all([pay(session, 49900, race), pay(session, 49900, race)]);
     expect(results.map((r) => r.error)).toEqual([null, null]);
     expect(results[0]!.data).toBe(results[1]!.data);
     near(await end(), plusMonth(trialEnd), 5_000);
@@ -683,6 +689,35 @@ describe("admin", () => {
     must(await admin.client.rpc("admin_review_business", { p_business_id: businessId, p_decision: "SUSPENDED", p_note: "Test suspension" }));
     const pub = must(await anon().from("businesses").select("id").eq("id", businessId));
     expect(pub).toHaveLength(0);
+  });
+});
+
+describe("two-step sign-in", () => {
+  it("once it's on, a session that skipped the code step can't see or change license and ID records", async () => {
+    // Turning it on makes Supabase Auth send a security email, so this user gets Resend's test inbox (never a fake domain, which
+    // bounces) and is deleted at the end.
+    const u = await makeUserWithEmail("twostep", `delivered+twostep-${crypto.randomUUID().slice(0, 8)}@resend.dev`);
+    try {
+    await completeRenterProfile(u);
+    const { data: f, error } = await u.client.auth.mfa.enroll({ factorType: "totp", friendlyName: "Test app" });
+    if (error) throw error;
+    must(await u.client.auth.mfa.challengeAndVerify({ factorId: f.id, code: totp(f.totp.secret) }));
+    expect(must(await u.client.rpc("passed_two_step"))).toBe(true);
+    expect(must(await u.client.from("driver_documents").select("id"))).toHaveLength(3);
+
+    // Password only (aal1): locked out of them, even through the API...
+    const half = await signInAgain(u);
+    expect(must(await half.rpc("passed_two_step"))).toBe(false);
+    expect(must(await half.from("driver_documents").select("id"))).toHaveLength(0);
+    await expectError(half.from("driver_documents").insert({ user_id: u.id, doc_type: "GOVERNMENT_ID", storage_path: `${u.id}/x.png` }), /row-level security/);
+    // ...until it passes the code step.
+    must(await half.auth.mfa.challengeAndVerify({ factorId: f.id, code: totp(f.totp.secret, Date.now() + 30_000) }));
+    expect(must(await half.from("driver_documents").select("id"))).toHaveLength(3);
+    // People without it on aren't affected.
+    expect(must(await renter.client.rpc("passed_two_step"))).toBe(true);
+    } finally {
+      await service.auth.admin.deleteUser(u.id);
+    }
   });
 });
 
