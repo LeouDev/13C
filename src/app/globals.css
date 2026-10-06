@@ -242,6 +242,13 @@
    screen move up by its height (bottom-[...var(--app-bottom,0px)]). */
 @media (display-mode: standalone) and (width < 64rem) {
   :root:has([data-app-tabbar]) { --app-bottom: calc(4rem + env(safe-area-inset-bottom)); }
+  /* While typing, the keyboard needs the room: the tab bar steps aside and what sat above it drops back down.
+     ponytail: focus stands in for "keyboard open"; Android's back key hides the keyboard without leaving the field,
+     so there the bar returns on the next tap elsewhere. Watch visualViewport if that ever matters. */
+  :root:has(textarea:focus, input:focus:not([type=checkbox], [type=radio], [type=range], [type=file], [type=color], [type=button], [type=submit], [type=reset], [type=image])) {
+    --app-bottom: 0px;
+    & [data-app-tabbar] { display: none; }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
