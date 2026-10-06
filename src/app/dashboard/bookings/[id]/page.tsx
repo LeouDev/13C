@@ -120,7 +120,8 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
 
           <section className="rounded-3xl border bg-white p-5">
             <h2 className="mb-4 font-semibold text-navy-900">Payment</h2>
-            <PaymentsPanel bookingId={b.id} total={Number(b.total_amount)} status={b.payment_status} method={b.payment_method} payments={b.payments} canEdit />
+            <PaymentsPanel bookingId={b.id} total={Number(b.total_amount)} status={b.payment_status} method={b.payment_method} payments={b.payments} canEdit
+              downPaymentLeft={downOwed ? Number(b.down_payment_amount) - paid : 0} />
           </section>
 
           {current && !signedNow ? (

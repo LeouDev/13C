@@ -10,7 +10,7 @@ import { regenerateContract } from "@/app/actions/contracts";
 import { createReview, respondToReview } from "@/app/actions/reviews";
 import { Field, NativeSelect } from "@/components/common/field";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { nextStatuses, type Actor, type BookingStatus } from "@/lib/bookings/status";
@@ -52,6 +52,27 @@ export function NoteDialog({ title, description, confirm, required, destructive,
       </DialogContent>
     </Dialog>
   );
+}
+
+type Ask = { title: string; description: string; confirm: string; destructive?: boolean; onConfirm: () => void };
+
+/** A second "are you sure?" for payment steps the renter is told about or that can't be taken back. Render `dialog`, then `ask(...)`. */
+export function useConfirm() {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState<Ask | null>(null);
+  const ask = (next: Ask) => { setQ(next); setOpen(true); };
+  const dialog = (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>{q?.title}</DialogTitle><DialogDescription>{q?.description}</DialogDescription></DialogHeader>
+        <DialogFooter>
+          <DialogClose render={<Button size="lg" variant="outline" />}>Go back</DialogClose>
+          <Button size="lg" variant={q?.destructive ? "destructive" : "default"} onClick={() => { setOpen(false); q?.onConfirm(); }}>{q?.confirm}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+  return { ask, dialog };
 }
 
 /** Buttons for every transition the state machine allows this actor (SYSTEM steps are triggered elsewhere). */
@@ -149,22 +170,42 @@ export function TermsEditor({ booking }: { booking: { id: string; pickup_at: str
   );
 }
 
-export function PaymentsPanel({ bookingId, total, status, method, payments, canEdit }: {
+export function PaymentsPanel({ bookingId, total, status, method, payments, canEdit, downPaymentLeft = 0 }: {
   bookingId: string; total: number; status: Enums<"payment_status">; method: Enums<"payment_method_type">;
   payments: { id: string; amount: number; method: Enums<"payment_method_type">; reference: string | null; paid_at: string }[]; canEdit: boolean;
+  /** Still owed of the down payment: recording that much tells the renter and prepares the agreement. */
+  downPaymentLeft?: number;
 }) {
   const { pending, run } = useRun();
+  const { ask, dialog } = useConfirm();
   const [f, setF] = useState({ amount: "", method: method as string, reference: "" });
   const paid = payments.reduce((s, p) => s + Number(p.amount), 0);
+  const setStatus = (to: Enums<"payment_status">) => {
+    const save = () => run(() => setPaymentStatus(bookingId, to));
+    if (to !== "PAID") return save();
+    ask({ title: "Mark this booking as paid?", description: `Only do this once the renter has paid the full ${formatPHP(total)}. They'll see it as paid.`,
+      confirm: "Yes, it's paid", onConfirm: save });
+  };
+  const record = () => {
+    const amount = Number(f.amount);
+    ask({
+      title: `Record ${formatPHP(amount, true)} via ${labelize(f.method)}?`,
+      description: "Only record money you've actually received. The renter sees it on their booking."
+        + (downPaymentLeft > 0 && amount >= downPaymentLeft ? " This covers the down payment, so the renter is told and the rental agreement is prepared. This can't be taken back." : ""),
+      confirm: "Record payment",
+      onConfirm: () => run(() => recordPayment(bookingId, { amount: f.amount, method: f.method as never, reference: f.reference }), () => setF({ ...f, amount: "", reference: "" })),
+    });
+  };
   return (
     <div className="grid gap-4">
+      {dialog}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-muted-foreground">Paid {formatPHP(paid)} of {formatPHP(total)} · via {labelize(method)}</p>
           <p className="text-xs text-muted-foreground">13C doesn&apos;t process payments.{canEdit ? " Record what the renter paid you." : " The business records what you've paid."}</p>
         </div>
         {canEdit ? (
-          <NativeSelect className="w-48" value={status} disabled={pending} aria-label="Payment status" onChange={(e) => run(() => setPaymentStatus(bookingId, e.target.value as Enums<"payment_status">))}>
+          <NativeSelect className="w-48" value={status} disabled={pending} aria-label="Payment status" onChange={(e) => setStatus(e.target.value as Enums<"payment_status">)}>
             {PAYMENT_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </NativeSelect>
         ) : <span className="rounded-full bg-canvas px-3 py-1 text-xs font-semibold">{labelize(status)}</span>}
@@ -174,13 +215,19 @@ export function PaymentsPanel({ bookingId, total, status, method, payments, canE
           {payments.map((p) => (
             <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2">
               <span>{formatPHP(p.amount, true)} · {labelize(p.method)}{p.reference ? ` · ${p.reference}` : ""}</span>
-              {canEdit && <button className="text-xs text-muted-foreground hover:text-destructive" onClick={() => run(() => deletePayment(p.id))}>Remove</button>}
+              {canEdit && (
+                <button className="text-xs text-muted-foreground hover:text-destructive" onClick={() => ask({
+                  title: `Remove this ${formatPHP(p.amount, true)} payment?`, confirm: "Remove payment", destructive: true,
+                  description: "Only if it was recorded by mistake. It comes off this booking's payments, and the renter no longer sees it.",
+                  onConfirm: () => run(() => deletePayment(p.id)),
+                })}>Remove</button>
+              )}
             </li>
           ))}
         </ul>
       )}
       {canEdit && (
-        <form className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]" onSubmit={(e) => { e.preventDefault(); run(() => recordPayment(bookingId, { amount: f.amount, method: f.method as never, reference: f.reference }), () => setF({ ...f, amount: "", reference: "" })); }}>
+        <form className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]" onSubmit={(e) => { e.preventDefault(); record(); }}>
           <Input type="number" min={1} step="0.01" placeholder="Amount ₱" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} aria-label="Amount" />
           <NativeSelect value={f.method} onChange={(e) => setF({ ...f, method: e.target.value })} aria-label="Method">{PAYMENT_METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}</NativeSelect>
           <Input placeholder="Reference no." value={f.reference} onChange={(e) => setF({ ...f, reference: e.target.value })} aria-label="Reference" />

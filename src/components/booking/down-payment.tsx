@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { HandCoins, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { recordPayment, rejectDownPayment, reportDownPayment, waiveDownPayment } from "@/app/actions/bookings";
-import { NoteDialog } from "@/components/booking/booking-actions";
+import { NoteDialog, useConfirm } from "@/components/booking/booking-actions";
 import { PayToDetails, type PayTo } from "@/components/booking/pay-to";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,9 +68,11 @@ export function DownPaymentBox({ due, total, businessName, method, payTo, booked
 /** Business: waiting for the down payment; record it when it's in (the agreement is prepared then), or waive it. */
 export function DownPaymentPanel({ due, paid, method, canWaive }: { due: Due; paid: number; method: Enums<"payment_method_type">; canWaive: boolean }) {
   const { pending, run } = useRun();
+  const { ask, dialog } = useConfirm();
   const owed = Math.max(0, due.amount - paid);
   return (
     <div className="mt-5 rounded-2xl bg-amber-50 p-4 text-sm text-amber-950 ring-1 ring-amber-200">
+      {dialog}
       <p className="font-semibold">Waiting for the {formatPHP(due.amount)} down payment ({due.percent}%){paid > 0 ? `, ${formatPHP(owed)} still owed` : ""}</p>
       <p className="mt-0.5 text-amber-950/80">
         Due by {formatDateTime(due.dueAt)}. If the renter hasn&apos;t paid by then, the booking is cancelled and the dates open again.
@@ -82,12 +84,20 @@ export function DownPaymentPanel({ due, paid, method, canWaive }: { due: Due; pa
         </p>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button disabled={pending} onClick={() => run(() => recordPayment(due.bookingId, { amount: owed, method, reference: due.reference ?? undefined, note: "Down payment" }))}>
+        <Button disabled={pending} onClick={() => ask({
+          title: `Mark ${formatPHP(owed)} as received?`, confirm: "Yes, I received it",
+          description: `Only confirm once you've checked that the money actually arrived${due.reference ? ` (reference ${due.reference})` : ""}. `
+            + "The renter is told it was received and the rental agreement is prepared, so this can't be taken back.",
+          onConfirm: () => run(() => recordPayment(due.bookingId, { amount: owed, method, reference: due.reference ?? undefined, note: "Down payment" })),
+        })}>
           {pending && <Loader2 className="animate-spin" />} Mark {formatPHP(owed)} received
         </Button>
         {canWaive && (
-          <Button variant="outline" disabled={pending}
-            onClick={() => confirm("Skip the down payment for this booking? The rental agreement is prepared right away.") && run(() => waiveDownPayment(due.bookingId))}>
+          <Button variant="outline" disabled={pending} onClick={() => ask({
+            title: "Skip the down payment?", confirm: "Yes, waive it",
+            description: "The renter won't need to pay it for this booking, and the rental agreement is prepared right away.",
+            onConfirm: () => run(() => waiveDownPayment(due.bookingId)),
+          })}>
             Waive
           </Button>
         )}
