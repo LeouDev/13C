@@ -16,6 +16,11 @@ export type EmailData = {
   deposit?: string;
   paymentMethod?: string;
   paymentInstructions?: string;
+  /** A down payment the business asks for after approval: amount, deadline, how to send it, and the renter's reference */
+  downPayment?: string;
+  downPaymentDue?: string;
+  downPaymentInstructions?: string;
+  downPaymentReference?: string;
   bookingId?: string;
   versionId?: string;
   conversationId?: string;
@@ -161,10 +166,14 @@ export const EMAILS = {
     notificationType: "booking_approved",
     sample: SAMPLE,
     build: (d) => ({
-      subject: `Approved: ${d.vehicle}`,
-      preheader: "Your rental agreement is being prepared.",
+      subject: d.downPayment ? `Approved: send the down payment to hold the ${d.vehicle}` : `Approved: ${d.vehicle}`,
+      preheader: d.downPayment ? `Send ${d.downPayment} by ${d.downPaymentDue} to hold the car.` : "Your rental agreement is being prepared.",
       heading: "Your booking is approved",
-      blocks: [
+      blocks: d.downPayment ? [
+        { p: `${hi(d)} good news — **${d.businessName}** approved your booking. To hold the car, send a **${d.downPayment} down payment by ${d.downPaymentDue}**. Once they confirm it, you'll get the rental agreement to sign.` },
+        { note: `**How to pay:** ${d.downPaymentInstructions} Then tap "I've paid" on your booking. If it isn't received by the deadline, the booking is cancelled.`, tone: "warning" },
+        bookingDetails(d),
+      ] : [
         { p: `${hi(d)} good news — **${d.businessName}** approved your booking. They're reviewing your rental agreement now; we'll email you when it's ready to sign.` },
         bookingDetails(d),
       ],
@@ -274,6 +283,25 @@ export const EMAILS = {
       ],
       cta: { label: "View booking", url: renterBooking(d) },
       secondary: { label: "Find another car", url: "/explore" },
+      disclaimer: provider(d),
+    }),
+  },
+  down_payment_received: {
+    audience: "Renter",
+    trigger: "The business records the down payment (the agreement is prepared next)",
+    notificationType: "down_payment_received",
+    sample: { ...SAMPLE, downPayment: "₱360" },
+    build: (d) => ({
+      subject: `Down payment received — ${d.reference}`,
+      preheader: "Your rental agreement is being prepared.",
+      heading: "Down payment received",
+      blocks: [
+        { p: `${hi(d)} **${d.businessName}** received your ${d.downPayment} down payment. They're preparing your rental agreement; we'll email you when it's ready to sign.` },
+        bookingDetails(d),
+      ],
+      cta: { label: "View booking", url: renterBooking(d) },
+      accent: d.accent,
+      brand: brand(d),
       disclaimer: provider(d),
     }),
   },
@@ -510,6 +538,55 @@ export const EMAILS = {
         ...(d.message ? [{ quote: d.message, by: d.customerName } as Block] : []),
       ],
       cta: { label: "Reply", url: `/dashboard/messages/${d.conversationId}` },
+    }),
+  },
+  proposal_accepted: {
+    audience: "Business",
+    trigger: "The renter accepts a proposal and a down payment is due (the agreement waits for it)",
+    notificationType: "proposal_accepted",
+    sample: { ...SAMPLE, downPayment: "₱360", downPaymentDue: "Oct 7, 2026, 3:00 PM" },
+    build: (d) => ({
+      subject: `Proposal accepted — ${d.reference}`,
+      preheader: `Waiting for the ${d.downPayment} down payment.`,
+      heading: "Your proposal was accepted",
+      blocks: [
+        { p: `**${d.customerName}** accepted your proposal. The car is held while they send the ${d.downPayment} down payment, due by ${d.downPaymentDue}. We'll tell you when they say they've paid.` },
+        bookingDetails(d),
+      ],
+      cta: { label: "Open booking", url: businessBooking(d) },
+    }),
+  },
+  down_payment_reported: {
+    audience: "Business",
+    trigger: "The renter taps \"I've paid\" for the down payment",
+    notificationType: "down_payment_reported",
+    sample: { ...SAMPLE, downPayment: "₱360", downPaymentReference: "1009 2837 4655" },
+    build: (d) => ({
+      subject: `Down payment sent — check your ${d.paymentMethod} (${d.reference})`,
+      preheader: `${d.customerName} says they sent ${d.downPayment}.`,
+      heading: "Check for the down payment",
+      blocks: [
+        { p: `**${d.customerName}** says they sent the **${d.downPayment}** down payment via ${d.paymentMethod}${d.downPaymentReference ? ` (reference ${d.downPaymentReference})` : ""}. Check your account, then mark it received on the booking. The rental agreement is prepared as soon as you do.` },
+        bookingDetails(d),
+      ],
+      cta: { label: "Open booking", url: businessBooking(d) },
+    }),
+  },
+  down_payment_missed: {
+    audience: "Business",
+    trigger: "An approved booking's down payment wasn't recorded by the deadline, so 13C cancelled it",
+    notificationType: "down_payment_missed",
+    sample: { ...SAMPLE, downPayment: "₱360", downPaymentDue: "Oct 7, 2026, 3:00 PM" },
+    build: (d) => ({
+      subject: `Booking cancelled: no down payment — ${d.reference}`,
+      preheader: "The dates are open again.",
+      heading: "A booking was cancelled",
+      blocks: [
+        { p: `The ${d.downPayment} down payment for **${d.customerName}**'s booking wasn't recorded by ${d.downPaymentDue}, so 13C cancelled it. The dates are open again.` },
+        { note: "If they did pay, contact them to rebook or refund. 13C goes by the payments recorded on the booking.", tone: "warning" },
+        bookingDetails(d),
+      ],
+      cta: { label: "Open booking", url: businessBooking(d) },
     }),
   },
   contract_generated: {

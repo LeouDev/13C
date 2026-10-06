@@ -172,6 +172,22 @@ export async function suggestStoreFaqs(businessId: string, questions: string[]):
 }
 
 /** Hours needed between one rental's return and the next pickup. The database applies it to every booking. */
+/** Down payment asked after approval: a % of the total (0 = none), due within `hours`. Unpaid bookings are cancelled then. */
+export async function saveDownPayment(businessId: string, percent: number, hours: number): Promise<ActionResult> {
+  const parsed = z.object({ percent: z.number().int().min(0).max(100), hours: z.number().int().min(1).max(168) }).safeParse({ percent, hours });
+  if (!parsed.success) return invalid(parsed.error);
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("businesses")
+    .update({ down_payment_percent: parsed.data.percent, down_payment_hours: parsed.data.hours }).eq("id", businessId).select("id");
+  if (error) return fail(error);
+  if (!data?.length) return { ok: false, error: "Only owners and managers can change this." };
+  revalidatePath("/dashboard", "layout");
+  revalidatePath("/[business]", "layout");
+  return ok(undefined, parsed.data.percent
+    ? `Saved. Renters pay ${parsed.data.percent}% within ${parsed.data.hours} hour${parsed.data.hours === 1 ? "" : "s"} of approval.`
+    : "Saved. No down payment is asked.");
+}
+
 export async function saveRentalGap(businessId: string, hours: number): Promise<ActionResult> {
   const parsed = z.number().int().min(0).max(48).safeParse(hours);
   if (!parsed.success) return invalid(parsed.error);

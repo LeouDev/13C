@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ContractTermsEditor } from "@/components/business/contract-terms-editor";
+import { DownPaymentSetting } from "@/components/business/down-payment-setting";
 import { RentalGapSetting } from "@/components/business/rental-gap-setting";
 import { TeamManager } from "@/components/business/team-manager";
 import { PageHeader } from "@/components/common/states";
@@ -35,6 +36,8 @@ export default async function SettingsPage() {
           <h2 className="font-semibold text-navy-900">Bookings</h2>
           <p className="mt-1 text-sm text-muted-foreground">The time you need between one rental&apos;s return and the next pickup, for cleaning and inspection. Renters can&apos;t book a car inside this gap, and it shows as booked on your cars&apos; calendars. When you approve a request, other requests for the same car and dates (gap included) are declined automatically.</p>
           <RentalGapSetting businessId={business.id} initial={business.turnaround_hours} canEdit={hasRole(role, "MANAGER")} />
+          <p className="mt-6 text-sm text-muted-foreground">A down payment protects you from no-shows. After you approve a booking, the renter sends part of the total to you directly, by the deadline you set. The rental agreement is prepared once you record it, and if it isn&apos;t recorded in time, the booking is cancelled and the dates open again. Say in your cancellation policy whether it&apos;s refundable.</p>
+          <DownPaymentSetting businessId={business.id} initial={{ percent: business.down_payment_percent, hours: business.down_payment_hours }} canEdit={hasRole(role, "MANAGER")} />
         </section>
         <section className="rounded-3xl border bg-white p-5 sm:p-6">
           <h2 className="font-semibold text-navy-900">Contract settings</h2>

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronDown, Download, FileSignature, MessageSquare, Phone } from "lucide-react";
 import { DocumentLink } from "@/components/admin/business-review";
 import { PaymentsPanel, RegenerateButton, TermsEditor, TransitionActions } from "@/components/booking/booking-actions";
+import { DownPaymentPanel } from "@/components/booking/down-payment";
 import { BookingProgress, StatusHistory } from "@/components/booking/booking-timeline";
 import { BookingStatusBadge, Pill } from "@/components/common/badges";
 import { PageHeader } from "@/components/common/states";
@@ -38,6 +39,8 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
   const versions = [...(contract?.contract_versions ?? [])].sort((x, y) => y.version - x.version);
   const current = versions.find((v) => v.version === contract?.current_version);
   const canManage = hasRole(role, "MANAGER");
+  const paid = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const downOwed = b.status === "APPROVED" && Number(b.down_payment_amount) > paid; // the agreement waits for it
   const editable = ["BOOKING_REQUESTED", "PENDING_OWNER_APPROVAL", "CONTRACT_DRAFT", "CONTRACT_SENT", "AWAITING_SIGNATURE", "SIGNED", "CONFIRMED"].includes(b.status);
   const vars = (current?.data ?? {}) as Record<string, string>;
   const signedNow = current?.status === "SIGNED";
@@ -60,7 +63,7 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
       <section className="mb-6 rounded-3xl border bg-white p-5">
         <BookingProgress status={b.status} />
         <div className="mt-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <p className="text-sm text-navy-800">{nextStepCopy(b.status)}</p>
+          <p className="text-sm text-navy-800">{downOwed ? "Approved. Waiting for the renter's down payment; the rental agreement is prepared as soon as you record it." : nextStepCopy(b.status)}</p>
           <div className="flex flex-wrap gap-2">
             {b.status === "CONTRACT_DRAFT" && contract && canManage && <SendContractDialog contractId={contract.id} defaultName={business.representative_name ?? user.full_name} />}
             {canManage && contract && ["CONTRACT_DRAFT", "CONTRACT_SENT", "AWAITING_SIGNATURE", "SIGNED", "CONFIRMED"].includes(b.status) && <RegenerateButton bookingId={b.id} signed={["SIGNED", "CONFIRMED"].includes(b.status)} />}
@@ -69,6 +72,10 @@ export default async function BusinessBookingPage({ params }: PageProps<"/dashbo
               pickupFrom={isoToManilaDate(new Date()) < isoToManilaDate(b.pickup_at) ? formatDate(b.pickup_at) : null} />
           </div>
         </div>
+        {downOwed && b.down_payment_due_at && (
+          <DownPaymentPanel paid={paid} method={b.payment_method} canWaive={canManage}
+            due={{ bookingId: b.id, amount: Number(b.down_payment_amount), percent: b.down_payment_percent, dueAt: b.down_payment_due_at, reportedAt: b.down_payment_reported_at, reference: b.down_payment_reference }} />
+        )}
       </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">

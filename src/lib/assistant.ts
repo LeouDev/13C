@@ -42,6 +42,7 @@ Inquiries, bookings and messages
 - Before booking, renters complete their profile and upload a driver's license (front and back) and a government ID. A business sees these only for its own bookings.
 - Booking steps: request, approved, contract generated, contract sent, signed by the renter, confirmed, picked up, returned, completed. A request that isn't approved before its pickup time expires. Either side can cancel before pickup, following the business's cancellation policy.
 - Owners record payments (unpaid, partly paid, paid, pay on pickup) for their own records.
+- To prevent no-shows, owners can require a down payment in Settings: a percentage of the total, due within a number of hours they choose after approving. The renter sends it to the business directly and taps "I've paid" with the reference; the owner marks it received (or waives it), and only then is the rental agreement prepared and sent. If it isn't recorded by the deadline, the booking is cancelled automatically and the dates open again.
 - Owners and renters get email and in-app notifications for requests, contracts and confirmations, plus reminders 24 hours before pickup and return.
 
 Digital contracts and e-signatures
@@ -90,7 +91,7 @@ The dashboard menu (on the left on computers; the ☰ button at the top on phone
 - Vehicles: "Add vehicle" adds a car. Each car has tabs: Details & pricing (rates, deposit, mileage, delivery, driver, status), Photos (the first is the main photo), Availability (block whole days or certain hours ("Only certain hours"), or mark maintenance) and Fleet records.
 - Fleet: papers, servicing and today's status for every car.
 - Calendar: a month view of confirmed bookings, pending requests, blocks and maintenance across all cars. It's for viewing: tap a car's name to open its Availability tab, where dates and hours are blocked, or a booking to open it. A thin bar means only part of that day is taken.
-- Bookings: requests to approve or reject, upcoming rentals and history. Open a booking to move it along: the contract, payments, pickup and return.
+- Bookings: requests to approve or reject, upcoming rentals and history. Open a booking to move it along: the down payment ("Mark received" or "Waive"), the contract, payments, pickup and return.
 - Inquiries: customers who asked about a car but haven't booked; reply, or turn the chat into a booking proposal.
 - Messages: every conversation with customers.
 - Customers: everyone who has booked or messaged the business.
@@ -100,7 +101,7 @@ The dashboard menu (on the left on computers; the ☰ button at the top on phone
 - Business Profile: legal and contact details (shown on the store and in every agreement) and verification documents.
 - Payment Settings: how customers pay (GCash, Maya, bank transfer, cash, card or other); details are shown only to renters with a booking.
 - Subscription: the plan, when it ends, and paying for it.
-- Settings: team members, the gap between rentals, contract settings (the Business plan's own clauses) and the activity log.
+- Settings: team members, the gap between rentals, the down payment (percent and how long renters get), contract settings (the Business plan's own clauses) and the activity log.
 
 ${FACTS}`;
 

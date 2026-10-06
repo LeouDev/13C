@@ -405,6 +405,67 @@ describe("rental completion & reviews", () => {
   });
 });
 
+describe("down payment", () => {
+  it("holds the agreement until the down payment is in; unpaid bookings are cancelled at the deadline; owners can waive it", async () => {
+    // The business asks for 20%, within 2 hours of approval (switched off again at the end, even if this fails).
+    must(await owner.client.from("businesses").update({ down_payment_percent: 20, down_payment_hours: 2 }).eq("id", businessId));
+    try {
+    const args = { p_vehicle_id: vehicleId, p_pickup_location: "Cebu City", p_return_location: "Cebu City", p_payment_method: "GCASH" as const };
+    const status = async (id: string) => must(await owner.client.from("bookings").select("status").eq("id", id).single()).status;
+
+    // Approved: the car is held, no agreement yet, and the renter is told what to pay and by when.
+    const id = must(await renter2.client.rpc("request_booking", { ...args, p_pickup_at: day(70), p_return_at: day(72) }));
+    must(await owner.client.rpc("transition_booking", { p_booking_id: id, p_to: "APPROVED" }));
+    const b = must(await owner.client.from("bookings").select("status, total_amount, down_payment_amount, down_payment_due_at").eq("id", id).single());
+    expect(b.status).toBe("APPROVED");
+    expect(Number(b.down_payment_amount)).toBe(Math.round(Number(b.total_amount) * 0.2));
+    const left = new Date(b.down_payment_due_at!).getTime() - Date.now();
+    expect(left).toBeGreaterThan(115 * 60_000);
+    expect(left).toBeLessThanOrEqual(2 * 3_600_000);
+    expect(must(await owner.client.from("contracts").select("id").eq("booking_id", id))).toHaveLength(0);
+    const approved = must(await renter2.client.from("notifications").select("title, body").eq("user_id", renter2.id).eq("type", "booking_approved")
+      .order("created_at", { ascending: false }).limit(1).single());
+    expect(approved.title).toMatch(/down payment/);
+    expect(approved.body).toContain("₱");
+
+    // "I've paid": only the renter, and the business is told the reference.
+    await expectError(outsider.client.rpc("report_down_payment", { p_booking_id: id, p_reference: "x" }), "NOT_AUTHORIZED");
+    must(await renter2.client.rpc("report_down_payment", { p_booking_id: id, p_reference: "GC-123" }));
+    const told = must(await owner.client.from("notifications").select("body").eq("user_id", owner.id).eq("type", "down_payment_reported")
+      .order("created_at", { ascending: false }).limit(1).single());
+    expect(told.body).toContain("GC-123");
+
+    // Part of it isn't enough; the rest prepares the agreement.
+    must(await owner.client.from("payments").insert({ booking_id: id, amount: 100, method: "GCASH", reference: "GC-123" } as never));
+    expect(await status(id)).toBe("APPROVED");
+    must(await owner.client.from("payments").insert({ booking_id: id, amount: Number(b.down_payment_amount) - 100, method: "GCASH" } as never));
+    expect(must(await owner.client.from("bookings").select("status, payment_status").eq("id", id).single())).toEqual({ status: "CONTRACT_DRAFT", payment_status: "PARTIALLY_PAID" });
+    expect(must(await renter2.client.from("notifications").select("id").eq("user_id", renter2.id).eq("type", "down_payment_received"))).not.toHaveLength(0);
+    await expectError(renter2.client.rpc("report_down_payment", { p_booking_id: id, p_reference: "again" }), "INVALID_TRANSITION");
+
+    // Unpaid at the deadline: cancelled with the reason, and the dates are free again.
+    const unpaid = must(await renter2.client.rpc("request_booking", { ...args, p_pickup_at: day(74), p_return_at: day(75) }));
+    must(await owner.client.rpc("transition_booking", { p_booking_id: unpaid, p_to: "APPROVED" }));
+    expect(must(await service.rpc("cancel_unpaid_down_payments", { p_booking_id: unpaid }))).toBe(0); // not due yet
+    must(await service.from("bookings").update({ down_payment_due_at: new Date(Date.now() - 60_000).toISOString() }).eq("id", unpaid));
+    expect(must(await service.rpc("cancel_unpaid_down_payments", { p_booking_id: unpaid }))).toBe(1);
+    expect(must(await owner.client.from("bookings").select("status, cancel_reason").eq("id", unpaid).single()))
+      .toEqual({ status: "CANCELLED", cancel_reason: expect.stringMatching(/down payment wasn't received/) });
+    expect(must(await owner.client.from("notifications").select("id").eq("user_id", owner.id).eq("type", "down_payment_missed"))).not.toHaveLength(0);
+
+    // Waived: only a manager or owner can, and the agreement is prepared right away (same dates: they were freed).
+    const waived = must(await renter2.client.rpc("request_booking", { ...args, p_pickup_at: day(74), p_return_at: day(75) }));
+    must(await owner.client.rpc("transition_booking", { p_booking_id: waived, p_to: "APPROVED" }));
+    await expectError(renter2.client.rpc("waive_down_payment", { p_booking_id: waived }), "NOT_AUTHORIZED");
+    must(await owner.client.rpc("waive_down_payment", { p_booking_id: waived }));
+    expect(must(await owner.client.from("bookings").select("status, down_payment_amount").eq("id", waived).single())).toEqual({ status: "CONTRACT_DRAFT", down_payment_amount: 0 });
+    for (const b of [id, waived]) must(await owner.client.rpc("transition_booking", { p_booking_id: b, p_to: "CANCELLED", p_note: "Test cleanup" }));
+    } finally {
+      must(await owner.client.from("businesses").update({ down_payment_percent: 0 }).eq("id", businessId));
+    }
+  });
+});
+
 describe("free trial", () => {
   it("starts on verification and lasts TRIAL_DAYS", async () => {
     const s = must(await owner.client.from("subscriptions").select("plan, status, current_period_end").eq("business_id", businessId).single());

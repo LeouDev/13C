@@ -128,6 +128,26 @@ export async function recordPayment(bookingId: string, input: z.input<typeof pay
   return ok(undefined, "Payment recorded.");
 }
 
+/** The renter's "I've paid" for the down payment: the business is told to check its account (and the reference). */
+export async function reportDownPayment(bookingId: string, reference: string): Promise<ActionResult> {
+  const parsed = z.object({ bookingId: z.uuid(), reference: z.string().trim().max(120) }).safeParse({ bookingId, reference });
+  if (!parsed.success) return invalid(parsed.error);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("report_down_payment", { p_booking_id: parsed.data.bookingId, p_reference: parsed.data.reference });
+  if (error) return fail(error);
+  refresh();
+  return ok(undefined, "Sent. The business will check and confirm it.");
+}
+
+/** The business skips this booking's down payment; the rental agreement is prepared right away. */
+export async function waiveDownPayment(bookingId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("waive_down_payment", { p_booking_id: z.uuid().parse(bookingId) });
+  if (error) return fail(error);
+  refresh();
+  return ok(undefined, "Down payment waived. The rental agreement is ready to review.");
+}
+
 export async function deletePayment(paymentId: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("payments").delete().eq("id", paymentId);

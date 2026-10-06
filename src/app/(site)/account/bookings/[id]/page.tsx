@@ -4,6 +4,7 @@ import { BookingOnOtherAccount } from "@/components/booking/other-account";
 import { CheckCircle2, FileSignature, MapPin, MessageSquare, Phone, Wallet } from "lucide-react";
 import { DriverDocuments } from "@/components/account/account-panels";
 import { AcceptProposal, PaymentsPanel, ReviewForm, TransitionActions } from "@/components/booking/booking-actions";
+import { DownPaymentBox } from "@/components/booking/down-payment";
 import { BookingProgress, StatusHistory } from "@/components/booking/booking-timeline";
 import { SignedAgreementCard } from "@/components/contract/signed-agreement";
 import { BookingStatusBadge, Stars } from "@/components/common/badges";
@@ -22,7 +23,7 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
   const user = await requireUser(`/account/bookings/${id}`);
   const supabase = await createClient();
   const { data: b } = await supabase.from("bookings")
-    .select("*, vehicles(make, model, year, slug, vehicle_images(storage_path, position)), businesses(id, name, slug, phone, email, address, city, logo_path), booking_status_history(to_status, note, created_at), payments(id, amount, method, reference, paid_at), contracts(id, status, current_version, contract_versions(id, version, status, signed_at, content_hash, contract_signatures(signer_role, signer_name, signature_data, signed_at))), reviews(id, rating, comment)")
+    .select("*, vehicles(make, model, year, slug, vehicle_images(storage_path, position)), businesses(id, name, slug, phone, email, address, city, logo_path, down_payment_percent, down_payment_hours), booking_status_history(to_status, note, created_at), payments(id, amount, method, reference, paid_at), contracts(id, status, current_version, contract_versions(id, version, status, signed_at, content_hash, contract_signatures(signer_role, signer_name, signature_data, signed_at))), reviews(id, rating, comment)")
     .eq("id", id).eq("renter_id", user.id).order("created_at", { referencedTable: "booking_status_history" }).maybeSingle();
   if (!b) return <BookingOnOtherAccount bookingId={id} email={user.email} />;
   const [{ data: methods }, { data: myDocs }] = await Promise.all([
@@ -36,6 +37,10 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
   const current = versions.find((v) => v.version === b.contracts?.current_version);
   const signedVersions = versions.filter((v) => v.status === "SIGNED").sort((x, y) => y.version - x.version);
   const toSign = current?.status === "SENT";
+  const paid = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const downOwed = b.status === "APPROVED" && Number(b.down_payment_amount) > paid;
+  // Before approval: what the business will ask for once it approves.
+  const downAhead = ["PENDING_OWNER_APPROVAL", "BOOKING_REQUESTED"].includes(b.status) && (b.businesses?.down_payment_percent ?? 0) > 0;
 
   return (
     <div className="grid gap-6">
@@ -48,11 +53,22 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
             <div className="flex flex-wrap items-center gap-2"><BookingStatusBadge status={b.status} /><span className="font-mono text-xs text-muted-foreground">{b.reference}</span></div>
             <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-navy-900">{b.vehicles?.year} {b.vehicles?.make} {b.vehicles?.model}</h1>
             <p className="text-sm text-muted-foreground">from <Link href={`/${b.businesses?.slug}`} className="font-semibold text-navy-900 hover:underline">{b.businesses?.name}</Link></p>
-            <p className="mt-3 text-sm text-navy-800">{STATUS_META[b.status].renterHint}</p>
+            <p className="mt-3 text-sm text-navy-800">{downOwed ? "Approved. Send the down payment to hold the car." : STATUS_META[b.status].renterHint}</p>
+            {downAhead && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Once approved, {b.businesses?.name} asks for a {b.businesses?.down_payment_percent}% down payment
+                ({formatPHP(Math.round(Number(b.total_amount) * (b.businesses?.down_payment_percent ?? 0) / 100))}) within {b.businesses?.down_payment_hours} hours to hold the car.
+              </p>
+            )}
           </div>
         </div>
         <div className="border-t px-5 py-4 sm:px-6"><BookingProgress status={b.status} /></div>
       </section>
+
+      {downOwed && b.down_payment_due_at && (
+        <DownPaymentBox total={Number(b.total_amount)} businessName={b.businesses?.name ?? "The business"} method={b.payment_method} payTo={payInfo ?? null}
+          due={{ bookingId: b.id, amount: Number(b.down_payment_amount), percent: b.down_payment_percent, dueAt: b.down_payment_due_at, reportedAt: b.down_payment_reported_at, reference: b.down_payment_reference }} />
+      )}
 
       {toSign && current && (
         <Link href={`/account/bookings/${b.id}/contract`} className="flex items-center gap-4 rounded-3xl bg-electric p-5 text-white shadow-lg shadow-electric/30 transition hover:brightness-110">
@@ -97,7 +113,7 @@ export default async function RenterBookingPage({ params, searchParams }: PagePr
                 {payInfo.account_name && <p>Account name: {payInfo.account_name}</p>}
                 {payInfo.account_number && <p>Number: <span className="font-mono">{payInfo.account_number}</span></p>}
                 {payInfo.instructions && <p className="mt-1 text-muted-foreground">{payInfo.instructions}</p>}
-                <p className="mt-2 text-xs text-muted-foreground">Only pay after your booking is confirmed. 13C never asks you to pay 13C for a rental.</p>
+                <p className="mt-2 text-xs text-muted-foreground">{downOwed ? "For now, send only the down payment above." : "Only pay after your booking is confirmed."} 13C never asks you to pay 13C for a rental.</p>
               </div>
             )}
             <PaymentsPanel bookingId={b.id} total={Number(b.total_amount)} status={b.payment_status} method={b.payment_method} payments={b.payments} canEdit={false} />

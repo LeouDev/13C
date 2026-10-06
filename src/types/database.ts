@@ -193,6 +193,11 @@ export type Database = {
           delivery: boolean
           delivery_fee: number
           discount: number
+          down_payment_amount: number | null
+          down_payment_due_at: string | null
+          down_payment_percent: number
+          down_payment_reference: string | null
+          down_payment_reported_at: string | null
           driver_fee: number
           drivers_count: number
           excess_km_fee: number | null
@@ -235,6 +240,11 @@ export type Database = {
           delivery?: boolean
           delivery_fee?: number
           discount?: number
+          down_payment_amount?: number | null
+          down_payment_due_at?: string | null
+          down_payment_percent?: number
+          down_payment_reference?: string | null
+          down_payment_reported_at?: string | null
           driver_fee?: number
           drivers_count?: number
           excess_km_fee?: number | null
@@ -277,6 +287,11 @@ export type Database = {
           delivery?: boolean
           delivery_fee?: number
           discount?: number
+          down_payment_amount?: number | null
+          down_payment_due_at?: string | null
+          down_payment_percent?: number
+          down_payment_reference?: string | null
+          down_payment_reported_at?: string | null
           driver_fee?: number
           drivers_count?: number
           excess_km_fee?: number | null
@@ -527,6 +542,8 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           description: string | null
+          down_payment_hours: number
+          down_payment_percent: number
           email: string | null
           id: string
           is_demo: boolean
@@ -553,6 +570,8 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           description?: string | null
+          down_payment_hours?: number
+          down_payment_percent?: number
           email?: string | null
           id?: string
           is_demo?: boolean
@@ -579,6 +598,8 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           description?: string | null
+          down_payment_hours?: number
+          down_payment_percent?: number
           email?: string | null
           id?: string
           is_demo?: boolean
@@ -2357,6 +2378,10 @@ export type Database = {
         Args: { p_renter: string }
         Returns: boolean
       }
+      cancel_unpaid_down_payments: {
+        Args: { p_booking_id?: string }
+        Returns: number
+      }
       claim_notification_emails: {
         Args: { p_limit?: number }
         Returns: {
@@ -2395,6 +2420,7 @@ export type Database = {
         Args: { p_booking_id: string }
         Returns: number
       }
+      down_payment_pending: { Args: { p_booking_id: string }; Returns: boolean }
       expire_stale_bookings: { Args: never; Returns: number }
       fmt_date: { Args: { p: string }; Returns: string }
       fmt_money: { Args: { p: number }; Returns: string }
@@ -2581,6 +2607,10 @@ export type Database = {
         Returns: string
       }
       rental_gap: { Args: { p_business_id: string }; Returns: string }
+      report_down_payment: {
+        Args: { p_booking_id: string; p_reference: string }
+        Returns: undefined
+      }
       request_account_deletion: { Args: never; Returns: undefined }
       request_booking: {
         Args: {
@@ -2754,6 +2784,7 @@ export type Database = {
           starts_at: string
         }[]
       }
+      waive_down_payment: { Args: { p_booking_id: string }; Returns: undefined }
     }
     Enums: {
       block_reason: "BLOCKED" | "MAINTENANCE"

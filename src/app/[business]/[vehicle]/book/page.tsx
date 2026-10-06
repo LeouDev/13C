@@ -48,6 +48,7 @@ export default async function BookPage({ params, searchParams }: PageProps<"/[bu
           docsReady={docsReady}
           documents={<DriverDocuments userId={user.id} docs={docs ?? []} />}
           initial={{ from: sp.from, to: sp.to, ft: sp.ft, tt: sp.tt, driver: sp.driver === "1", delivery: sp.delivery === "1" }}
+          downPayment={{ percent: sf.business.down_payment_percent, hours: sf.business.down_payment_hours }}
         />
       )}
     </div>

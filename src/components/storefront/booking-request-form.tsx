@@ -20,7 +20,7 @@ import type { Enums } from "@/types/database";
 type Quote = { rental_days: number; base_amount: number; driver_fee: number; delivery_fee: number; total_amount: number; security_deposit: number };
 
 export function BookingRequestForm({
-  vehicle, businessName, methods, pickupDefault, renter, profileComplete, docsReady, documents, initial,
+  vehicle, businessName, methods, pickupDefault, renter, profileComplete, docsReady, documents, initial, downPayment,
 }: {
   vehicle: { id: string; name: string; self_drive: boolean; with_driver: boolean; delivery_available: boolean };
   businessName: string;
@@ -32,6 +32,8 @@ export function BookingRequestForm({
   docsReady: boolean;
   documents: React.ReactNode;
   initial: { from?: string; to?: string; ft?: string; tt?: string; driver?: boolean; delivery?: boolean };
+  /** The business's down payment, asked after approval (percent 0 = none) */
+  downPayment: { percent: number; hours: number };
 }) {
   const router = useRouter();
   const renterForm = useRenterForm(renter);
@@ -148,6 +150,11 @@ export function BookingRequestForm({
                 {quote.delivery_fee > 0 && <div className="flex justify-between"><dt>Delivery</dt><dd>{formatPHP(quote.delivery_fee)}</dd></div>}
                 <div className="flex justify-between border-t border-black/10 pt-1.5 text-base font-bold"><dt>Total</dt><dd>{formatPHP(quote.total_amount)}</dd></div>
                 {quote.security_deposit > 0 && <div className="flex justify-between text-xs text-muted-foreground"><dt>+ refundable deposit</dt><dd>{formatPHP(quote.security_deposit)}</dd></div>}
+                {downPayment.percent > 0 && (
+                  <div className="flex justify-between gap-3 text-xs text-muted-foreground">
+                    <dt>Down payment after approval ({downPayment.percent}%, within {downPayment.hours}h)</dt><dd>{formatPHP(Math.round(quote.total_amount * downPayment.percent / 100))}</dd>
+                  </div>
+                )}
               </dl>
             ) : <p className="text-destructive">{quoteError ?? "Calculating…"}</p>}
           </div>
@@ -159,8 +166,14 @@ export function BookingRequestForm({
           </button>
           <ol className="mt-4 grid gap-1.5 text-xs text-muted-foreground">
             <li>1. {businessName} reviews your request</li>
-            <li>2. You review & e-sign the rental agreement</li>
-            <li>3. Booking confirmed — pay as agreed and pick up</li>
+            {downPayment.percent > 0 ? <>
+              <li>2. You send the {downPayment.percent}% down payment to hold the car</li>
+              <li>3. You review & e-sign the rental agreement</li>
+              <li>4. Booking confirmed — pay the rest as agreed and pick up</li>
+            </> : <>
+              <li>2. You review & e-sign the rental agreement</li>
+              <li>3. Booking confirmed — pay as agreed and pick up</li>
+            </>}
           </ol>
         </div>
       </aside>

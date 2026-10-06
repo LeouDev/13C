@@ -161,6 +161,9 @@ export default async function StorefrontPage({ params, searchParams }: PageProps
               {policies.map((p) => (
                 <div key={p.key}><dt className="text-sm font-semibold text-navy-900">{p.label}</dt><dd className="mt-0.5 text-sm whitespace-pre-line text-muted-foreground">{(store.policies as Record<string, string>)[p.key]}</dd></div>
               ))}
+              {business.down_payment_percent > 0 && (
+                <div><dt className="text-sm font-semibold text-navy-900">Down payment</dt><dd className="mt-0.5 text-sm text-muted-foreground">{business.down_payment_percent}% of the total, within {business.down_payment_hours} hour{business.down_payment_hours === 1 ? "" : "s"} after your booking is approved. Bookings without it are cancelled.</dd></div>
+              )}
               {paymentMethods.length > 0 && (
                 <div><dt className="text-sm font-semibold text-navy-900">Payment</dt><dd className="mt-1 flex flex-wrap gap-1.5">{paymentMethods.map((m) => <span key={m} className="rounded-full bg-canvas px-3 py-1 text-xs font-medium">{labelize(m)}</span>)}</dd></div>
               )}

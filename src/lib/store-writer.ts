@@ -47,7 +47,7 @@ function task(field: StoreTextField) {
  */
 export async function storeFacts(supabase: SupabaseClient<Database>, businessId: string, skip?: StoreTextField | "faqs") {
   const [{ data: b }, { data: s }, { data: cars }, { data: methods }] = await Promise.all([
-    supabase.from("businesses").select("name, city, province, description, turnaround_hours").eq("id", businessId).single(),
+    supabase.from("businesses").select("name, city, province, description, turnaround_hours, down_payment_percent, down_payment_hours").eq("id", businessId).single(),
     supabase.from("business_storefronts").select("tagline, about, policies, faqs, pickup_locations, delivery_areas, business_hours").eq("business_id", businessId).single(),
     supabase.from("vehicles")
       .select("make, model, variant, year, status, vehicle_categories(label), seats, transmission, fuel_type, self_drive, with_driver, delivery_available, min_rental_days, vehicle_pricing(daily_rate, weekly_rate, monthly_rate, security_deposit, mileage_limit_km, excess_km_fee, delivery_fee, driver_fee_per_day)")
@@ -89,6 +89,7 @@ export async function storeFacts(supabase: SupabaseClient<Database>, businessId:
       return m.method === "GCASH" || m.method === "MAYA" ? label : label.toLowerCase(); // brand names keep their capitals
     }).join(", ")}`,
     b.turnaround_hours > 0 && `Time kept free between rentals for cleaning and checks: ${b.turnaround_hours} hours`,
+    b.down_payment_percent > 0 && `Down payment: ${b.down_payment_percent}% of the total, sent to us within ${b.down_payment_hours} hours after we approve a booking (the rental agreement follows once we receive it); bookings without it are cancelled`,
     written.length > 0 && `Rental policies:\n${written.join("\n")}`,
     faqs.length > 0 && `FAQs on the store:\n${faqs.join("\n")}`,
     `How renting works (the same on every 13C store):

@@ -35,7 +35,7 @@ const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function addBooking(d: EmailData, bookingId: string) {
   const admin = createAdminClient();
   const { data: b } = await admin.from("bookings")
-    .select("id, reference, business_id, pickup_at, return_at, pickup_location, return_location, total_amount, security_deposit, payment_method, conversation_id, cancel_reason, vehicles(year, make, model, variant), renter:profiles!bookings_renter_id_fkey(full_name), contracts(current_version, contract_versions(id, version)), booking_status_history(to_status, note, created_at)")
+    .select("id, reference, business_id, pickup_at, return_at, pickup_location, return_location, total_amount, security_deposit, payment_method, conversation_id, cancel_reason, down_payment_amount, down_payment_due_at, down_payment_reference, payments(amount), vehicles(year, make, model, variant), renter:profiles!bookings_renter_id_fkey(full_name), contracts(current_version, contract_versions(id, version)), booking_status_history(to_status, note, created_at)")
     .eq("id", bookingId).maybeSingle();
   if (!b) return;
   const current = b.contracts?.contract_versions.find((v) => v.version === b.contracts?.current_version);
@@ -49,14 +49,25 @@ async function addBooking(d: EmailData, bookingId: string) {
     paymentMethod: labelize(b.payment_method), conversationId: b.conversation_id ?? undefined,
     customerName: b.renter?.full_name ?? undefined, versionId: current?.id, version: current?.version,
     reason: b.cancel_reason ?? lastNote ?? undefined,
+    downPayment: Number(b.down_payment_amount) > 0 ? formatPHP(b.down_payment_amount) : undefined,
+    downPaymentDue: b.down_payment_due_at ? formatDateTime(b.down_payment_due_at) : undefined,
+    downPaymentReference: b.down_payment_reference ?? undefined,
   } satisfies EmailData);
 
   const { data: pm } = await admin.from("payment_methods").select("account_name, account_number, instructions")
     .eq("business_id", b.business_id).eq("method", b.payment_method).eq("is_enabled", true).maybeSingle();
   const to = [pm?.account_number, pm?.account_name && `(${pm.account_name})`].filter(Boolean).join(" ");
-  d.paymentInstructions = b.payment_method === "CASH"
-    ? `Pay ${d.total} in cash at pickup.${pm?.instructions ? ` ${pm.instructions}` : ""}`
-    : `Send ${d.total} via ${d.paymentMethod}${to ? ` to ${to}` : ""} before pickup.${pm?.instructions ? ` ${pm.instructions}` : ""}`;
+  const extra = pm?.instructions ? ` ${pm.instructions}` : "";
+  const paid = b.payments.reduce((sum, p) => sum + Number(p.amount), 0);
+  const owed = paid > 0 ? `the remaining ${formatPHP(Math.max(0, Number(b.total_amount) - paid))}` : d.total;
+  d.paymentInstructions = paid >= Number(b.total_amount) ? "Paid in full."
+    : b.payment_method === "CASH" ? `Pay ${owed} in cash at pickup.${extra}`
+    : `Send ${owed} via ${d.paymentMethod}${to ? ` to ${to}` : ""} before pickup.${extra}`;
+  if (d.downPayment) {
+    d.downPaymentInstructions = b.payment_method === "CASH"
+      ? `Pay ${d.downPayment} in cash to ${d.businessName ?? "the business"} by ${d.downPaymentDue}.${extra}`
+      : `Send ${d.downPayment} via ${d.paymentMethod}${to ? ` to ${to}` : ""} by ${d.downPaymentDue}.${extra}`;
+  }
 }
 
 async function addConversation(d: EmailData, conversationId: string, n: OutboxRow) {
