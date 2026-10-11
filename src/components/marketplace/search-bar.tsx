@@ -42,7 +42,7 @@ export function SearchBar({
         <CalendarDays className="size-5 shrink-0 text-electric" />
         <span className="min-w-0 flex-1">
           <span className={label}>Pickup date</span>
-          <DateInput name="from" min={todayManila()} defaultValue={defaults.from} placeholder="Any date" className={input} />
+          <DateInput name="from" min={todayManila()} defaultValue={defaults.from} placeholder="Any date" className={cn(input, "[&::-webkit-calendar-picker-indicator]:hidden")} />
         </span>
       </label>
       <span className="hidden h-10 w-px bg-border md:block" />
@@ -50,7 +50,7 @@ export function SearchBar({
         <CalendarDays className="size-5 shrink-0 text-electric" />
         <span className="min-w-0 flex-1">
           <span className={label}>Return date</span>
-          <DateInput name="to" min={todayManila(1)} defaultValue={defaults.to} placeholder="Any date" className={input} />
+          <DateInput name="to" min={todayManila(1)} defaultValue={defaults.to} placeholder="Any date" className={cn(input, "[&::-webkit-calendar-picker-indicator]:hidden")} />
         </span>
       </label>
       <span className="hidden h-10 w-px bg-border md:block" />

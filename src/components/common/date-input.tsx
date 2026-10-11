@@ -14,7 +14,9 @@ export function DateInput({ placeholder, className, defaultValue = "", ...props 
   if (defaultValue !== shown) { setShown(defaultValue); setValue(defaultValue); } // a new search brings its own dates
   return (
     <span className="relative block">
+      {/* On computers the calendar otherwise opens only from the browser's small icon (hidden in the search bar) */}
       <input type="date" {...props} value={value} onChange={(e) => setValue(e.target.value)}
+        onClick={(e) => { try { if (matchMedia("(pointer: fine)").matches) e.currentTarget.showPicker(); } catch { /* not allowed here: typing still works */ } }}
         className={cn("peer", className, !value && "[&:not(:focus)]:text-transparent")} />
       {!value && (
         <span aria-hidden className={cn(className, "pointer-events-none absolute inset-0 flex items-center border-transparent bg-transparent peer-focus:hidden")}>
