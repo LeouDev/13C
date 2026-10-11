@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "13C",
     short_name: "13C",
-    description: "Find and book cars from local Cebu rental businesses.",
+    description: "Find and book cars from local rental businesses across the Philippines.",
     start_url: "/",
     display: "standalone",
     background_color: "#121f3d",

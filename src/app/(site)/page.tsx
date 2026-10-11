@@ -7,23 +7,24 @@ import { BusinessCard } from "@/components/marketplace/business-card";
 import { SearchBar } from "@/components/marketplace/search-bar";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { buttonVariants } from "@/components/ui/button";
-import { LOCATIONS, PLAN_VEHICLE_LIMIT, SITE_URL, TRIAL_DAYS } from "@/lib/constants";
-import { getCategories, getFeaturedBusinesses, searchVehicles } from "@/lib/queries";
+import { PLAN_VEHICLE_LIMIT, SITE_URL, TRIAL_DAYS } from "@/lib/constants";
+import { plural } from "@/lib/format";
+import { getCategories, getFeaturedBusinesses, getPlaces, searchVehicles } from "@/lib/queries";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
-/** Tells search engines what 13C is: the site's name, its logo, and that it's a car-rental marketplace in Cebu. */
+/** Tells search engines what 13C is: the site's name, its logo, and that it's a car-rental marketplace in the Philippines. */
 const JSON_LD = {
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": "WebSite", "@id": `${SITE_URL}/#website`, url: SITE_URL, name: "13C", alternateName: ["13C Cebu", "13C Car Rental"],
+      "@type": "WebSite", "@id": `${SITE_URL}/#website`, url: SITE_URL, name: "13C", alternateName: ["13C Car Rental", "13C Philippines"],
       inLanguage: "en-PH", publisher: { "@id": `${SITE_URL}/#organization` },
     },
     {
       "@type": "Organization", "@id": `${SITE_URL}/#organization`, url: SITE_URL, name: "13C", logo: `${SITE_URL}/brand/13c-badge.webp`,
-      description: "13C helps people find and book cars from local rental businesses in Cebu, Philippines, and gives those businesses their own booking website.",
-      email: "support@13c.online", areaServed: { "@type": "AdministrativeArea", name: "Cebu, Philippines" },
+      description: "13C helps people find and book cars from local rental businesses across the Philippines, and gives those businesses their own booking website.",
+      email: "support@13c.online", areaServed: { "@type": "Country", name: "Philippines" },
     },
   ],
 };
@@ -33,7 +34,7 @@ const STEPS = [
   { icon: MessageCircle, title: "Message the business", body: "Ask about delivery, drivers or the airport — right in 13C." },
   { icon: CalendarRange, title: "Request a booking", body: "Pick your dates and payment method. No surprise fees." },
   { icon: FileSignature, title: "Review & sign", body: "Read the rental agreement and sign from your phone." },
-  { icon: KeyRound, title: "Pick up the car", body: "Meet the rental business and drive anywhere in Cebu." },
+  { icon: KeyRound, title: "Pick up the car", body: "Meet the rental business and hit the road." },
 ];
 
 const BIZ_FEATURES = [
@@ -46,10 +47,11 @@ const BIZ_FEATURES = [
 ];
 
 export default async function HomePage() {
-  const [categories, featured, businesses] = await Promise.all([
+  const [categories, featured, businesses, places] = await Promise.all([
     getCategories(),
     searchVehicles({}, { limit: 6 }),
     getFeaturedBusinesses(6),
+    getPlaces(),
   ]);
 
   return (
@@ -61,9 +63,9 @@ export default async function HomePage() {
         <div className="absolute -right-40 -bottom-40 size-[36rem] rounded-full bg-electric/20 blur-3xl" />
         <div className="container-page relative grid grid-cols-1 items-center gap-10 pt-12 pb-36 md:pt-20 lg:grid-cols-[1.15fr_1fr] lg:pb-44">
           <div>
-            <p className="eyebrow animate-rush text-cyan">Cebu&apos;s car rental marketplace</p>
+            <p className="eyebrow animate-rush text-cyan">The Philippines&apos; car rental marketplace</p>
             <h1 className="mt-4 font-display-italic text-[2.75rem] leading-[0.95] sm:text-6xl lg:text-7xl">
-              Find your next car in <span className="text-brand-red">Cebu.</span>
+              Find your next car, <span className="text-brand-red">anywhere.</span>
             </h1>
             <p className="mt-5 max-w-xl text-base text-white/75 sm:text-lg">
               Discover trusted local rental businesses, compare vehicles, and book directly.
@@ -77,7 +79,7 @@ export default async function HomePage() {
         </div>
       </section>
       <div className="container-page relative z-10 -mt-24 lg:-mt-28">
-        <SearchBar categories={categories} />
+        <SearchBar categories={categories} provinces={places.provinces} />
       </div>
 
       {/* Featured cars */}
@@ -97,30 +99,30 @@ export default async function HomePage() {
           </div>
         ) : (
           <EmptyState className="mt-8" icon={Car} title="Cars are on their way"
-            description="Cebu's rental businesses are setting up their 13C stores. Own a rental business? Be one of the first."
+            description="Rental businesses are setting up their 13C stores. Own a rental business? Be one of the first."
             action={{ label: "List your cars", href: "/register/business" }} />
         )}
       </section>
 
-      {/* Locations */}
-      <section className="bg-canvas py-16 sm:py-20">
+      {/* Locations: the places with the most cars */}
+      {places.cities.length > 0 && <section className="bg-canvas py-16 sm:py-20">
         <div className="container-page">
           <p className="eyebrow text-electric">Popular locations</p>
           <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-navy-900 sm:text-4xl">Pick up where you land</h2>
           <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
-            {LOCATIONS.slice(0, 5).map((l, i) => (
+            {places.cities.slice(0, 5).map((l, i) => (
               <Link key={l.slug} href={`/explore/${l.slug}`}
                 className={`group relative flex min-h-36 flex-col justify-end overflow-hidden rounded-3xl p-5 text-white transition hover:-translate-y-0.5 ${i === 0 ? "col-span-2 lg:col-span-1" : ""}`}
                 style={{ background: `linear-gradient(150deg, ${["#2f6bff", "#0ea5e9", "#121f3b", "#273b69", "#14b8a6"][i]}, #0a1430)` }}>
                 <div className="speed-lines absolute inset-0 opacity-60" />
                 <span className="relative font-display-italic text-2xl">{l.name}</span>
-                <span className="relative mt-1 text-xs text-white/70">{l.blurb}</span>
+                <span className="relative mt-1 text-xs text-white/70">{l.province} · {plural(l.cars, "car")}</span>
                 <ArrowRight className="absolute top-5 right-5 size-5 opacity-60 transition group-hover:translate-x-1 group-hover:opacity-100" />
               </Link>
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* Businesses */}
       <section className="container-page py-16 sm:py-20">

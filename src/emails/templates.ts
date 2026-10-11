@@ -110,10 +110,10 @@ export const EMAILS = {
     sample: SAMPLE,
     build: (d) => ({
       subject: "Welcome to 13C",
-      preheader: "Find and book cars from verified rental businesses across Cebu.",
+      preheader: "Find and book cars from verified rental businesses across the Philippines.",
       heading: `Welcome to 13C${d.name ? `, ${d.name.split(" ")[0]}` : ""}`,
       blocks: [
-        { p: "13C connects you with verified, local rental businesses in Cebu City, Mactan, Lapu-Lapu, Mandaue, Talisay and beyond." },
+        { p: "13C connects you with verified, local rental businesses across the Philippines." },
         { list: ["Compare cars, prices and real availability", "Message businesses before you book", "Review and e-sign your rental agreement from your phone"] },
         { note: "Tip: add your driver's license details in your profile so booking takes seconds.", tone: "info" },
       ],

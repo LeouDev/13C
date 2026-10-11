@@ -10,7 +10,7 @@ import { AssistantWidget } from "@/components/site/assistant-widget";
 import { DriveCar } from "@/components/site/drive-car";
 import { SpeedStreaks } from "@/components/site/speed-streaks";
 import { buttonVariants } from "@/components/ui/button";
-import { ACCENT_PRESETS, LOCATIONS, PLAN_VEHICLE_LIMIT, PLANS, ROOT_DOMAIN, TRIAL_DAYS } from "@/lib/constants";
+import { ACCENT_PRESETS, PLAN_VEHICLE_LIMIT, PLANS, ROOT_DOMAIN, TRIAL_DAYS } from "@/lib/constants";
 
 // Signature lettering for the desktop contract preview (same face the signature pad types with); not preloaded since phones never show it.
 const caveat = Caveat({ subsets: ["latin"], weight: "600", display: "swap", preload: false });
@@ -116,7 +116,7 @@ export default function ForBusinessPage() {
               <div className="px-4 pb-4">
                 <span className="-mt-[22px] grid size-11 place-items-center rounded-2xl border-[3px] border-white bg-brand-red font-display text-base font-bold text-white">Y</span>
                 <p className="mt-1.5 text-[15px] font-extrabold text-navy-900">Your Car Rental</p>
-                <p className="text-xs text-muted-foreground">Self-drive cars in Cebu City &amp; Mactan</p>
+                <p className="text-xs text-muted-foreground">Self-drive cars with airport delivery</p>
               </div>
             </div>
           </div>
@@ -186,10 +186,8 @@ export default function ForBusinessPage() {
 
         <div className="mt-3 flex flex-col gap-4 rounded-[25px] bg-gradient-to-r from-accent to-canvas p-[22px] lg:mt-5 lg:flex-row lg:items-center lg:gap-5 lg:rounded-3xl lg:px-8 lg:py-7">
           <span className="grid size-11 shrink-0 place-items-center rounded-[14px] bg-electric text-white lg:size-14 lg:rounded-[18px]"><Search className="size-5 lg:size-[26px]" /></span>
-          <p className="flex-1 text-sm leading-[1.55] text-navy-800 lg:text-base"><b className="text-navy-900">Plus a marketplace.</b> Verified stores also appear in 13C search, so customers looking for cars in Cebu can find you. That&apos;s an extra channel on top of your own website. 13C never takes a commission on your rentals in this version.</p>
-          <span className="flex flex-wrap gap-1.5 lg:max-w-[300px] lg:justify-end">
-            {LOCATIONS.slice(0, 5).map((l) => <Link key={l.slug} href={`/explore/${l.slug}`} className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-white/70">{l.name}</Link>)}
-          </span>
+          <p className="flex-1 text-sm leading-[1.55] text-navy-800 lg:text-base"><b className="text-navy-900">Plus a marketplace.</b> Verified stores also appear in 13C search, so customers looking for cars across the Philippines can find you. That&apos;s an extra channel on top of your own website. 13C never takes a commission on your rentals in this version.</p>
+          <Link href="/explore" className="self-start rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-white/70 lg:self-auto">See the marketplace</Link>
         </div>
       </section>
 
@@ -263,7 +261,7 @@ function Hero() {
       <div className="container-page relative grid gap-7 py-10 lg:grid-cols-[minmax(0,1fr)_440px] lg:items-center lg:gap-10 lg:pt-[88px] lg:pb-24 xl:grid-cols-[minmax(0,1fr)_576px] xl:gap-14">
         <div>
           <p className="eyebrow inline-flex h-7 items-center gap-2 rounded-full border border-cyan/30 bg-cyan/10 px-3 text-[11px] text-cyan lg:h-[30px] lg:px-3.5 lg:text-xs">
-            <span className="size-1.5 rounded-full bg-cyan" /> 13C for rental businesses<span className="hidden lg:inline">&nbsp;in Cebu</span>
+            <span className="size-1.5 rounded-full bg-cyan" /> 13C for rental businesses<span className="hidden lg:inline">&nbsp;in the Philippines</span>
           </p>
           <h1 className="mt-[18px] font-display-italic text-[50px] leading-[0.92] sm:text-[64px] lg:mt-[22px] xl:text-[84px]">Your car rental business, <span className="text-brand-red">online.</span></h1>
           <p className="mt-[18px] max-w-[540px] text-base leading-[1.55] text-white/75 lg:mt-[26px] lg:text-[19px]">Get your own professional car-rental website powered by 13C. Manage your cars, availability, inquiries, bookings, contracts and customers from one place.</p>
@@ -318,7 +316,7 @@ function StoreMock() {
           <span className="inline-flex h-[34px] items-center rounded-full bg-brand-red px-4 text-[13px] font-semibold text-white">Book now</span>
         </div>
         <p className="mt-2 text-lg font-extrabold">Your Car Rental</p>
-        <p className="text-[13px] text-muted-foreground">Self-drive cars in Cebu City &amp; Mactan</p>
+        <p className="text-[13px] text-muted-foreground">Self-drive cars with airport delivery</p>
         <div className="mt-2.5 flex gap-3 text-xs">
           <span className="flex items-center gap-1 font-semibold text-electric"><BadgeCheck className="size-3.5" /> Verified Business</span>
           <span className="flex items-center gap-1 text-muted-foreground"><MapPin className="size-[13px]" /> Airport delivery</span>

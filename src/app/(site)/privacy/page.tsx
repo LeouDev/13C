@@ -31,12 +31,12 @@ export default function PrivacyPage() {
   return (
     <LegalDoc
       title="Privacy Policy"
-      updated="October 5, 2026"
+      updated="October 12, 2026"
       toc={TOC}
       intro={
         <>
           <p>
-            13C is a technology marketplace and software platform that connects renters with independent car rental businesses in Cebu. We take the
+            13C is a technology marketplace and software platform that connects renters with independent car rental businesses in the Philippines. We take the
             privacy of renters, rental business owners and their staff seriously, and we process personal data in accordance with the{" "}
             <strong>Data Privacy Act of 2012 (Republic Act No. 10173)</strong>, its Implementing Rules and Regulations, and issuances of the
             National Privacy Commission (NPC).

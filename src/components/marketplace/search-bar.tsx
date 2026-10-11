@@ -1,13 +1,28 @@
 import { CalendarDays, Car, MapPin, Search } from "lucide-react";
 import { cn } from "cn";
 import { DateInput } from "@/components/common/date-input";
-import { LOCATIONS } from "@/lib/constants";
 import { todayManila } from "@/lib/format";
+import type { Province } from "@/lib/queries";
+
+/** The location choices: the whole country, then each province that has cars, and its cities. */
+export function PlaceOptions({ provinces }: { provinces: Province[] }) {
+  return (
+    <>
+      <option value="">All of the Philippines</option>
+      {provinces.map((p) => (
+        <optgroup key={p.slug} label={p.name}>
+          <option value={p.slug}>All of {p.name}</option>
+          {p.cities.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+        </optgroup>
+      ))}
+    </>
+  );
+}
 
 /** Plain GET form → /explore. Native date/select inputs give phones their native pickers. */
 export function SearchBar({
-  categories, defaults = {}, className,
-}: { categories: { slug: string; label: string }[]; defaults?: Record<string, string | undefined>; className?: string }) {
+  categories, provinces, defaults = {}, className,
+}: { categories: { slug: string; label: string }[]; provinces: Province[]; defaults?: Record<string, string | undefined>; className?: string }) {
   const field = "flex min-w-0 flex-1 items-center gap-3 rounded-2xl px-4 py-2.5 transition focus-within:bg-canvas hover:bg-canvas";
   const label = "block text-[11px] font-semibold tracking-wide text-muted-foreground uppercase";
   const input = "w-full bg-transparent text-[15px] font-semibold text-navy-900 outline-none";
@@ -18,8 +33,7 @@ export function SearchBar({
         <span className="min-w-0 flex-1">
           <span className={label}>Pickup location</span>
           <select name="location" defaultValue={defaults.location ?? ""} className={cn(input, "appearance-none")}>
-            <option value="">All of Cebu</option>
-            {LOCATIONS.map((l) => <option key={l.slug} value={l.slug}>{l.name}</option>)}
+            <PlaceOptions provinces={provinces} />
           </select>
         </span>
       </label>

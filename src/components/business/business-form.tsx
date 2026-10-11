@@ -7,7 +7,7 @@ import { Field, NativeSelect, PhoneInput } from "@/components/common/field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CITY_OPTIONS, ROOT_DOMAIN } from "@/lib/constants";
+import { PROVINCES, ROOT_DOMAIN } from "@/lib/constants";
 import type { ActionResult } from "@/lib/actions";
 import type { BusinessInput } from "@/lib/validation";
 
@@ -22,7 +22,7 @@ export function BusinessForm({
   lockSlug?: boolean;
 }) {
   const [values, setValues] = useState<BusinessInput>({
-    name: "", slug: "", city: "Cebu City", province: "Cebu", address: "", phone: "", email: "", description: "",
+    name: "", slug: "", city: "", province: "", address: "", phone: "", email: "", description: "",
     representative_name: "", representative_title: "", registration_type: "DTI", registration_number: "",
     ...Object.fromEntries(Object.entries(initial ?? {}).map(([k, v]) => [k, v ?? ""])),
   } as BusinessInput);
@@ -56,25 +56,26 @@ export function BusinessForm({
           <Input id="name" value={values.name} onChange={(e) => {
             const name = e.target.value;
             setValues((v) => ({ ...v, name, slug: slugTouched || lockSlug ? v.slug : slugify(name) }));
-          }} placeholder="Cebu XYZ Car Rental" required />
+          }} placeholder="XYZ Car Rental" required />
         </Field>
         <Field label="Store link" htmlFor="slug" error={errors.slug} required className="sm:col-span-2"
           hint={slugStatus === false ? <span className="text-destructive">That link is taken.</span> : "Customers will find your store here. Choose carefully — changing it later breaks shared links."}>
           <div className="flex items-center overflow-hidden rounded-xl border border-input bg-white focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
             <span className="shrink-0 border-r bg-canvas px-3 py-2.5 text-sm text-muted-foreground">{ROOT_DOMAIN}/</span>
             <input id="slug" value={values.slug} disabled={lockSlug} onChange={(e) => { setSlugTouched(true); setSlugFree(null); setValues((v) => ({ ...v, slug: slugify(e.target.value) })); }}
-              className="h-10 min-w-0 flex-1 px-3 text-base outline-none disabled:opacity-60 md:text-sm" placeholder="cebu-xyz-rental" />
+              className="h-10 min-w-0 flex-1 px-3 text-base outline-none disabled:opacity-60 md:text-sm" placeholder="xyz-car-rental" />
             {slugStatus === true && <Check className="mr-3 size-4 text-emerald-600" aria-label="Available" />}
             {slugStatus === false && <X className="mr-3 size-4 text-destructive" aria-label="Taken" />}
           </div>
         </Field>
-        <Field label="City" htmlFor="city" error={errors.city} required>
-          <NativeSelect id="city" value={values.city} onChange={set("city")}>
-            {CITY_OPTIONS.map((c) => <option key={c}>{c}</option>)}
+        <Field label="Province" htmlFor="province" error={errors.province} required>
+          <NativeSelect id="province" value={values.province} onChange={set("province")}>
+            <option value="" disabled>Choose a province</option>
+            {PROVINCES.map((p) => <option key={p}>{p}</option>)}
           </NativeSelect>
         </Field>
-        <Field label="Province" htmlFor="province" error={errors.province}>
-          <Input id="province" value={values.province} onChange={set("province")} />
+        <Field label="City or town" htmlFor="city" error={errors.city} required>
+          <Input id="city" value={values.city} onChange={set("city")} placeholder="e.g. Cebu City, Makati, Davao City" autoComplete="address-level2" />
         </Field>
         <Field label="Business address" htmlFor="address" error={errors.address} required className="sm:col-span-2">
           <Input id="address" value={values.address} onChange={set("address")} placeholder="Street, barangay" autoComplete="street-address" />
@@ -86,7 +87,7 @@ export function BusinessForm({
           <Input id="email" type="email" value={values.email} onChange={set("email")} placeholder="hello@yourbusiness.ph" />
         </Field>
         <Field label="Short description" htmlFor="description" error={errors.description} className="sm:col-span-2" hint="Shown on marketplace cards. Max 600 characters.">
-          <Textarea id="description" value={values.description ?? ""} onChange={set("description")} maxLength={600} rows={3} placeholder="Self-drive cars in Cebu City & Mactan with free airport delivery." />
+          <Textarea id="description" value={values.description ?? ""} onChange={set("description")} maxLength={600} rows={3} placeholder="Self-drive cars with free airport delivery." />
         </Field>
       </div>
 

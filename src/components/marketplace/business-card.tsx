@@ -22,7 +22,7 @@ export function BusinessCard({ b }: { b: FeaturedBusiness }) {
           <h3 className="truncate font-bold text-navy-900">{b.name}</h3>
           <VerifiedBadge compact />
         </div>
-        <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">{store?.tagline || b.description || "Car rental in Cebu"}</p>
+        <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">{store?.tagline || b.description || `Car rental in ${b.city}`}</p>
         <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
           <Rating value={b.stats?.rating} count={b.stats?.review_count} />
           <span className="flex items-center gap-1"><Car className="size-3.5" />{plural(Number(b.stats?.vehicle_count ?? 0), "vehicle")}</span>

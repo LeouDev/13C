@@ -2486,6 +2486,14 @@ export type Database = {
         Args: { p_conversation_id: string }
         Returns: undefined
       }
+      marketplace_locations: {
+        Args: never
+        Returns: {
+          cars: number
+          city: string
+          province: string
+        }[]
+      }
       member_has_role: {
         Args: {
           p_business: string
@@ -2678,6 +2686,7 @@ export type Database = {
           p_min_rating?: number
           p_min_seats?: number
           p_offset?: number
+          p_province?: string
           p_q?: string
           p_self_drive?: boolean
           p_sort?: string

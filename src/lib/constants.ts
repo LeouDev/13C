@@ -8,24 +8,20 @@ export const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "13c.online";
 /** How a storefront URL is displayed to owners (13c.online/<slug>). */
 export const storeDisplayUrl = (slug: string) => `${ROOT_DOMAIN}/${slug}`;
 
-/** Launch locations. `match` lists the city values a search for this location covers. */
-export const LOCATIONS = [
-  { slug: "cebu-city", name: "Cebu City", match: ["Cebu City"], blurb: "Downtown, IT Park & Ayala" },
-  { slug: "mactan", name: "Mactan", match: ["Lapu-Lapu", "Mactan", "Cordova"], blurb: "Airport & island resorts" },
-  { slug: "lapu-lapu", name: "Lapu-Lapu", match: ["Lapu-Lapu", "Mactan"], blurb: "Mactan-Cebu Int'l Airport" },
-  { slug: "mandaue", name: "Mandaue", match: ["Mandaue"], blurb: "Central business corridor" },
-  { slug: "talisay", name: "Talisay", match: ["Talisay"], blurb: "South Cebu gateway" },
-  { slug: "consolacion", name: "Consolacion", match: ["Consolacion"], blurb: "North Cebu" },
-  { slug: "liloan", name: "Liloan", match: ["Liloan"], blurb: "North coast" },
+/** Provinces a business can be in (plus Metro Manila). Marketplace places come from the cars listed, see getPlaces(). */
+export const PROVINCES = [
+  "Metro Manila",
+  "Abra", "Agusan del Norte", "Agusan del Sur", "Aklan", "Albay", "Antique", "Apayao", "Aurora", "Basilan", "Bataan", "Batanes",
+  "Batangas", "Benguet", "Biliran", "Bohol", "Bukidnon", "Bulacan", "Cagayan", "Camarines Norte", "Camarines Sur", "Camiguin",
+  "Capiz", "Catanduanes", "Cavite", "Cebu", "Cotabato", "Davao de Oro", "Davao del Norte", "Davao del Sur", "Davao Occidental",
+  "Davao Oriental", "Dinagat Islands", "Eastern Samar", "Guimaras", "Ifugao", "Ilocos Norte", "Ilocos Sur", "Iloilo", "Isabela",
+  "Kalinga", "La Union", "Laguna", "Lanao del Norte", "Lanao del Sur", "Leyte", "Maguindanao del Norte", "Maguindanao del Sur",
+  "Marinduque", "Masbate", "Misamis Occidental", "Misamis Oriental", "Mountain Province", "Negros Occidental", "Negros Oriental",
+  "Northern Samar", "Nueva Ecija", "Nueva Vizcaya", "Occidental Mindoro", "Oriental Mindoro", "Palawan", "Pampanga", "Pangasinan",
+  "Quezon", "Quirino", "Rizal", "Romblon", "Samar", "Sarangani", "Siquijor", "Sorsogon", "South Cotabato", "Southern Leyte",
+  "Sultan Kudarat", "Sulu", "Surigao del Norte", "Surigao del Sur", "Tarlac", "Tawi-Tawi", "Zambales", "Zamboanga del Norte",
+  "Zamboanga del Sur", "Zamboanga Sibugay",
 ] as const;
-
-export const CITY_OPTIONS = ["Cebu City", "Mandaue", "Lapu-Lapu", "Cordova", "Talisay", "Consolacion", "Liloan", "Minglanilla", "Danao", "Carcar", "Toledo"];
-
-export const locationBySlug = (slug?: string | null) => LOCATIONS.find((l) => l.slug === slug);
-
-/** /explore/cebu — the whole province (no city filter). */
-export const ALL_CEBU = { slug: "cebu", name: "Cebu", match: [] as string[], blurb: "Cebu City, Mactan, Mandaue, Talisay and beyond" };
-export const cityPageBySlug = (slug: string) => (slug === ALL_CEBU.slug ? ALL_CEBU : locationBySlug(slug));
 
 export const PAYMENT_METHODS: { value: Enums<"payment_method_type">; label: string }[] = [
   { value: "CASH", label: "Cash" },
@@ -130,7 +126,7 @@ export const STORE_SECTIONS = [
 export const POLICY_FIELDS = [
   { key: "requirements", label: "Rental requirements", placeholder: "Valid driver's license + 1 government ID. Minimum age 21." },
   { key: "fuel", label: "Fuel policy", placeholder: "Return with the same fuel level as pickup." },
-  { key: "mileage", label: "Mileage notes", placeholder: "Unlimited within Cebu island." },
+  { key: "mileage", label: "Mileage notes", placeholder: "Unlimited within the island." },
   { key: "late_return", label: "Late return", placeholder: "1-hour grace period, then ₱200/hour." },
   { key: "cancellation", label: "Cancellation", placeholder: "Free cancellation up to 48 hours before pickup." },
   { key: "deposit", label: "Security deposit", placeholder: "Refunded within 3 days after return." },

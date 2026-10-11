@@ -24,7 +24,7 @@ export function ContractTermsEditor({ businessId, initial, canEdit }: { business
         <div key={i} className="grid gap-2 rounded-2xl border p-3">
           <div className="flex items-center gap-2">
             <span className="w-6 shrink-0 text-center text-xs font-semibold text-muted-foreground">({String.fromCharCode(97 + i)})</span>
-            <Input value={t.title} onChange={(e) => set(i, { title: e.target.value })} placeholder="Title, e.g. Travel outside Cebu" maxLength={80}
+            <Input value={t.title} onChange={(e) => set(i, { title: e.target.value })} placeholder="Title, e.g. Travel to other islands" maxLength={80}
               disabled={!canEdit} aria-label={`Term ${i + 1} title`} aria-invalid={!!errors[`${i}.title`]} />
             {canEdit && (
               <Button type="button" variant="ghost" size="icon-lg" aria-label={`Remove term ${i + 1}`} onClick={() => setTerms((ts) => ts.filter((_, j) => j !== i))}>
@@ -33,7 +33,7 @@ export function ContractTermsEditor({ businessId, initial, canEdit }: { business
             )}
           </div>
           <Textarea value={t.body} onChange={(e) => set(i, { body: e.target.value })} rows={3} maxLength={2000} disabled={!canEdit}
-            placeholder="e.g. Taking the vehicle off Cebu island needs the Rental Provider's written approval."
+            placeholder="e.g. Taking the vehicle off the island needs the Rental Provider's written approval."
             aria-label={`Term ${i + 1}`} aria-invalid={!!errors[`${i}.body`]} />
           {(errors[`${i}.title`] || errors[`${i}.body`]) && <p className="text-xs text-destructive">{errors[`${i}.title`] ?? errors[`${i}.body`]}</p>}
         </div>

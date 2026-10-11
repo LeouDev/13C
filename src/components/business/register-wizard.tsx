@@ -99,7 +99,7 @@ export function RegisterWizard({ resume }: { resume: Resume }) {
           </div>
           <Field label="Tagline" htmlFor="tagline" hint="One line under your business name on your store."
             labelAside={<AiWriteButton businessId={biz.id} field="tagline" value={tagline} onChange={setTagline} />}>
-            <Input id="tagline" value={tagline} maxLength={140} onChange={(e) => setTagline(e.target.value)} placeholder="Self-drive cars across Cebu City & Mactan" />
+            <Input id="tagline" value={tagline} maxLength={140} onChange={(e) => setTagline(e.target.value)} placeholder="Self-drive cars with free airport delivery" />
           </Field>
           <div className="flex justify-between gap-3">
             <p className="self-center text-xs text-muted-foreground">You can change all of this later in My Store.</p>

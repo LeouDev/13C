@@ -13,7 +13,7 @@ export type StoreTextField = "tagline" | "about" | PolicyKey;
 export type Faq = { q: string; a: string };
 type Hours = { day: string; open: string; close: string; closed: boolean };
 
-const RULES = `You write text for a car-rental business's own store page on 13C, a booking website for car-rental businesses in Cebu, Philippines. The owner checks your text before publishing it.
+const RULES = `You write text for a car-rental business's own store page on 13C, a booking website for car-rental businesses in the Philippines. The owner checks your text before publishing it.
 
 Rules:
 - Use only the facts given. Never invent anything else: no years in business, awards, customer numbers, insurance, guarantees, discounts, prices, fees or times that aren't in the facts.
@@ -30,7 +30,7 @@ const POLICY_HINTS: Record<PolicyKey, string> = {
   late_return: "the grace period and the charges for returning the car late.",
   cancellation: "what is refunded or charged when the renter cancels, depending on how long before pickup, and for no-shows.",
   deposit: "when and how the security deposit is returned. The agreement already says it's paid on or before pickup, states the amount and lists what may be deducted, so don't repeat or change those.",
-  prohibited: "extra rules for using the car, such as no smoking, no pets or no eating inside. The agreement already forbids unlicensed drivers, drunk driving, racing, off-road use, leaving Cebu island without consent and sub-leasing, so don't repeat those.",
+  prohibited: "extra rules for using the car, such as no smoking, no pets or no eating inside. The agreement already forbids unlicensed drivers, drunk driving, racing, off-road use, taking the car off the island without consent and sub-leasing, so don't repeat those.",
   other: "other practical terms, such as cleaning fees, lost keys or extending the rental. The agreement already covers the car's condition, damage, accidents, traffic violations, insurance and disputes, so don't write about those.",
 };
 

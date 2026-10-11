@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { locationBySlug, POLICY_FIELDS } from "@/lib/constants";
+import { POLICY_FIELDS } from "@/lib/constants";
 import { manilaToISO } from "@/lib/format";
 import type { Database, Enums } from "@/types/database";
 
@@ -16,15 +16,50 @@ export type SearchParams = {
 
 export const PAGE_SIZE = 18;
 
+/** A province, or a city in it (`spellings`: how its listings write the city, e.g. "Lapu-Lapu" and "Lapu Lapu"). */
+export type Place = { slug: string; name: string; province: string; spellings?: string[]; cars: number };
+export type Province = Place & { cities: Place[] };
+
+/**
+ * The provinces and cities that have cars on the marketplace, most cars first. A place's slug is its name; a city also
+ * gets its province's when another province has a town by that name, or a province shares it.
+ */
+export function placesFrom(rows: { province: string; city: string; cars: number }[]) {
+  const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const byProvince = new Map<string, Province>();
+  for (const r of rows) {
+    const p = byProvince.get(r.province) ?? { slug: slug(r.province), name: r.province, province: r.province, cars: 0, cities: [] };
+    byProvince.set(r.province, p);
+    p.cars += Number(r.cars);
+    const same = p.cities.find((c) => c.slug === slug(r.city));
+    if (same) { same.spellings!.push(r.city); same.cars += Number(r.cars); }
+    else p.cities.push({ slug: slug(r.city), name: r.city, province: r.province, spellings: [r.city], cars: Number(r.cars) });
+  }
+  const mostCars = (a: Place, b: Place) => b.cars - a.cars || a.name.localeCompare(b.name);
+  const provinces = [...byProvince.values()].sort(mostCars);
+  const cities = provinces.flatMap((p) => p.cities.sort(mostCars));
+  const uses = new Map<string, number>();
+  for (const c of [...provinces, ...cities]) uses.set(c.slug, (uses.get(c.slug) ?? 0) + 1);
+  for (const c of cities) if (uses.get(c.slug)! > 1) c.slug += `-${slug(c.province)}`;
+  return { provinces, cities: [...cities].sort(mostCars), find: (s?: string) => [...provinces, ...cities].find((x) => x.slug === s) };
+}
+
+export const getPlaces = cache(async () => {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("marketplace_locations");
+  return placesFrom(data ?? []);
+});
+
 export async function searchVehicles(p: SearchParams, extra: { businessId?: string; limit?: number } = {}) {
   const supabase = await createClient();
-  const loc = locationBySlug(p.location);
+  const loc = p.location ? (await getPlaces()).find(p.location) : undefined;
   const page = Math.max(1, Number(p.page) || 1);
   const limit = extra.limit ?? PAGE_SIZE;
   const from = p.from && /^\d{4}-\d{2}-\d{2}$/.test(p.from) ? manilaToISO(p.from) : undefined;
   const to = p.to && /^\d{4}-\d{2}-\d{2}$/.test(p.to) ? manilaToISO(p.to) : undefined;
   const { data, error } = await supabase.rpc("search_vehicles", {
-    p_cities: loc ? [...loc.match] : undefined,
+    p_cities: loc?.spellings,
+    p_province: loc?.province,
     p_q: p.q || undefined,
     p_category: p.type || undefined,
     p_transmission: (p.transmission as Enums<"transmission_type">) || undefined,

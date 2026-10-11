@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: PageProps<"/[business]">): Pr
   if (!sf) return {};
   const { business, store } = sf;
   const title = `${business.name} — Car Rental in ${business.city}`;
-  const description = store.tagline || business.description || `Rent cars from ${business.name} in ${business.city}, Cebu. Book online on 13C.`;
+  const description = store.tagline || business.description || `Rent cars from ${business.name} in ${business.city}, ${business.province}. Book online on 13C.`;
   const isPublic = business.status === "VERIFIED" && store.is_published;
   return {
     title: { absolute: title },

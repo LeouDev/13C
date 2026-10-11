@@ -1,11 +1,14 @@
 import { DateInput } from "@/components/common/date-input";
 import { NativeSelect } from "@/components/common/field";
-import { LOCATIONS, TRANSMISSIONS } from "@/lib/constants";
+import { PlaceOptions } from "@/components/marketplace/search-bar";
+import { TRANSMISSIONS } from "@/lib/constants";
 import { todayManila } from "@/lib/format";
-import type { SearchParams } from "@/lib/queries";
+import type { Province, SearchParams } from "@/lib/queries";
 
 /** GET form; works without JavaScript. */
-export function ExploreFilters({ p, categories, action = "/explore", lockLocation }: { p: SearchParams; categories: { slug: string; label: string }[]; action?: string; lockLocation?: boolean }) {
+export function ExploreFilters({ p, categories, provinces, action = "/explore", lockLocation }: {
+  p: SearchParams; categories: { slug: string; label: string }[]; provinces: Province[]; action?: string; lockLocation?: boolean;
+}) {
   const label = "mb-1.5 block text-xs font-semibold text-navy-900";
   const check = "flex items-center gap-2.5 py-1 text-sm text-navy-800";
   return (
@@ -18,8 +21,7 @@ export function ExploreFilters({ p, categories, action = "/explore", lockLocatio
         <div>
           <label className={label} htmlFor="f-loc">Location</label>
           <NativeSelect id="f-loc" name="location" defaultValue={p.location ?? ""}>
-            <option value="">All of Cebu</option>
-            {LOCATIONS.map((l) => <option key={l.slug} value={l.slug}>{l.name}</option>)}
+            <PlaceOptions provinces={provinces} />
           </NativeSelect>
         </div>
       )}

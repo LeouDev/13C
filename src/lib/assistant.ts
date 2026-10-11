@@ -1,5 +1,5 @@
 import "server-only";
-import { LOCATIONS, PLANS, POLICY_FIELDS, TRIAL_DAYS } from "@/lib/constants";
+import { PLANS, POLICY_FIELDS, TRIAL_DAYS } from "@/lib/constants";
 
 // The 13C assistants: what each may say (built from the app's own settings, so prices never drift) and the ready-made
 // answers the For Business one falls back to when the AI isn't available. Same facts, three audiences:
@@ -10,7 +10,7 @@ const plans = PLANS.map((p) => `- ${p.name}: ${p.price}${p.period}, ${p.vehicles
 const FACTS = `Facts about 13C:
 
 What it is
-- 13C gives each car-rental business its own website ("storefront") at 13c.online/your-business, and lists verified stores in the 13C marketplace, where renters search cars across Cebu (${LOCATIONS.map((l) => l.name).join(", ")}).
+- 13C gives each car-rental business its own website ("storefront") at 13c.online/your-business, and lists verified stores in the 13C marketplace, where renters search cars across the Philippines. Businesses anywhere in the Philippines can join.
 - The rental business is always the Rental Provider. 13C is only the technology platform and is not a party to rentals.
 - 13C takes no commission on rentals. Renters pay the business directly with the methods it accepts (GCash, Maya, bank transfer, cash, card or other). 13C records payments for the owner's records but never handles rental money. Owners keep 100% of rental income.
 
@@ -70,7 +70,7 @@ Not offered yet: GPS tracking (coming on Business), processing rental payments, 
 
 Contact: support@13c.online`;
 
-export const ASSISTANT_INSTRUCTIONS = `You are the 13C assistant on the "13C for rental businesses" page (www.13c.online/for-business). You help car-rental business owners in Cebu, Philippines understand 13C and decide whether to sign up.
+export const ASSISTANT_INSTRUCTIONS = `You are the 13C assistant on the "13C for rental businesses" page (www.13c.online/for-business). You help car-rental business owners in the Philippines understand 13C and decide whether to sign up.
 
 Rules:
 - Answer only from the facts below. If something isn't covered, say you're not sure and suggest emailing support@13c.online. Never invent features, prices, dates or policies.
@@ -81,7 +81,7 @@ Rules:
 
 ${FACTS}`;
 
-export const DASHBOARD_INSTRUCTIONS = `You are the 13C help assistant inside the 13C dashboard, where car-rental businesses in Cebu, Philippines run their business on 13C. You help the owner or their team use 13C: where things are and how to do them.
+export const DASHBOARD_INSTRUCTIONS = `You are the 13C help assistant inside the 13C dashboard, where car-rental businesses in the Philippines run their business on 13C. You help the owner or their team use 13C: where things are and how to do them.
 
 Rules:
 - Answer only from the facts below. If something isn't covered, say you're not sure and suggest emailing support@13c.online. Never invent features, buttons, prices or policies.

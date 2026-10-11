@@ -12,7 +12,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
       <div className="relative flex h-[200px] flex-col overflow-hidden rounded-[28px] bg-navy-900 px-6 pt-5 lg:hidden">
         <div className="speed-lines absolute inset-0" />
         <SpeedStreaks count={6} seed={11} top={4} bottom={40} />
-        <p className="relative font-display-italic text-[26px] leading-[1.15] text-white">Drive anywhere in Cebu.</p>
+        <p className="relative font-display-italic text-[26px] leading-[1.15] text-white">Drive anywhere.</p>
         <div className="relative -mx-6 mt-auto pb-[22px]">
           <div className="flex justify-center"><DriveCar className="w-[190px]" /></div>
           <div className="road-dashes mt-0.5" />
@@ -32,7 +32,7 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
           <div className="road-dashes mt-0.5" />
         </div>
         <div className="relative">
-          <p style={after(0.5)} className="animate-fade-in-x font-display-italic text-4xl leading-tight">Drive anywhere<br />in Cebu.</p>
+          <p style={after(0.5)} className="animate-fade-in-x font-display-italic text-4xl leading-tight">Drive<br />anywhere.</p>
           <p style={after(0.65)} className="animate-fade-in-x mt-3 max-w-sm text-white/70">Verified local rental businesses, transparent prices, and digital rental agreements you can sign from your phone.</p>
           <Link href="/for-business" style={after(0.8)} className="animate-fade-in-x mt-6 inline-block text-sm font-semibold text-cyan hover:underline">Own a rental business? Get your own storefront →</Link>
         </div>

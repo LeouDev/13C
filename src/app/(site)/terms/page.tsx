@@ -6,7 +6,7 @@ import { BILLED_BY } from "@/lib/constants";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "The terms for using 13C, a Cebu car-rental marketplace and software platform. 13C is not a rental company: vehicles are rented by independent rental businesses.",
+    "The terms for using 13C, a Philippine car-rental marketplace and software platform. 13C is not a rental company: vehicles are rented by independent rental businesses.",
 };
 
 const TOC = [
@@ -36,7 +36,7 @@ export default function TermsPage() {
   return (
     <LegalDoc
       title="Terms of Service"
-      updated="October 3, 2026"
+      updated="October 12, 2026"
       toc={TOC}
       intro={
         <>
@@ -62,7 +62,7 @@ export default function TermsPage() {
       <LegalSection {...sec("what-13c-is")}>
         <p>13C provides two things:</p>
         <ul>
-          <li>a <strong>marketplace</strong> where renters can discover vehicles and contact rental businesses in Cebu; and</li>
+          <li>a <strong>marketplace</strong> where renters can discover vehicles and contact rental businesses in the Philippines; and</li>
           <li><strong>software (SaaS)</strong> that rental businesses use to run a storefront, manage vehicles, bookings, customers and rental agreements.</li>
         </ul>
         <p>13C is <strong>not</strong>:</p>

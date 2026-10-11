@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
-import { LOCATIONS } from "@/lib/constants";
+import { getPlaces } from "@/lib/queries";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const { cities } = await getPlaces();
   return (
     <footer className="mt-auto bg-navy-950 text-white/70">
       <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <Logo tone="light" speed className="h-10" />
-          <p className="mt-4 max-w-xs text-sm">Find and book cars from trusted local rental businesses across Cebu.</p>
+          <p className="mt-4 max-w-xs text-sm">Find and book cars from trusted local rental businesses across the Philippines.</p>
           <p className="mt-4 max-w-xs text-xs text-white/45">
             13C is a technology marketplace and software platform. Vehicles are owned, operated and rented by independent rental businesses.
           </p>
@@ -16,7 +17,8 @@ export function SiteFooter() {
         <div>
           <p className="eyebrow text-white">Rent</p>
           <ul className="mt-4 grid gap-2 text-sm">
-            {LOCATIONS.slice(0, 5).map((l) => (
+            <li><Link href="/explore" className="hover:text-white">Find a car</Link></li>
+            {cities.slice(0, 4).map((l) => (
               <li key={l.slug}><Link href={`/explore/${l.slug}`} className="hover:text-white">Cars in {l.name}</Link></li>
             ))}
           </ul>

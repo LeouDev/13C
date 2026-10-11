@@ -14,7 +14,7 @@ import { blockWindow, coverDays, formatSpan } from "@/lib/calendar";
 import { friendlyError } from "@/lib/errors";
 import { browserLabel, formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
-import { storeSections, type Storefront } from "@/lib/queries";
+import { placesFrom, storeSections, type Storefront } from "@/lib/queries";
 import { dueKm, dueOn } from "@/lib/fleet";
 import { toCsv } from "@/lib/csv";
 import { groupFingerprint, isValidSignatureImage } from "@/lib/signature";
@@ -395,5 +395,26 @@ describe("calendar: blocks and partly taken days (Asia/Manila)", () => {
     expect(formatSpan(at("2026-10-12", "00:00"), at("2026-10-15", "00:00"))).toBe("Oct 12, 2026 – Oct 14, 2026");
     expect(formatSpan(at("2026-10-12", "13:00"), at("2026-10-12", "17:00"))).toBe("Oct 12, 2026, 1:00 PM–5:00 PM");
     expect(formatSpan(at("2026-10-12", "18:00"), at("2026-10-14", "08:00"))).toBe("Oct 12, 2026, 6:00 PM – Oct 14, 2026, 8:00 AM");
+  });
+});
+
+describe("marketplace places", () => {
+  it("groups cities by province, merges spellings, and keeps same-named towns apart", () => {
+    const p = placesFrom([
+      { province: "Cebu", city: "Cebu City", cars: 3 },
+      { province: "Cebu", city: "Lapu-Lapu", cars: 1 },
+      { province: "Cebu", city: "Lapu Lapu", cars: 1 },
+      { province: "Cebu", city: "Talisay", cars: 1 },
+      { province: "Negros Occidental", city: "Talisay", cars: 1 },
+      { province: "Metro Manila", city: "Makati", cars: 9 },
+    ]);
+    expect(p.provinces.map((x) => [x.slug, x.cars])).toEqual([["metro-manila", 9], ["cebu", 6], ["negros-occidental", 1]]);
+    expect(p.find("lapu-lapu")).toMatchObject({ province: "Cebu", spellings: ["Lapu-Lapu", "Lapu Lapu"], cars: 2 });
+    expect(p.find("talisay-cebu")?.province).toBe("Cebu");
+    expect(p.find("talisay-negros-occidental")?.province).toBe("Negros Occidental");
+    expect(p.find("talisay")).toBeUndefined();
+    expect(p.find("cebu")?.name).toBe("Cebu");
+    expect(p.find("cebu")?.spellings).toBeUndefined(); // a province: no city filter
+    expect(p.cities[0]?.slug).toBe("makati");
   });
 });

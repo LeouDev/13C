@@ -15,12 +15,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { ACCENT_PRESETS, CITY_OPTIONS, DAYS, LOCATIONS, POLICY_FIELDS, STORE_SECTIONS } from "@/lib/constants";
+import { ACCENT_PRESETS, DAYS, POLICY_FIELDS, STORE_SECTIONS } from "@/lib/constants";
 import type { StorefrontInput } from "@/lib/validation";
 import type { Tables } from "@/types/database";
 
 type Hours = { day: string; open: string; close: string; closed: boolean };
-const AREA_SUGGESTIONS = ["Mactan-Cebu Int'l Airport", ...LOCATIONS.map((l) => l.name), "SM Seaside", "IT Park"];
 
 function Section({ id, title, description, children }: { id?: string; title: string; description?: string; children: React.ReactNode }) {
   return (
@@ -100,7 +99,7 @@ export function StoreEditor({
         </Field>
         <Field label="Tagline" htmlFor="tagline" error={errors.tagline}
           labelAside={<AiWriteButton businessId={business.id} field="tagline" value={v.tagline ?? ""} onChange={(t) => set("tagline", t)} />}>
-          <Input id="tagline" value={v.tagline ?? ""} maxLength={140} onChange={(e) => set("tagline", e.target.value)} placeholder="Self-drive vehicles across Cebu." />
+          <Input id="tagline" value={v.tagline ?? ""} maxLength={140} onChange={(e) => set("tagline", e.target.value)} placeholder="Self-drive cars with free airport delivery." />
         </Field>
         <Field label="About your business" htmlFor="about" error={errors.about} hint="Tell your story: how long you've been renting, what makes you different. Rough notes are fine; AI can polish them."
           labelAside={<AiWriteButton businessId={business.id} field="about" value={v.about ?? ""} onChange={(t) => set("about", t)} />}>
@@ -136,8 +135,8 @@ export function StoreEditor({
         <Field label="Pickup locations" hint="Press Enter to add.">
           <TagInput value={v.pickup_locations} onChange={(x) => set("pickup_locations", x)} placeholder="e.g. Our garage, A.S. Fortuna St." suggestions={[business.city]} />
         </Field>
-        <Field label="Delivery areas" hint="Customers searching these areas will also see your delivery-enabled cars.">
-          <TagInput value={v.delivery_areas} onChange={(x) => set("delivery_areas", x)} placeholder="Add an area" suggestions={[...new Set([...AREA_SUGGESTIONS, ...CITY_OPTIONS.slice(0, 5)])]} />
+        <Field label="Delivery areas" hint="Cities and towns you deliver to. Customers searching them will also see your delivery-enabled cars.">
+          <TagInput value={v.delivery_areas} onChange={(x) => set("delivery_areas", x)} placeholder="Add a city or town" suggestions={[business.city]} />
         </Field>
       </Section>
 

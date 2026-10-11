@@ -41,7 +41,7 @@ export default async function MyBookingsPage() {
     <>
       <PageHeader title="My bookings" />
       {rows.length === 0 ? (
-        <EmptyState icon={CalendarCheck} title="No bookings yet" description="Find a car from a verified Cebu rental business." action={{ label: "Find a car", href: "/explore" }} />
+        <EmptyState icon={CalendarCheck} title="No bookings yet" description="Find a car from a verified local rental business." action={{ label: "Find a car", href: "/explore" }} />
       ) : (
         <div className="grid gap-8">
           {current.length > 0 && <section><h2 className="mb-3 text-sm font-semibold text-muted-foreground">Current & upcoming</h2><div className="grid gap-3 lg:grid-cols-2">{current.map((b) => <Card key={b.id} b={b} />)}</div></section>}

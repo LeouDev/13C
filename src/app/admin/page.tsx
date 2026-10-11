@@ -23,7 +23,7 @@ export default async function AdminOverview() {
 
   return (
     <>
-      <PageHeader title="Platform overview" description="Marketplace health across Cebu." />
+      <PageHeader title="Platform overview" description="Marketplace health across the Philippines." />
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Link href="/admin/businesses?status=queue"><StatCard tone="brand" label="Awaiting verification" value={o.pending_verifications ?? 0} icon={ShieldCheck} /></Link>
         <StatCard label="Businesses" value={sum(o.businesses)} hint={`${o.published_stores ?? 0} published stores`} icon={Building2} />

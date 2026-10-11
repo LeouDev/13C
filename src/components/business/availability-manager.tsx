@@ -56,7 +56,7 @@ export function AvailabilityManager({ vehicleId, blocks, bookings }: { vehicleId
               <option value="MAINTENANCE">Maintenance</option>
             </NativeSelect>
           </Field>
-          <Field label="Note (private)" htmlFor="b-note"><Input id="b-note" value={form.note} maxLength={300} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="PMS at Toyota Cebu" /></Field>
+          <Field label="Note (private)" htmlFor="b-note"><Input id="b-note" value={form.note} maxLength={300} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="PMS at the dealership" /></Field>
           <Button type="submit" disabled={pending}>{pending && <Loader2 className="animate-spin" />} {form.hours ? "Block hours" : "Block dates"}</Button>
         </form>
         <div className="rounded-3xl border bg-white p-5">

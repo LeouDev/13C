@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { CITY_OPTIONS, FUEL_TYPES, TRANSMISSIONS, VEHICLE_STATUSES } from "@/lib/constants";
+import { FUEL_TYPES, TRANSMISSIONS, VEHICLE_STATUSES } from "@/lib/constants";
 import type { Tables } from "@/types/database";
 
 type Vehicle = Tables<"vehicles"> & { vehicle_pricing: Tables<"vehicle_pricing"> | null };
@@ -98,10 +98,10 @@ export function VehicleForm({
           </label>
         ))}
         {errors.self_drive && <p className="text-xs text-destructive sm:col-span-2">{errors.self_drive}</p>}
-        <Field label="City" htmlFor="city" error={errors.city} required>
-          <NativeSelect id="city" {...txt("city")}>{CITY_OPTIONS.map((c) => <option key={c}>{c}</option>)}</NativeSelect>
+        <Field label="City or town" htmlFor="city" error={errors.city} required hint="Where renters pick it up. Renters search by this.">
+          <Input id="city" {...txt("city")} />
         </Field>
-        <Field label="Pickup location" htmlFor="pickup_location" error={errors.pickup_location}><Input id="pickup_location" placeholder="Our garage in Banilad" {...txt("pickup_location")} /></Field>
+        <Field label="Pickup location" htmlFor="pickup_location" error={errors.pickup_location}><Input id="pickup_location" placeholder="Our garage on Rizal St." {...txt("pickup_location")} /></Field>
         <Field label="Minimum rental (days)" htmlFor="min_days" error={errors.min_rental_days}><Input id="min_days" type="number" min={1} max={90} {...txt("min_rental_days")} /></Field>
         <Field label="Status" htmlFor="status">
           <NativeSelect id="status" {...txt("status")}>{VEHICLE_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}</NativeSelect>

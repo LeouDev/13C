@@ -18,9 +18,9 @@ const barlow = Barlow_Condensed({ variable: "--font-barlow", subsets: ["latin"],
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: "13C — Find and book cars from local Cebu rental businesses", template: "%s · 13C" },
+  title: { default: "13C — Find and book cars from local rental businesses across the Philippines", template: "%s · 13C" },
   description:
-    "Discover trusted local rental businesses in Cebu, compare vehicles, and book directly. Self-drive and with-driver cars in Cebu City, Mactan, Lapu-Lapu, Mandaue and Talisay.",
+    "Discover trusted local rental businesses across the Philippines, compare vehicles, and book directly. Self-drive and with-driver cars, wherever you're headed.",
   applicationName: "13C",
   appleWebApp: { title: "13C" }, // the name iPhones suggest for Add to Home Screen (icon: app/apple-icon.png)
   openGraph: { siteName: "13C", type: "website", locale: "en_PH" }, // image: app/opengraph-image.tsx

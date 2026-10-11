@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: PageProps<"/[business]/[vehic
   if (!d) return {};
   const v = d.vehicle;
   const title = `${v.year} ${v.make} ${v.model} for rent in ${v.city} — ${formatPHP(v.vehicle_pricing?.daily_rate)}/day · ${d.business.name}`;
-  const description = `Rent a ${v.make} ${v.model} (${labelize(v.transmission)}, ${v.seats} seats) from ${d.business.name} in ${v.city}, Cebu. ${v.description?.slice(0, 120) ?? ""}`.trim();
+  const description = `Rent a ${v.make} ${v.model} (${labelize(v.transmission)}, ${v.seats} seats) from ${d.business.name} in ${v.city}, ${d.business.province}. ${v.description?.slice(0, 120) ?? ""}`.trim();
   return {
     title: { absolute: title },
     description,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { RESERVED_SLUGS } from "@/lib/constants";
+import { PROVINCES, RESERVED_SLUGS } from "@/lib/constants";
 
 // No eval-compiled parsers: Zod would otherwise probe `Function("")`, which the Content-Security-Policy
 // reports (and will block once enforced). These forms are small, so the faster path doesn't matter.
@@ -28,8 +28,8 @@ export const phoneSchema = z.string().trim().min(1, "Enter your mobile number")
 export const businessSchema = z.object({
   name: z.string().trim().min(2, "Enter your business name").max(80),
   slug: slugSchema,
-  city: z.string().trim().min(2, "Choose a city").max(80),
-  province: z.string().trim().max(80).default("Cebu"),
+  province: z.string().refine((p) => (PROVINCES as readonly string[]).includes(p), "Choose a province"),
+  city: z.string().trim().min(2, "Enter your city or town").max(80).transform((s) => s.replace(/\s+/g, " ")),
   address: z.string().trim().min(5, "Enter your business address").max(300),
   phone: phoneSchema,
   email: z.email("Enter a valid email").trim().max(120),
@@ -97,7 +97,7 @@ export const vehicleSchema = z.object({
   with_driver: z.boolean(),
   delivery_available: z.boolean(),
   pickup_location: optionalText(200),
-  city: z.string().trim().min(2, "Choose a city").max(80),
+  city: z.string().trim().min(2, "Enter the city or town").max(80).transform((s) => s.replace(/\s+/g, " ")),
   min_rental_days: z.coerce.number().int().min(1).max(90),
 }).refine((v) => v.self_drive || v.with_driver, { message: "Offer self-drive, with driver, or both", path: ["self_drive"] });
 
