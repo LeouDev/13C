@@ -54,7 +54,7 @@ export function BookingWidget({
         <span className="font-display text-3xl font-bold text-navy-900">{formatPHP(dailyRate)}</span>
         <span className="text-sm text-muted-foreground">/ day</span>
       </div>
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_minmax(0,8rem)] gap-2">
         <label className="grid gap-1 text-[11px] font-semibold text-muted-foreground uppercase">Pickup<input type="date" className={input} value={from} min={todayManila()} onChange={(e) => { setFrom(e.target.value); if (e.target.value >= to) setTo(new Date(new Date(`${e.target.value}T00:00:00Z`).getTime() + 86400000).toISOString().slice(0, 10)); }} /></label>
         <label className="grid gap-1 text-[11px] font-semibold text-muted-foreground uppercase">Time<input type="time" className={input} value={ft} onChange={(e) => setFt(e.target.value)} /></label>
         <label className="grid gap-1 text-[11px] font-semibold text-muted-foreground uppercase">Return<input type="date" className={input} value={to} min={from} onChange={(e) => setTo(e.target.value)} /></label>
