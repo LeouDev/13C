@@ -10,7 +10,7 @@ import { missingVerificationDocs, PLAN_PRICE_CENTAVOS, PLANS } from "@/lib/const
 import { renderContractPdf, toWinAnsi, type ContractPdfInput } from "@/lib/contracts/pdf";
 import { answerText, faqAnswer } from "@/lib/assistant";
 import { cleanText, parseFaqs } from "@/lib/store-writer";
-import { blockWindow, coverDays, formatSpan } from "@/lib/calendar";
+import { blockWindow, coverDays, formatSpan, weekAhead } from "@/lib/calendar";
 import { friendlyError } from "@/lib/errors";
 import { browserLabel, formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
@@ -430,5 +430,21 @@ describe("marketplace places", () => {
     expect(locationFilter(p, "cebu")).toEqual({ label: "Cebu", province: "Cebu", cities: undefined });
     expect(locationFilter(p, "davao del sur")).toEqual({ label: "Davao del Sur", province: "Davao del Sur" }); // no cars yet
     expect(locationFilter(p, "Siargao")).toEqual({ label: "Siargao", cities: ["Siargao"] });
+  });
+});
+
+describe("dashboard week ahead", () => {
+  it("lists the week's pickups and returns in time order", () => {
+    const at = (d: string, t: string) => new Date(`${d}T${t}:00+08:00`).toISOString();
+    const days = ["2026-10-12", "2026-10-13", "2026-10-14"];
+    const events = weekAhead([
+      { id: "a", status: "CONFIRMED", pickup_at: at("2026-10-13", "10:00"), return_at: at("2026-10-14", "09:00") },
+      { id: "b", status: "ACTIVE", pickup_at: at("2026-10-10", "10:00"), return_at: at("2026-10-12", "18:00") },
+      { id: "c", status: "CONFIRMED", pickup_at: at("2026-10-14", "08:00"), return_at: at("2026-10-20", "08:00") },
+      { id: "d", status: "CONFIRMED", pickup_at: at("2026-10-20", "08:00"), return_at: at("2026-10-22", "08:00") },
+    ], days);
+    expect(events.map((e) => `${e.booking.id}:${e.kind}`)).toEqual(["b:return", "a:pickup", "c:pickup", "a:return"]);
+    // a booking that's already active has no pickup left; one picked up after midnight Manila counts on that Manila day
+    expect(weekAhead([{ status: "CONFIRMED", pickup_at: "2026-10-13T16:30:00.000Z", return_at: "2026-10-30T00:00:00.000Z" }], ["2026-10-14"])).toHaveLength(1);
   });
 });

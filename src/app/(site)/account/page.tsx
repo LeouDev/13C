@@ -2,13 +2,14 @@ import type { Metadata } from "next";
 import { ShieldCheck } from "lucide-react";
 import { DeletionRequest, DriverDocuments, PasswordForm, TwoStepPanel } from "@/components/account/account-panels";
 import { RenterForm } from "@/components/account/renter-form";
+import { RenterOverview } from "@/components/account/renter-overview";
 import { Pill } from "@/components/common/badges";
 import { PageHeader } from "@/components/common/states";
 import { requireUser } from "@/lib/auth";
 import { labelize } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Profile & documents" };
+export const metadata: Metadata = { title: "My account" };
 
 export default async function AccountPage() {
   const user = await requireUser("/account");
@@ -18,9 +19,15 @@ export default async function AccountPage() {
     supabase.from("driver_documents").select("doc_type, storage_path").eq("user_id", user.id),
   ]);
   const card = "rounded-3xl bg-white p-5 ring-1 ring-black/5 sm:p-6";
+  const docsReady = new Set(docs?.map((d) => d.doc_type)).size >= 3;
   return (
     <div className="grid gap-6">
-      <PageHeader title="Profile & documents" description={user.email ?? undefined} />
+      <PageHeader title={`Hi${user.full_name ? `, ${user.full_name.split(" ")[0]}` : ""}`} description="Your bookings, agreements and messages at a glance." />
+      <RenterOverview userId={user.id} docsReady={docsReady} />
+      <div className="mt-4">
+        <h2 className="font-display text-2xl font-bold tracking-tight text-navy-900">Profile &amp; documents</h2>
+        {user.email && <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>}
+      </div>
       <section className={card}>
         <h2 className="mb-4 font-semibold text-navy-900">Renter details</h2>
         <RenterForm initial={{

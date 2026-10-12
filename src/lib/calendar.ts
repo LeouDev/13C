@@ -70,3 +70,12 @@ export function formatSpan(start: string, end: string) {
   }
   return isoToManilaDate(start) === isoToManilaDate(last) ? `${formatDate(start)}, ${formatTime(start)}–${formatTime(end)}` : `${formatDateTime(start)} – ${formatDateTime(end)}`;
 }
+
+/** The pickups and returns falling on `days` (Manila dates), in time order. An ACTIVE booking is already picked up. */
+export function weekAhead<B extends { status: string; pickup_at: string; return_at: string }>(bookings: B[], days: string[]) {
+  const on = (iso: string) => days.includes(isoToManilaDate(iso));
+  return bookings.flatMap((b) => [
+    ...(b.status !== "ACTIVE" && on(b.pickup_at) ? [{ kind: "pickup" as const, at: b.pickup_at, booking: b }] : []),
+    ...(on(b.return_at) ? [{ kind: "return" as const, at: b.return_at, booking: b }] : []),
+  ]).sort((x, y) => x.at.localeCompare(y.at));
+}

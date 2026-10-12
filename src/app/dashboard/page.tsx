@@ -4,12 +4,13 @@ import { BookingStatusBadge } from "@/components/common/badges";
 import { EmptyState, PageHeader, StatCard } from "@/components/common/states";
 import { StoreChecklistGroups } from "@/components/dashboard/store-checklist";
 import { VerificationBanner } from "@/components/dashboard/verification-banner";
+import { WeekAhead } from "@/components/dashboard/week-ahead";
 import { buttonVariants } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { requireBusiness } from "@/lib/auth";
 import { BLOCKING_STATUSES } from "@/lib/bookings/status";
 import { getStoreChecklist } from "@/lib/dashboard";
-import { formatDateTime, formatPHP, formatRange, todayManila } from "@/lib/format";
+import { formatDateTime, formatPHP, formatRange, manilaToISO, todayManila } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardHome() {
@@ -19,7 +20,10 @@ export default async function DashboardHome() {
   const dayStart = new Date(`${today}T00:00:00+08:00`).toISOString();
   const dayEnd = new Date(`${today}T23:59:59+08:00`).toISOString();
 
-  const [checklist, pickups, returns, pending, upcoming, active, activeVehicles, unread, analytics] = await Promise.all([
+  const week = Array.from({ length: 7 }, (_, i) => todayManila(i));
+  const weekEnd = manilaToISO(todayManila(7), "00:00");
+
+  const [checklist, pickups, returns, pending, upcoming, active, activeVehicles, unread, analytics, thisWeek] = await Promise.all([
     getStoreChecklist(business),
     supabase.from("bookings").select("id", { count: "exact", head: true }).eq("business_id", business.id).in("status", ["CONFIRMED", "SIGNED"]).gte("pickup_at", dayStart).lte("pickup_at", dayEnd),
     supabase.from("bookings").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("status", "ACTIVE").gte("return_at", dayStart).lte("return_at", dayEnd),
@@ -29,6 +33,9 @@ export default async function DashboardHome() {
     supabase.from("vehicles").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("status", "ACTIVE").is("deleted_at", null),
     supabase.from("conversations").select("last_message_at, business_last_read_at").eq("business_id", business.id).eq("last_sender_role", "CUSTOMER").limit(200),
     supabase.rpc("business_analytics", { p_business_id: business.id, p_days: 30 }),
+    supabase.from("bookings").select("id, status, pickup_at, return_at, pickup_location, return_location, vehicles(make, model), renter:profiles!bookings_renter_id_fkey(full_name)")
+      .eq("business_id", business.id).in("status", BLOCKING_STATUSES)
+      .or(`and(pickup_at.gte.${dayStart},pickup_at.lt.${weekEnd}),and(return_at.gte.${dayStart},return_at.lt.${weekEnd})`).limit(200),
   ]);
   const a = (analytics.data ?? {}) as Record<string, number>;
   const unreadCount = (unread.data ?? []).filter((c) => !c.business_last_read_at || c.business_last_read_at < c.last_message_at).length;
@@ -95,7 +102,7 @@ export default async function DashboardHome() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <BookingList title="Pending requests" empty="No requests waiting for you." rows={pending.data ?? []} />
-        <BookingList title="Upcoming bookings" empty="No upcoming bookings yet." rows={upcoming.data ?? []} />
+        <WeekAhead bookings={thisWeek.data ?? []} days={week} />
       </div>
     </>
   );
