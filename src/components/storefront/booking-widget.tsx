@@ -11,10 +11,10 @@ import { formatPHP, manilaToISO, todayManila } from "@/lib/format";
 type Quote = { rental_days: number; base_amount: number; driver_fee: number; delivery_fee: number; total_amount: number; security_deposit: number; rate_applied: string };
 
 export function BookingWidget({
-  vehicleId, bookHref, dailyRate, selfDrive, withDriver, delivery, initialFrom, initialTo,
+  vehicleId, bookHref, dailyRate, selfDrive, withDriver, delivery, initialFrom, initialTo, practice,
 }: {
   vehicleId: string; bookHref: string; dailyRate: number; selfDrive: boolean; withDriver: boolean; delivery: boolean;
-  initialFrom?: string; initialTo?: string;
+  initialFrom?: string; initialTo?: string; /** the sample store: the button opens a practice booking */ practice?: boolean;
 }) {
   const [from, setFrom] = useState(initialFrom ?? todayManila(1));
   const [to, setTo] = useState(initialTo ?? todayManila(2));
@@ -85,7 +85,7 @@ export function BookingWidget({
         style={{ background: "var(--store-accent)" }}>
         Request Booking
       </Link>
-      <p className="mt-2 text-center text-xs text-muted-foreground">You won&apos;t be charged. The business confirms first.</p>
+      <p className="mt-2 text-center text-xs text-muted-foreground">{practice ? "Practice booking: nothing is sent or saved." : "You won't be charged. The business confirms first."}</p>
     </div>
   );
 }

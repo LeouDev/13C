@@ -41,7 +41,7 @@ export default async function StorefrontLayout({ children, params }: LayoutProps
       )}
       {business.is_demo && (
         <div className="bg-electric px-4 py-2.5 text-center text-xs leading-relaxed font-medium text-white sm:text-sm">
-          <strong>Sample store.</strong> This is how a rental business&apos;s own website looks on 13C. It isn&apos;t a real business, and booking is turned off.{" "}
+          <strong>Sample store.</strong> This is how a rental business&apos;s own website looks on 13C. It isn&apos;t a real business: bookings here are practice, nothing is sent or saved.{" "}
           <Link href="/for-business" className="font-semibold whitespace-nowrap underline underline-offset-2">Get yours free for {TRIAL_DAYS} days →</Link>
         </div>
       )}

@@ -67,7 +67,8 @@ export function SampleContractDemo({ title, sections, contentHash }: { title: st
   );
 }
 
-function SignStep({ role, contentHash, previous, onSign }: {
+/** One party signs the sample (also used by the demo store's practice booking). */
+export function SignStep({ role, contentHash, previous, onSign }: {
   role: "PROVIDER" | "RENTER"; contentHash: string; previous?: ContractSignature; onSign: (sig: ContractSignature) => void;
 }) {
   const provider = role === "PROVIDER";

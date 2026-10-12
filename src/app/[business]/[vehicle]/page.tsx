@@ -12,7 +12,7 @@ import { MessageButton } from "@/components/storefront/message-button";
 import { VehicleGallery } from "@/components/storefront/vehicle-gallery";
 import { ViewTracker } from "@/components/storefront/view-tracker";
 import { getCurrentUser } from "@/lib/auth";
-import { SITE_URL, TRIAL_DAYS } from "@/lib/constants";
+import { SITE_URL } from "@/lib/constants";
 import { formatDate, formatPHP, isoDaysFromNow, labelize, responseTimeLabel } from "@/lib/format";
 import { plural } from "@/lib/format";
 import { getStorefront, getVehicleBySlug } from "@/lib/queries";
@@ -60,6 +60,7 @@ export default async function VehiclePage({ params, searchParams }: PageProps<"/
   ]);
   const name = `${v.make} ${v.model}`;
   const bookable = v.status === "ACTIVE" && business.status === "VERIFIED" && store.is_published && !business.is_demo;
+  const practice = business.is_demo && v.status === "ACTIVE"; // the sample store: a practice booking, nothing saved
   const tiles = [
     { icon: Fuel, label: "Fuel", value: labelize(v.fuel_type) },
     { icon: CalendarDays, label: "Year", value: v.year },
@@ -174,15 +175,9 @@ export default async function VehiclePage({ params, searchParams }: PageProps<"/
 
           <aside className="grid content-start gap-4 lg:sticky lg:top-20 lg:self-start">
             <div id="book" className="scroll-mt-32 lg:scroll-mt-24">
-              {bookable && p ? (
-                <BookingWidget vehicleId={v.id} bookHref={`/${business.slug}/${v.slug}/book`} dailyRate={Number(p.daily_rate)}
+              {(bookable || practice) && p ? (
+                <BookingWidget vehicleId={v.id} bookHref={`/${business.slug}/${v.slug}/book`} dailyRate={Number(p.daily_rate)} practice={practice}
                   selfDrive={v.self_drive} withDriver={v.with_driver} delivery={v.delivery_available} initialFrom={sp.from} initialTo={sp.to} />
-              ) : business.is_demo ? (
-                <div className="rounded-3xl bg-white p-5 text-sm ring-1 ring-black/5">
-                  <p className="font-semibold text-navy-900">Booking is turned off in this sample store</p>
-                  <p className="mt-1 text-muted-foreground">On your own store, renters pick their dates here, see the price and send you a booking request.</p>
-                  <Link href="/for-business" className="mt-4 inline-flex h-11 items-center rounded-full px-5 font-semibold text-white" style={{ background: "var(--store-accent)" }}>Get a store like this — {TRIAL_DAYS} days free</Link>
-                </div>
               ) : (
                 <div className="rounded-3xl bg-white p-5 text-sm text-muted-foreground ring-1 ring-black/5">This vehicle isn&apos;t accepting bookings right now. Message the business for options.</div>
               )}
@@ -208,7 +203,7 @@ export default async function VehiclePage({ params, searchParams }: PageProps<"/
         </div>
       </div>
 
-      {bookable && (
+      {(bookable || practice) && (
         <div className="fixed inset-x-0 bottom-[var(--app-bottom,0px)] z-30 border-t bg-white/95 p-3 backdrop-blur lg:hidden">
           <div className="container-page flex items-center gap-3">
             <p className="flex-1"><span className="font-display text-xl font-bold">{formatPHP(p?.daily_rate)}</span><span className="text-sm text-muted-foreground"> /day</span></p>
