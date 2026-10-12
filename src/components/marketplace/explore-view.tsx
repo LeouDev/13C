@@ -4,15 +4,17 @@ import { cn } from "cn";
 import { EmptyState } from "@/components/common/states";
 import { BusinessCard } from "@/components/marketplace/business-card";
 import { ExploreFilters } from "@/components/marketplace/filters";
+import { PlaceSuggestions } from "@/components/marketplace/search-bar";
 import { VehicleCard } from "@/components/marketplace/vehicle-card";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { formatRange } from "@/lib/format";
-import { getCategories, getFeaturedBusinesses, getPlaces, PAGE_SIZE, searchVehicles, type SearchParams } from "@/lib/queries";
+import { getCategories, getFeaturedBusinesses, getPlaces, locationFilter, PAGE_SIZE, searchVehicles, type SearchParams } from "@/lib/queries";
 
 const SORTS = [["recommended", "Recommended"], ["price_asc", "Price: low to high"], ["price_desc", "Price: high to low"], ["newest", "Newest"]] as const;
 
 export async function ExploreView({ p, title, basePath, lockLocation, view }: { p: SearchParams; title: string; basePath: string; lockLocation?: boolean; view?: string }) {
-  const [categories, { provinces }] = await Promise.all([getCategories(), getPlaces()]);
+  const [categories, places] = await Promise.all([getCategories(), getPlaces()]);
+  const location = locationFilter(places, p.location);
   const qs = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(Object.entries({ ...p, ...patch }).filter(([, v]) => v) as [string, string][]);
     return `${basePath}?${next}`;
@@ -37,6 +39,7 @@ export async function ExploreView({ p, title, basePath, lockLocation, view }: { 
 
   return (
     <div className="container-page py-8">
+      {!lockLocation && <PlaceSuggestions id="places" provinces={places.provinces} />}
       <Tabs view="cars" basePath={basePath} />
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -48,7 +51,7 @@ export async function ExploreView({ p, title, basePath, lockLocation, view }: { 
             <SheetTrigger className="inline-flex h-10 items-center gap-2 rounded-full border bg-white px-4 text-sm font-semibold lg:hidden"><SlidersHorizontal className="size-4" /> Filters</SheetTrigger>
             <SheetContent side="bottom" className="max-h-[85svh] overflow-y-auto rounded-t-3xl p-5">
               <SheetTitle>Filters</SheetTitle>
-              <ExploreFilters p={p} categories={categories} provinces={provinces} action={basePath} lockLocation={lockLocation} />
+              <ExploreFilters p={p} categories={categories} locationLabel={location?.label} action={basePath} lockLocation={lockLocation} />
             </SheetContent>
           </Sheet>
           <div className="flex flex-wrap gap-1">
@@ -59,7 +62,7 @@ export async function ExploreView({ p, title, basePath, lockLocation, view }: { 
         </div>
       </div>
       <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[260px_1fr]">
-        <aside className="hidden lg:block"><div className="sticky top-20 rounded-3xl bg-white p-5 ring-1 ring-black/5"><ExploreFilters p={p} categories={categories} provinces={provinces} action={basePath} lockLocation={lockLocation} /></div></aside>
+        <aside className="hidden lg:block"><div className="sticky top-20 rounded-3xl bg-white p-5 ring-1 ring-black/5"><ExploreFilters p={p} categories={categories} locationLabel={location?.label} action={basePath} lockLocation={lockLocation} /></div></aside>
         <div>
           {vehicles.length ? (
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{vehicles.map((v, i) => <VehicleCard key={v.id} v={v} query={carry} priority={i < 3} />)}</div>

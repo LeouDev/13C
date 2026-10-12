@@ -1,21 +1,17 @@
 import { CalendarDays, Car, MapPin, Search } from "lucide-react";
 import { cn } from "cn";
 import { DateInput } from "@/components/common/date-input";
+import { PROVINCES } from "@/lib/constants";
 import { todayManila } from "@/lib/format";
-import type { Province } from "@/lib/queries";
+import { placeLabel, type Province } from "@/lib/queries";
 
-/** The location choices: the whole country, then each province that has cars, and its cities. */
-export function PlaceOptions({ provinces }: { provinces: Province[] }) {
+/** Suggestions while typing a location: places with cars first (cities, then provinces), then every other province. */
+export function PlaceSuggestions({ id, provinces }: { id: string; provinces: Province[] }) {
+  const withCars = [...provinces.flatMap((p) => p.cities), ...provinces].map(placeLabel);
   return (
-    <>
-      <option value="">All of the Philippines</option>
-      {provinces.map((p) => (
-        <optgroup key={p.slug} label={p.name}>
-          <option value={p.slug}>All of {p.name}</option>
-          {p.cities.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
-        </optgroup>
-      ))}
-    </>
+    <datalist id={id}>
+      {[...new Set([...withCars, ...PROVINCES])].map((label) => <option key={label} value={label} />)}
+    </datalist>
   );
 }
 
@@ -32,9 +28,9 @@ export function SearchBar({
         <MapPin className="size-5 shrink-0 text-electric" />
         <span className="min-w-0 flex-1">
           <span className={label}>Pickup location</span>
-          <select name="location" defaultValue={defaults.location ?? ""} className={cn(input, "appearance-none")}>
-            <PlaceOptions provinces={provinces} />
-          </select>
+          <input name="location" list="places-home" defaultValue={defaults.location ?? ""} placeholder="Any city or province" autoComplete="off" enterKeyHint="search"
+            className={cn(input, "placeholder:text-navy-900")} />
+          <PlaceSuggestions id="places-home" provinces={provinces} />
         </span>
       </label>
       <span className="hidden h-10 w-px bg-border md:block" />

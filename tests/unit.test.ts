@@ -14,7 +14,7 @@ import { blockWindow, coverDays, formatSpan } from "@/lib/calendar";
 import { friendlyError } from "@/lib/errors";
 import { browserLabel, formatPHP, isoToManilaDate, labelize, manilaToISO, plural } from "@/lib/format";
 import { subscriptionState } from "@/lib/plans";
-import { placesFrom, storeSections, type Storefront } from "@/lib/queries";
+import { locationFilter, placesFrom, storeSections, type Storefront } from "@/lib/queries";
 import { dueKm, dueOn } from "@/lib/fleet";
 import { toCsv } from "@/lib/csv";
 import { groupFingerprint, isValidSignatureImage } from "@/lib/signature";
@@ -416,5 +416,19 @@ describe("marketplace places", () => {
     expect(p.find("cebu")?.name).toBe("Cebu");
     expect(p.find("cebu")?.spellings).toBeUndefined(); // a province: no city filter
     expect(p.cities[0]?.slug).toBe("makati");
+  });
+
+  it("understands a typed location", () => {
+    const p = placesFrom([
+      { province: "Cebu", city: "Lapu-Lapu", cars: 1 },
+      { province: "Cebu", city: "Talisay", cars: 1 },
+      { province: "Negros Occidental", city: "Talisay", cars: 1 },
+    ]);
+    expect(locationFilter(p, "  ")).toBeUndefined();
+    expect(locationFilter(p, "lapu lapu")).toEqual({ label: "Lapu-Lapu, Cebu", province: "Cebu", cities: ["Lapu-Lapu"] });
+    expect(locationFilter(p, "Talisay, Negros Occidental")?.province).toBe("Negros Occidental");
+    expect(locationFilter(p, "cebu")).toEqual({ label: "Cebu", province: "Cebu", cities: undefined });
+    expect(locationFilter(p, "davao del sur")).toEqual({ label: "Davao del Sur", province: "Davao del Sur" }); // no cars yet
+    expect(locationFilter(p, "Siargao")).toEqual({ label: "Siargao", cities: ["Siargao"] });
   });
 });

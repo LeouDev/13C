@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { POLICY_FIELDS } from "@/lib/constants";
+import { POLICY_FIELDS, PROVINCES } from "@/lib/constants";
 import { manilaToISO } from "@/lib/format";
 import type { Database, Enums } from "@/types/database";
 
@@ -24,8 +24,9 @@ export type Province = Place & { cities: Place[] };
  * The provinces and cities that have cars on the marketplace, most cars first. A place's slug is its name; a city also
  * gets its province's when another province has a town by that name, or a province shares it.
  */
+const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
 export function placesFrom(rows: { province: string; city: string; cars: number }[]) {
-  const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   const byProvince = new Map<string, Province>();
   for (const r of rows) {
     const p = byProvince.get(r.province) ?? { slug: slug(r.province), name: r.province, province: r.province, cars: 0, cities: [] };
@@ -44,6 +45,25 @@ export function placesFrom(rows: { province: string; city: string; cars: number 
   return { provinces, cities: [...cities].sort(mostCars), find: (s?: string) => [...provinces, ...cities].find((x) => x.slug === s) };
 }
 
+type Places = ReturnType<typeof placesFrom>;
+
+/** "Cebu City, Cebu" for a city, "Cebu" for a province. */
+export const placeLabel = (p: Place) => (p.spellings ? `${p.name}, ${p.province}` : p.name);
+
+/**
+ * What a typed (or linked) location means: a place with cars, by slug, name or label; else any province; else a city or
+ * town by name, which matches cars there and cars delivered there.
+ */
+export function locationFilter(places: Places, text?: string): { label: string; province?: string; cities?: string[] } | undefined {
+  const typed = text?.trim();
+  if (!typed) return undefined;
+  const s = slug(typed);
+  const place = places.find(typed) ?? [...places.provinces, ...places.cities].find((p) => [p.slug, slug(p.name), slug(placeLabel(p))].includes(s));
+  if (place) return { label: placeLabel(place), province: place.province, cities: place.spellings };
+  const province = PROVINCES.find((p) => slug(p) === s);
+  return province ? { label: province, province } : { label: typed, cities: [typed] };
+}
+
 export const getPlaces = cache(async () => {
   const supabase = await createClient();
   const { data } = await supabase.rpc("marketplace_locations");
@@ -52,13 +72,13 @@ export const getPlaces = cache(async () => {
 
 export async function searchVehicles(p: SearchParams, extra: { businessId?: string; limit?: number } = {}) {
   const supabase = await createClient();
-  const loc = p.location ? (await getPlaces()).find(p.location) : undefined;
+  const loc = locationFilter(await getPlaces(), p.location);
   const page = Math.max(1, Number(p.page) || 1);
   const limit = extra.limit ?? PAGE_SIZE;
   const from = p.from && /^\d{4}-\d{2}-\d{2}$/.test(p.from) ? manilaToISO(p.from) : undefined;
   const to = p.to && /^\d{4}-\d{2}-\d{2}$/.test(p.to) ? manilaToISO(p.to) : undefined;
   const { data, error } = await supabase.rpc("search_vehicles", {
-    p_cities: loc?.spellings,
+    p_cities: loc?.cities,
     p_province: loc?.province,
     p_q: p.q || undefined,
     p_category: p.type || undefined,

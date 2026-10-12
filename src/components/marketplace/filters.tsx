@@ -1,13 +1,12 @@
 import { DateInput } from "@/components/common/date-input";
 import { NativeSelect } from "@/components/common/field";
-import { PlaceOptions } from "@/components/marketplace/search-bar";
 import { TRANSMISSIONS } from "@/lib/constants";
 import { todayManila } from "@/lib/format";
-import type { Province, SearchParams } from "@/lib/queries";
+import type { SearchParams } from "@/lib/queries";
 
-/** GET form; works without JavaScript. */
-export function ExploreFilters({ p, categories, provinces, action = "/explore", lockLocation }: {
-  p: SearchParams; categories: { slug: string; label: string }[]; provinces: Province[]; action?: string; lockLocation?: boolean;
+/** GET form; works without JavaScript. The location suggestions are the page's `places` datalist (explore-view). */
+export function ExploreFilters({ p, categories, locationLabel, action = "/explore", lockLocation }: {
+  p: SearchParams; categories: { slug: string; label: string }[]; locationLabel?: string; action?: string; lockLocation?: boolean;
 }) {
   const label = "mb-1.5 block text-xs font-semibold text-navy-900";
   const check = "flex items-center gap-2.5 py-1 text-sm text-navy-800";
@@ -20,9 +19,8 @@ export function ExploreFilters({ p, categories, provinces, action = "/explore", 
       {!lockLocation && (
         <div>
           <label className={label} htmlFor="f-loc">Location</label>
-          <NativeSelect id="f-loc" name="location" defaultValue={p.location ?? ""}>
-            <PlaceOptions provinces={provinces} />
-          </NativeSelect>
+          <input id="f-loc" name="location" list="places" defaultValue={locationLabel ?? p.location} placeholder="Any city or province" autoComplete="off"
+            className="h-10 w-full rounded-xl border border-input bg-white px-3 text-sm" />
         </div>
       )}
       <div className="grid grid-cols-2 gap-2">
