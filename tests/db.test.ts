@@ -685,6 +685,26 @@ describe("admin", () => {
     expect(o).toHaveProperty("gmv");
   });
 
+  it("a renter waits for KYC review once their license and ID are in, and again after replacing one", async () => {
+    const u = await makeUser("kyc");
+    const kyc = async () => must(await service.from("renters").select("kyc_status").eq("user_id", u.id).single()).kyc_status;
+    const id = { user_id: u.id, doc_type: "GOVERNMENT_ID" as const, storage_path: `${u.id}/government_id.png` };
+    must(await u.client.from("driver_documents").insert(id).select("id"));
+    expect(await kyc()).toBe("UNVERIFIED");
+    await completeRenterProfile(u);
+    expect(await kyc()).toBe("PENDING");
+    must(await admin.client.rpc("admin_set_kyc_status", { p_user_id: u.id, p_status: "VERIFIED" }));
+    // Replacing a document (the app removes the old record, then adds the new one) needs a new check.
+    must(await u.client.from("driver_documents").delete().eq("user_id", u.id).eq("doc_type", "GOVERNMENT_ID"));
+    expect(await kyc()).toBe("UNVERIFIED");
+    must(await u.client.from("driver_documents").insert(id).select("id"));
+    expect(await kyc()).toBe("PENDING");
+    // A rejection stays until they upload again.
+    must(await admin.client.rpc("admin_set_kyc_status", { p_user_id: u.id, p_status: "REJECTED", p_note: "Photo is blurry" }));
+    must(await u.client.from("driver_documents").delete().eq("user_id", u.id).eq("doc_type", "GOVERNMENT_ID"));
+    expect(await kyc()).toBe("REJECTED");
+  });
+
   it("suspension unpublishes the store", async () => {
     must(await admin.client.rpc("admin_review_business", { p_business_id: businessId, p_decision: "SUSPENDED", p_note: "Test suspension" }));
     const pub = must(await anon().from("businesses").select("id").eq("id", businessId));

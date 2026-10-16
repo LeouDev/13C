@@ -41,10 +41,12 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
   const term = searchTerms(q, 8).join("%");
   if (term) query = query.or(`full_name.ilike.%${term}%,email.ilike.%${term}%`);
 
-  const [{ data: rows }, { count: deletionCount }] = await Promise.all([
+  const [{ data: rows }, { count: deletionCount }, { count: kycCount }] = await Promise.all([
     query,
     supabase.from("profiles").select("id", { count: "exact", head: true }).not("deletion_requested_at", "is", null).neq("full_name", "Deleted user"),
+    supabase.from("renters").select("user_id", { count: "exact", head: true }).eq("kyc_status", "PENDING"),
   ]);
+  const counts: Record<string, number | null> = { deletion: deletionCount, kyc: kycCount };
 
   return (
     <>
@@ -55,7 +57,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps<"/admin
           <span><strong>{deletionCount}</strong> account deletion {deletionCount === 1 ? "request is" : "requests are"} waiting. Process within 30 days.</span>
         </Link>
       )}
-      <ListFilters basePath="/admin/users" options={FILTERS.map((f) => (f.key === "deletion" ? { ...f, count: deletionCount } : f))} active={filter.key} q={q} searchPlaceholder="Search name or email…" />
+      <ListFilters basePath="/admin/users" options={FILTERS.map((f) => (f.key in counts ? { ...f, count: counts[f.key] } : f))} active={filter.key} q={q} searchPlaceholder="Search name or email…" />
       {!rows?.length ? <EmptyState icon={Users} title="No users found" /> : (
         <div className="w-0 min-w-full overflow-hidden rounded-2xl border bg-white">
           <Table>
